@@ -1,4 +1,4 @@
-/*! lineupjs - v0.5.3 - 2016
+/*! lineupjs - v0.5.4 - 2016
 * https://github.com/Caleydo/lineup.js
 * Copyright (c) 2016 Caleydo Team; Licensed BSD-3-Clause*/
 
@@ -1279,6 +1279,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return StringColumn;
 	}(ValueColumn));
 	exports.StringColumn = StringColumn;
+	var MyColumn = (function (_super) {
+	    __extends(MyColumn, _super);
+	    function MyColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    MyColumn.prototype.compare = function (a, b) {
+	        return this.getValue(a).mean - this.getValue(b).mean;
+	    };
+	    return MyColumn;
+	}(ValueColumn));
+	exports.MyColumn = MyColumn;
+	var HeatmapColumn = (function (_super) {
+	    __extends(HeatmapColumn, _super);
+	    function HeatmapColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    HeatmapColumn.prototype.compare = function (a, b) {
+	        return this.getValue(a).mean - this.getValue(b).mean;
+	    };
+	    return HeatmapColumn;
+	}(ValueColumn));
+	exports.HeatmapColumn = HeatmapColumn;
 	/**
 	 * a string column in which the label is a text but the value a link
 	 */
@@ -2901,7 +2923,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        min: MinColumn,
 	        mean: MinColumn,
 	        script: ScriptColumn,
-	        nested: NestedColumn
+	        nested: NestedColumn,
+	        custom: MyColumn,
+	        heatmapcustom: MyColumn,
+	        sparklinecustom: MyColumn,
+	        boxplotcustom: MyColumn
 	    };
 	}
 	exports.models = models;
@@ -4410,6 +4436,230 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return DefaultCellRenderer;
 	}());
 	exports.DefaultCellRenderer = DefaultCellRenderer;
+	var MyCustomCellRenderer = (function (_super) {
+	    __extends(MyCustomCellRenderer, _super);
+	    function MyCustomCellRenderer() {
+	        _super.apply(this, arguments);
+	    }
+	    MyCustomCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('path').attr({
+	            'class': 'shift',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        var f = col.getWidth() / 100;
+	        $rows.attr('d', function (d, i) {
+	            var value = col.getValue(d);
+	            var left = value.min * f, right = value.max * f, center = value.mean * f;
+	            var top = context.option('rowPadding', 1);
+	            var bottom = Math.max(context.rowHeight(i) - top, 0);
+	            var middle = (bottom - top) / 2;
+	            return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
+	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
+	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
+	        });
+	        context.animated($rows).attr({
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	            }
+	        });
+	        $rows.exit().remove();
+	    };
+	    MyCustomCellRenderer.prototype.findRow = function ($col, index) {
+	        return $col.selectAll('path.shift[data-index="' + index + '"]');
+	    };
+	    return MyCustomCellRenderer;
+	}(DefaultCellRenderer));
+	var HeatmapCellRenderer = (function (_super) {
+	    __extends(HeatmapCellRenderer, _super);
+	    function HeatmapCellRenderer() {
+	        _super.apply(this, arguments);
+	    }
+	    HeatmapCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var p = d3.scale.category20();
+	        var colors = p.range();
+	        var height = 5;
+	        var width = [];
+	        var y = 3;
+	        var scale = d3.scale.linear().range([0, 100]); // Constraint the window width
+	        var max = 0;
+	        rows.forEach(function (d, i) {
+	            max = d3.max([max, d3.sum(d.custom2.x)]);
+	            scale.domain([0, max]); // Convert any range to fix with in window width
+	        });
+	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'my',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        var $rects = $rows_enter.selectAll('rect').data(function (d) {
+	            return d.custom2.x;
+	        }); // Select custom2.x data
+	        $rects.enter().append('rect');
+	        $rects.attr({
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            'width': function (d) {
+	                return scale(d);
+	            },
+	            'height': height,
+	            'y': y,
+	            'x': function (d) {
+	                var prev = this.previousSibling; // One previous step information.
+	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
+	            },
+	            'fill': function (d, i) {
+	                return colors[i];
+	            }
+	        });
+	        context.animated($rows).attr({
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	            }
+	        });
+	        $rows.exit().remove();
+	    };
+	    HeatmapCellRenderer.prototype.findRow = function ($col, index) {
+	        return $col.selectAll('rect.shift[data-index="' + index + '"]');
+	    };
+	    return HeatmapCellRenderer;
+	}(DefaultCellRenderer));
+	var SparklineCellRenderer = (function (_super) {
+	    __extends(SparklineCellRenderer, _super);
+	    function SparklineCellRenderer() {
+	        _super.apply(this, arguments);
+	    }
+	    SparklineCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('path').attr({
+	            'class': 'spark',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        var data = [3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 9, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9];
+	        var maxY = d3.max(data);
+	        var x = d3.scale.linear().domain([0, data.length]).range([0, 100]);
+	        var y = d3.scale.linear().domain([0, maxY]).range([10, 0]);
+	        // X scale will fit values from 0-10 within pixels 0-100
+	        // create a line object that represents the SVN line we're creating
+	        var line = d3.svg.line()
+	            .x(function (d, i) { return x(i); })
+	            .y(function (d, i) { return y(d); });
+	        $rows.attr('d', line(data));
+	        context.animated($rows).attr({
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	            }
+	        });
+	        $rows.exit().remove();
+	    };
+	    return SparklineCellRenderer;
+	}(DefaultCellRenderer));
+	var BoxplotCellRenderer = (function (_super) {
+	    __extends(BoxplotCellRenderer, _super);
+	    function BoxplotCellRenderer() {
+	        _super.apply(this, arguments);
+	    }
+	    BoxplotCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var maxarr = [];
+	        var minarr = [];
+	        rows.forEach(function (d, i) {
+	            var value = col.getValue(d);
+	            maxarr.push(value.max);
+	            minarr.push(value.min);
+	        });
+	        var scale = d3.scale.linear().domain([0, d3.max(maxarr)]).range([0, 100]); // Constraint the window width
+	        // var x = d3.scale.linear().domain([0, 73]).range([0, 100]);
+	        console.log(scale(10));
+	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'my',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        // It is not nested selection so we call directly from the enter method.
+	        $rows_enter.append('path').attr('class', 'shift');
+	        var f = col.getWidth() / 100;
+	        $rows.select('path.shift').attr('d', function (d, i) {
+	            var value = col.getValue(d);
+	            // console.log((value));
+	            var left = scale(value.min) * f, right = scale(value.max) * f, center = scale(value.med) * f;
+	            var top = context.option('rowPadding', 1);
+	            var bottom = Math.max(context.rowHeight(i) - top, 0);
+	            var middle = (bottom - top) / 2;
+	            console.log(top, bottom, middle);
+	            return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
+	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
+	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
+	        });
+	        // It is nested selection i.e. we have four rectangles so there is no needed selectall
+	        $rows_enter.append('rect').attr('class', 'shift');
+	        $rows.select('rect.shift').attr({
+	            'width': function (d, i) {
+	                var value = col.getValue(d);
+	                return scale(value.q3 - value.q1);
+	            },
+	            'height': function (d, i) {
+	                var top = context.option('rowPadding', 30);
+	                return (Math.max(context.rowHeight(i) - top, 10));
+	            },
+	            'y': 0,
+	            'x': function (d, i) {
+	                var value = col.getValue(d);
+	                return scale(value.q1);
+	            }
+	        });
+	        //
+	        //// It is nested selection i.e. we have four rectangles so there is no needed selectall
+	        // var $rects = $rows_enter.selectAll('rect').data(function (d) {
+	        //     return d.custom2.x
+	        // }); // Select custom2.x data
+	        //
+	        // console.log($rects);
+	        // $rects.enter().append('rect');
+	        // $rects.attr({
+	        //     'data-index': function (d, i) {
+	        //         return i;
+	        //     },
+	        //
+	        //     'width':40,
+	        //     'height': height,
+	        //     'y': y,
+	        //     'x': 0,
+	        //     'fill': function (d, i) {
+	        //         return colors[i];
+	        //     }
+	        // });
+	        context.animated($rows).attr({
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	            }
+	        });
+	        $rows.exit().remove();
+	    };
+	    return BoxplotCellRenderer;
+	}(DefaultCellRenderer));
 	/**
 	 * simple derived one where individual elements can be overridden
 	 */
@@ -5046,7 +5296,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        actions: new ActionCellRenderer(),
 	        annotate: new AnnotateCellRenderer(),
 	        selection: new SelectionCellRenderer(),
-	        nested: new StackCellRenderer(false)
+	        nested: new StackCellRenderer(false),
+	        custom: new MyCustomCellRenderer(),
+	        heatmapcustom: new HeatmapCellRenderer(),
+	        sparklinecustom: new SparklineCellRenderer(),
+	        boxplotcustom: new BoxplotCellRenderer()
 	    };
 	}
 	exports.renderers = renderers;

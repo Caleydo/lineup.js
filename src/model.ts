@@ -949,6 +949,17 @@ export class StringColumn extends ValueColumn<string> {
   }
 }
 
+export class MyColumn extends ValueColumn<any> {
+  compare(a:any, b:any) {
+    return this.getValue(a).mean - this.getValue(b).mean;
+  }
+}
+export class HeatmapColumn extends ValueColumn<any> {
+  compare(a:any, b:any) {
+    return this.getValue(a).mean - this.getValue(b).mean;
+  }
+}
+
 /**
  * a string column in which the label is a text but the value a link
  */
@@ -2674,6 +2685,10 @@ export function models() {
     min: MinColumn,
     mean: MinColumn,
     script: ScriptColumn,
-    nested: NestedColumn
+    nested: NestedColumn,
+    custom: MyColumn,
+    heatmapcustom: MyColumn,
+    sparklinecustom: MyColumn,
+    boxplotcustom:MyColumn
   };
 }
