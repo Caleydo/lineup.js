@@ -12,72 +12,72 @@ export interface IRenderContext {
    * the y position of the cell
    * @param index
    */
-  cellY(index:number):number;
+  cellY(index: number): number;
 
   /**
    * the previous y position of the cell
    * @param index
    */
-  cellPrevY(index:number):number;
+  cellPrevY(index: number): number;
   /**
    * the x position of the cell
    * @param index
    */
-  cellX(index:number):number;
+  cellX(index: number): number;
   /**
    * the height of a row
    * @param index
    */
-  rowHeight(index:number):number;
+  rowHeight(index: number): number;
   /**
    * a key function for uniquely identifying a data row
    * @param d
    * @param i
    */
-  rowKey(d:any, i:number):string;
+  rowKey(d: any, i: number): string;
 
   /**
    * factory function for resolving the renderer for a given column
    * @param col
    */
-  renderer(col:model.Column):ICellRenderer;
+  renderer(col: model.Column): ICellRenderer;
 
   /**
    * render a column
    * @param col
    */
-  render(col:model.Column, $this:d3.Selection<model.Column>, data:any[], context?:IRenderContext);
-  renderCanvas(col:model.Column, ctx: CanvasRenderingContext2D, data:any[], context?:IRenderContext);
+  render(col: model.Column, $this: d3.Selection<model.Column>, data: any[], context?: IRenderContext);
+  renderCanvas(col: model.Column, ctx: CanvasRenderingContext2D, data: any[], context?: IRenderContext);
 
   /**
    * internal option flags
    * @param col
    */
-  showStacked(col:model.Column):boolean;
+  showStacked(col: model.Column): boolean;
 
   /**
    * prefix used for all generated id names
    */
-  idPrefix:string;
+  idPrefix: string;
 
   /**
    * wrapper for a d3 selection making it (optinally) to an animated transition
    * @param $sel
    */
-  animated<T>($sel:d3.Selection<T>):any;
+  animated<T>($sel: d3.Selection<T>): any;
 
   /**
    * lookup custom options by key
    * @param key key to lookup
    * @param default_ default value
    */
-  option<T>(key:string, default_:T):T;
+  option<T>(key: string, default_: T): T;
 
   /**
    * whether to show the mean line for a given column
    * @param col
    */
-  showMeanLine(col:model.Column):boolean;
+  showMeanLine(col: model.Column): boolean;
 }
 
 /**
@@ -91,7 +91,7 @@ export interface ICellRenderer {
    * @param rows the data rows
    * @param context render context
    */
-  render($col:d3.Selection<any>, col:model.Column, rows:any[], context:IRenderContext);
+  render($col: d3.Selection<any>, col: model.Column, rows: any[], context: IRenderContext);
   /**
    * show the values and other information for the selected row
    * @param $col the column
@@ -101,7 +101,7 @@ export interface ICellRenderer {
    * @param index the index of the row in the column
    * @param context render context
    */
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext);
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext);
   /**
    * hide the values and other information for the selected row
    * @param $col the column
@@ -111,7 +111,7 @@ export interface ICellRenderer {
    * @param index the index of the row in the column
    * @param context render context
    */
-  mouseLeave($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext);
+  mouseLeave($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext);
 }
 
 /**
@@ -127,9 +127,9 @@ export class DefaultCellRenderer implements ICellRenderer {
    * the text alignment: left, center, right
    * @type {string}
    */
-  align:string = 'left';
+  align: string = 'left';
 
-  render($col:d3.Selection<any>, col:model.Column, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.Column, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('text.' + this.textClass).data(rows, context.rowKey);
 
     $rows.enter().append('text').attr({
@@ -163,11 +163,11 @@ export class DefaultCellRenderer implements ICellRenderer {
    * @param index
    * @return {Selection<Datum>}
    */
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('text.' + this.textClass + '[data-index="' + index + '"]');
   }
 
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
     var rowNode = <Node>$row.node();
     //find the right one and
     var n = <Node>this.findRow($col, index).node();
@@ -176,17 +176,17 @@ export class DefaultCellRenderer implements ICellRenderer {
     }
   }
 
-  mouseLeave($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseLeave($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
     var colNode = <Node>$col.node();
     var rowNode = <Node>$row.node();
     //move back
-    if (rowNode.hasChildNodes()&& colNode) {
+    if (rowNode.hasChildNodes() && colNode) {
       colNode.appendChild(rowNode.firstChild);
     }
     $row.selectAll('*').remove();
   }
 
-  renderCanvas(ctx:CanvasRenderingContext2D, col:model.Column, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, col: model.Column, rows: any[], context: IRenderContext) {
     ctx.save();
     ctx.textAlign = this.align;
     rows.forEach((row, i) => {
@@ -203,150 +203,174 @@ export class DefaultCellRenderer implements ICellRenderer {
     ctx.restore();
   }
 
-  mouseEnterCanvas(ctx:CanvasRenderingContext2D, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnterCanvas(ctx: CanvasRenderingContext2D, col: model.Column, row: any, index: number, context: IRenderContext) {
     //TODO
   }
 }
 
 class MyCustomCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.MyColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
-    var $rows_enter = $rows.enter().append('path').attr({
-        'class': 'shift',
-        'data-index': function (d, i) {
-            return i;
-        },
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-        }
+    $rows.enter().append('path').attr({
+      'class': 'shift',
+      'data-index': function (d, i) {
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
     });
     var f = col.getWidth() / 100;
 
     $rows.attr('d', function (d, i) {
-        var value = col.getValue(d);
+      var value = col.getValue(d);
 
-        var left = value.min * f, right = value.max * f, center = value.mean * f;
-        var top = context.option('rowPadding', 1);
-        var bottom = Math.max(context.rowHeight(i) - top, 0);
-        var middle = (bottom - top) / 2;
-        return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
-            'M' + left + ',' + top + 'L' + left + ',' + bottom +
-            'M' + center + ',' + top + 'L' + center + ',' + bottom +
-            'M' + right + ',' + top + 'L' + right + ',' + bottom;
-    })
+      var left = value.min * f, right = value.max * f, center = value.mean * f;
+      var top = context.option('rowPadding', 1);
+      var bottom = Math.max(context.rowHeight(i) - top, 0);
+      var middle = (bottom - top) / 2;
+      return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+        'M' + left + ',' + top + 'L' + left + ',' + bottom +
+        'M' + center + ',' + top + 'L' + center + ',' + bottom +
+        'M' + right + ',' + top + 'L' + right + ',' + bottom;
+    });
     context.animated($rows).attr({
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-        }
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
     });
     $rows.exit().remove();
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('path.shift[data-index="' + index + '"]');
   }
 }
 
 class HeatmapCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.MyColumn, rows:any[], context:IRenderContext) {
-     var p=d3.scale.category20();
-    var colors=p.range();
-     var height = 5;
-    var width = [];
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+
+    var p = d3.scale.category20();
+    var colors = p.range();
+    var height = 5;
+
     var y = 3;
-    var scale:any = d3.scale.linear().range([0, 100]); // Constraint the window width
+    var scale: any = d3.scale.linear().range([0, 100]); // Constraint the window width
     var max = 0;
 
     rows.forEach(function (d, i) {
-        max = d3.max([max, d3.sum(d.custom2.x)]);
-        scale.domain([0, max]);  // Convert any range to fix with in window width
+
+      max = d3.max([max, d3.sum(d.heatmapcustom)]);
+      scale.domain([0, max]);  // Convert any range to fix with in window width
     });
 
     var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
 
     var $rows_enter = $rows.enter().append('g').attr({
-        'class': 'my',
-        'data-index': function (d, i) {
-            return i;
-        },
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-        }
+      'class': 'my',
+      'data-index': function (d, i) {
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
     });
 
     var $rects = $rows_enter.selectAll('rect').data(function (d) {
-        return d.custom2.x
+      return d.heatmapcustom;
     }); // Select custom2.x data
     $rects.enter().append('rect');
     $rects.attr({
-        'data-index': function (d, i) {
-            return i;
-        },
+      'data-index': function (d, i) {
+        return i;
+      },
 
-        'width': function (d) {
-            return scale(d);
-        },
-        'height': height,
-        'y': y,
-        'x': function (d) {
-            var prev = this.previousSibling; // One previous step information.
-            return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
-        },
-        'fill': function (d, i) {
-            return colors[i];
-        }
+      'width': function (d) {
+        return scale(d);
+      },
+      'height': height,
+      'y': y,
+      'x': function (d) {
+        var prev = this.previousSibling; // One previous step information.
+        return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
+      },
+      'fill': function (d, i) {
+        return colors[i];
+      }
     });
 
     context.animated($rows).attr({
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-        }
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
     });
     $rows.exit().remove();
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('rect.shift[data-index="' + index + '"]');
   }
 }
 
 class SparklineCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.MyColumn, rows:any[], context:IRenderContext) {
-      var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-    var $rows_enter = $rows.enter().append('path').attr({
-        'class': 'spark',
-        'data-index': function (d, i) {
-            return i;
-        },
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-        }
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+    var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
+    $rows.enter().append('path').attr({
+      'class': 'spark',
+      'data-index': function (d, i) {
+        // console.log(d)
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
     });
 
-   var data:any = [3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 9, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9];
+
+    // var sparks = $rows_enter.selectAll('path').data(function (d) {
+    //
+    //         data=d.sparklinecustom
+    //         var max = d3.max(data);
+    //         console.log(max,data)
+    //         return data;
+    //       })
+
+    //console.log( $rows);
 
 
-   var  maxY = d3.max(data);
-   var x:any = d3.scale.linear().domain([0, data.length]).range([0, 100]);
-   var y:any = d3.scale.linear().domain([0, maxY]).range([10, 0]);
-		// X scale will fit values from 0-10 within pixels 0-100
+    $rows.attr('d', function (d, i) {
+        var data = d.sparklinecustom;
+        var maxY = d3.max(data);
+        var x: any = d3.scale.linear().domain([0, data.length]).range([0, 100]);
+        var y: any = d3.scale.linear().domain([0, maxY]).range([10, 0]);
+        // X scale will fit values from 0-10 within pixels 0-100
 
-		// create a line object that represents the SVN line we're creating
-		var line:any = d3.svg.line()
-			// assign the X function to plot our line as we wish
-			 //.interpolate('linear')
-        .x(function(d, i) { return x(i); })
-        .y(function(d, i) { return y(d); })
+        // create a line object that represents the SVN line we're creating
+        var line = d3.svg.line()
+        // assign the X function to plot our line as we wish
+        //.interpolate('linear')
+          .x(function (d, i) {
+            return x(i);
+          })
+          .y(function (d, i) {
+            return y(d);
+          });
 
-    $rows.attr('d', line(data));
+        // console.log(d,i,d.sparklinecustom);
+        return line(data);
+      }
+    );
+//$rows.attr('d', line(data));;
 
 
     context.animated($rows).attr({
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-        }
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
     });
+
     $rows.exit().remove();
+
   }
 
   // findRow($col:d3.Selection<any>, index:number) {
@@ -355,83 +379,114 @@ class SparklineCellRenderer extends DefaultCellRenderer {
 }
 
 class BoxplotCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.MyColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
 
-       var maxarr = [];
-        var minarr=[];
-   rows.forEach(function (d, i) {
-       var value = col.getValue(d);
-       maxarr.push(value.max);
-       minarr.push(value.min);
+    var maxarr = [];
+    var minarr = [];
+    var q1arr = [];
+    var q3arr = [];
+    var medarr = [];
+
+    rows.forEach(function (d, i) {
+
+      var data = d.boxplotcustom;
+      // console.log(data);
+      minarr.push(Math.min.apply(Math, data));
+      maxarr.push(Math.max.apply(Math, data));
+
+      q1arr.push(getPercentile(data, 25));
+      medarr.push(getPercentile(data, 50));
+      q3arr.push(getPercentile(data, 75));
+
     });
-    var scale = d3.scale.linear().domain([0,d3.max(maxarr)]).range([0, 100]); // Constraint the window width
- // var x = d3.scale.linear().domain([0, 73]).range([0, 100]);
-     console.log(scale(10));
+    var scale = d3.scale.linear().domain([0, d3.max(maxarr)]).range([0, 100]); // Constraint the window width
+    // var x = d3.scale.linear().domain([0, 73]).range([0, 100]);
+
 
     var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
 
     var $rows_enter = $rows.enter().append('g').attr({
-        'class': 'my',
-        'data-index': function (d, i) {
-            return i;
-        },
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-        }
+      'class': 'my',
+      'data-index': function (d, i) {
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
     });
+
+
+    function getPercentile(data, percentile) {
+      data.sort(numSort);
+      var index = (percentile / 100) * data.length;
+      var result;
+      if (Math.floor(index) === index) {
+        result = (data[(index - 1)] + data[index]) / 2;
+      }
+      else {
+        result = data[Math.floor(index)];
+      }
+      return result;
+    }
+
+//because .sort() doesn't sort numbers correctly
+    function numSort(a, b) {
+      return a - b;
+    }
 
 
     // It is not nested selection so we call directly from the enter method.
     $rows_enter.append('path').attr('class', 'shift');
 
 
-   var f = col.getWidth() / 100;
+    var f = col.getWidth() / 100;
 
     $rows.select('path.shift').attr('d', function (d, i) {
 
-        var value = col.getValue(d);
-       // console.log((value));
-        var left = scale(value.min) * f, right = scale(value.max) * f, center = scale(value.med) * f;
-        var top = context.option('rowPadding', 1);
 
-        var bottom = Math.max(context.rowHeight(i) - top, 0);
-        var middle = (bottom - top) / 2;
+      var left = scale(minarr[i]) * f, right = scale(maxarr[i]) * f, center = scale(medarr[i]) * f;
+      var top = context.option('rowPadding', 1);
 
-        console.log(top,bottom,middle)
+      var bottom = Math.max(context.rowHeight(i) - top, 0);
+      var middle = (bottom - top) / 2;
 
-        return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
-            'M' + left + ',' + top + 'L' + left + ',' + bottom +
-            'M' + center + ',' + top + 'L' + center + ',' + bottom +
-            'M' + right + ',' + top + 'L' + right + ',' + bottom;
-    })
+      // console.log('M' + left + ',' + middle + 'L' + right + ',' + middle +
+      //   'M' + left + ',' + top + 'L' + left + ',' + bottom +
+      //   'M' + center + ',' + top + 'L' + center + ',' + bottom +
+      //   'M' + right + ',' + top + 'L' + right + ',' + bottom);
+
+      return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+        'M' + left + ',' + top + 'L' + left + ',' + bottom +
+        'M' + center + ',' + top + 'L' + center + ',' + bottom +
+        'M' + right + ',' + top + 'L' + right + ',' + bottom;
+    });
 
 
     // It is nested selection i.e. we have four rectangles so there is no needed selectall
 
 
-      $rows_enter.append('rect').attr('class', 'shift');
-       $rows.select('rect.shift').attr(
-           {
-               'width': function (d,i) {
-                    var value = col.getValue(d);
-                    return scale(value.q3-value.q1);
+    $rows_enter.append('rect').attr('class', 'shift');
+    $rows.select('rect.shift').attr(
+      {
+        'width': function (d, i) {
+          //var data = d.boxplotcustom;
+          return scale(q3arr[i] - q1arr[i]);
 
-               },
-               'height': function (d,i) {
-                   var top = context.option('rowPadding', 30);
+        },
+        'height': function (d, i) {
+          var top = context.option('rowPadding', 30);
 
-                    return (Math.max(context.rowHeight(i) - top, 10));
+          return (Math.max(context.rowHeight(i) - top, 10));
 
 
-               },
-               'y': 0,
-               'x': function (d,i) {
-                    var value = col.getValue(d);
-                    return scale(value.q1);
+        },
+        'y': 0,
+        'x': function (d, i) {
 
-               }
-           });
+          return scale(q1arr[i]);
 
+        }
+      });
 
 
     //
@@ -457,9 +512,9 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
     // });
 
     context.animated($rows).attr({
-        transform: function (d, i) {
-            return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-        }
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
     });
     $rows.exit().remove();
   }
@@ -474,7 +529,7 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
  * simple derived one where individual elements can be overridden
  */
 class DerivedCellRenderer extends DefaultCellRenderer {
-  constructor(extraFuncs:any) {
+  constructor(extraFuncs: any) {
     super();
     //integrate all the extra functions
     Object.keys(extraFuncs).forEach((key) => {
@@ -493,14 +548,14 @@ export class BarCellRenderer extends DefaultCellRenderer {
    */
   protected renderValue = false;
 
-  render($col:d3.Selection<any>, col:model.NumberColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.NumberColumn, rows: any[], context: IRenderContext) {
     const renderValue = this.renderValue || context.option('renderBarValue', false);
     //map to bars
     var $rows = $col.datum(col).selectAll('.bar').data(rows, context.rowKey);
 
     const padding = context.option('rowPadding', 1);
     const renderBars = ($enter: d3.selection.Enter<any>, clazz: string, $update: d3.selection.Update<any>) => {
-       $enter.append('rect').attr({
+      $enter.append('rect').attr({
         'class': clazz,
         x: (d, i) => context.cellX(i),
         y: (d, i) => context.cellPrevY(i) + padding,
@@ -527,7 +582,7 @@ export class BarCellRenderer extends DefaultCellRenderer {
     };
 
     if (renderValue) {
-      let $rows_enter = $rows.enter().append('g').attr('class', 'bar '+this.textClass);
+      let $rows_enter = $rows.enter().append('g').attr('class', 'bar ' + this.textClass);
       renderBars($rows_enter, col.cssClass, $rows.select('rect'));
       $rows_enter.append('text').attr({
         'class': 'number',
@@ -535,7 +590,7 @@ export class BarCellRenderer extends DefaultCellRenderer {
       });
 
       context.animated($rows.select('text').text((d) => col.getLabel(d)))
-          .attr('transform', (d,i) => 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')');
+        .attr('transform', (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')');
     } else {
       renderBars($rows.enter(), 'bar ' + col.cssClass, $rows);
     }
@@ -554,15 +609,16 @@ export class BarCellRenderer extends DefaultCellRenderer {
    * @param col the model column
    * @returns {string}
    */
-  colorOf(d:any, i:number, col:model.Column) {
+  colorOf(d: any, i: number, col: model.Column) {
     return col.color;
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('.bar[data-index="' + index + '"]');
   }
 
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
+    //alert('hi')
     const renderValue = this.renderValue || context.option('renderBarValue', false);
     if (renderValue) { //default behavior move everything
       return super.mouseEnter($col, $row, col, row, index, context);
@@ -579,9 +635,9 @@ export class BarCellRenderer extends DefaultCellRenderer {
     }
   }
 
-  renderCanvas(ctx:CanvasRenderingContext2D, col:model.NumberColumn, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, col: model.NumberColumn, rows: any[], context: IRenderContext) {
     const renderValue = this.renderValue || context.option('renderBarValue', false);
-    const padding =context.option('rowPadding', 1);
+    const padding = context.option('rowPadding', 1);
     ctx.save();
     rows.forEach((d, i) => {
       const x = context.cellX(i);
@@ -599,7 +655,8 @@ export class BarCellRenderer extends DefaultCellRenderer {
     ctx.restore();
   }
 
-  mouseEnterCanvas(ctx:CanvasRenderingContext2D, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnterCanvas(ctx: CanvasRenderingContext2D, col: model.Column, row: any, index: number, context: IRenderContext) {
+
     const renderValue = this.renderValue || context.option('renderBarValue', false);
     if (renderValue) { //everything already rendered
       return;
@@ -615,7 +672,7 @@ export class BarCellRenderer extends DefaultCellRenderer {
  */
 export class HeatMapCellRenderer extends DefaultCellRenderer {
 
-  render($col:d3.Selection<any>, col:model.NumberColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.NumberColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('rect.heatmap').data(rows, context.rowKey);
 
     $rows.enter().append('rect').attr({
@@ -647,7 +704,7 @@ export class HeatMapCellRenderer extends DefaultCellRenderer {
    * @param col the column
    * @returns {string} the computed color
    */
-  colorOf(d:any, i:number, col:model.Column) {
+  colorOf(d: any, i: number, col: model.Column) {
     var v = col.getValue(d);
     if (isNaN(v)) {
       v = 0;
@@ -658,11 +715,12 @@ export class HeatMapCellRenderer extends DefaultCellRenderer {
     return color.toString();
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('rect.heatmap[data-index="' + index + '"]');
   }
 
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
+
     var rowNode = this.findRow($col, index);
     if (!rowNode.empty()) {
       //append a text element on top
@@ -675,7 +733,7 @@ export class HeatMapCellRenderer extends DefaultCellRenderer {
     }
   }
 
-  renderCanvas(ctx:CanvasRenderingContext2D, col:model.NumberColumn, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, col: model.NumberColumn, rows: any[], context: IRenderContext) {
     ctx.save();
     rows.forEach((d, i) => {
       const x = context.cellX(i);
@@ -687,7 +745,7 @@ export class HeatMapCellRenderer extends DefaultCellRenderer {
     ctx.restore();
   }
 
-  mouseEnterCanvas(ctx:CanvasRenderingContext2D, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnterCanvas(ctx: CanvasRenderingContext2D, col: model.Column, row: any, index: number, context: IRenderContext) {
     ctx.save();
     ctx.fillText(col.getLabel(row), context.cellX(index), context.cellY(index), col.getWidth());
     ctx.restore();
@@ -698,7 +756,7 @@ export class HeatMapCellRenderer extends DefaultCellRenderer {
  * a bar cell renderer where individual function can be overwritten
  */
 class DerivedBarCellRenderer extends BarCellRenderer {
-  constructor(extraFuncs:any) {
+  constructor(extraFuncs: any) {
     super();
     Object.keys(extraFuncs).forEach((key) => {
       this[key] = extraFuncs[key];
@@ -710,11 +768,11 @@ class DerivedBarCellRenderer extends BarCellRenderer {
  * an rendering for action columns, i.e., clickable column actions
  */
 export class ActionCellRenderer implements ICellRenderer {
-  render($col:d3.Selection<any>, col:model.Column, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.Column, rows: any[], context: IRenderContext) {
     //nothing to render in normal mode
   }
 
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
     //render all actions at tspans
     var actions = context.option('actions', []);
     var $actions = $row.append('text').attr({
@@ -733,7 +791,7 @@ export class ActionCellRenderer implements ICellRenderer {
       });
   }
 
-  mouseLeave($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.Column, row:any, index:number, context:IRenderContext) {
+  mouseLeave($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.Column, row: any, index: number, context: IRenderContext) {
     $row.selectAll('*').remove();
   }
 
@@ -746,7 +804,7 @@ export class SelectionCellRenderer extends DefaultCellRenderer {
     this.textClass = 'selection';
   }
 
-  render($col:d3.Selection<any>, col:model.SelectionColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.SelectionColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('text.' + this.textClass).data(rows, context.rowKey);
 
     $rows.enter().append('text').attr({
@@ -771,7 +829,7 @@ export class SelectionCellRenderer extends DefaultCellRenderer {
     $rows.exit().remove();
   }
 
-  renderCanvas(ctx:CanvasRenderingContext2D, col:model.SelectionColumn, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, col: model.SelectionColumn, rows: any[], context: IRenderContext) {
     ctx.save();
     ctx.font = 'FontAwesome';
     rows.forEach((d, i) => {
@@ -787,7 +845,7 @@ export class SelectionCellRenderer extends DefaultCellRenderer {
  * a renderer for annotate columns
  */
 class AnnotateCellRenderer extends DefaultCellRenderer {
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.AnnotateColumn, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.AnnotateColumn, row: any, index: number, context: IRenderContext) {
     //render an input field for editing
     this.findRow($col, index).attr('display', 'none');
     $row.append('foreignObject').attr({
@@ -808,7 +866,7 @@ class AnnotateCellRenderer extends DefaultCellRenderer {
     }).on('click', () => d3.event.stopPropagation());
   }
 
-  mouseLeave($col:d3.Selection<any>, $row:d3.Selection<any>, col:model.AnnotateColumn, row:any, index:number, context:IRenderContext) {
+  mouseLeave($col: d3.Selection<any>, $row: d3.Selection<any>, col: model.AnnotateColumn, row: any, index: number, context: IRenderContext) {
     this.findRow($col, index).attr('display', null);
     var node = <HTMLInputElement>$row.select('input').node();
     if (node) {
@@ -827,7 +885,7 @@ var barRendererInstance = new BarCellRenderer();
  * @param extraFuncs
  * @return {DefaultCellRenderer}
  */
-export function defaultRenderer(extraFuncs?:any) {
+export function defaultRenderer(extraFuncs?: any) {
   if (!extraFuncs) {
     return defaultRendererInstance;
   }
@@ -839,7 +897,7 @@ export function defaultRenderer(extraFuncs?:any) {
  * @param extraFuncs
  * @return {BarCellRenderer}
  */
-export function barRenderer(extraFuncs?:any) {
+export function barRenderer(extraFuncs?: any) {
   if (!extraFuncs) {
     return barRendererInstance;
   }
@@ -850,7 +908,7 @@ export function barRenderer(extraFuncs?:any) {
  * renderer of a link column, i.e. render an intermediate *a* element
  */
 class LinkCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.LinkColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.LinkColumn, rows: any[], context: IRenderContext) {
     //wrap the text elements with an a element
     var $rows = $col.datum(col).selectAll('text.link').data(rows, context.rowKey);
     $rows.enter().append('text').attr({
@@ -871,7 +929,7 @@ class LinkCellRenderer extends DefaultCellRenderer {
     $rows.exit().remove();
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('text.link[data-index="' + index + '"]');
   }
 }
@@ -881,7 +939,7 @@ class LinkCellRenderer extends DefaultCellRenderer {
  * renders a string with additional alignment behavior
  */
 class StringCellRenderer extends DefaultCellRenderer {
-  render($col:d3.Selection<any>, col:model.StringColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.StringColumn, rows: any[], context: IRenderContext) {
     this.align = col.alignment;
     this.textClass = 'text' + (col.alignment === 'left' ? '' : '_' + col.alignment);
     return super.render($col, col, rows, context);
@@ -894,7 +952,7 @@ class StringCellRenderer extends DefaultCellRenderer {
 class CategoricalRenderer extends DefaultCellRenderer {
   textClass = 'cat';
 
-  render($col:d3.Selection<any>, col:model.CategoricalColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, col: model.CategoricalColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('g.' + this.textClass).data(rows, context.rowKey);
 
     var $rows_enter = $rows.enter().append('g').attr({
@@ -931,11 +989,11 @@ class CategoricalRenderer extends DefaultCellRenderer {
     $rows.exit().remove();
   }
 
-  findRow($col:d3.Selection<any>, index:number) {
+  findRow($col: d3.Selection<any>, index: number) {
     return $col.selectAll('g.' + this.textClass + '[data-index="' + index + '"]');
   }
 
-  renderCanvas(ctx:CanvasRenderingContext2D, col:model.CategoricalColumn, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, col: model.CategoricalColumn, rows: any[], context: IRenderContext) {
     ctx.save();
     rows.forEach((d, i) => {
       const x = context.cellX(i);
@@ -943,7 +1001,7 @@ class CategoricalRenderer extends DefaultCellRenderer {
       ctx.fillStyle = 'black';
       ctx.fillText(col.getLabel(d), x + context.rowHeight(i), y);
       ctx.fillStyle = col.getColor(d);
-      ctx.fillRect(x, y+context.option('rowPadding', 1), Math.max(context.rowHeight(i) - context.option('rowPadding', 1) * 2, 0), Math.max(context.rowHeight(i) - context.option('rowPadding', 1) * 2, 0));
+      ctx.fillRect(x, y + context.option('rowPadding', 1), Math.max(context.rowHeight(i) - context.option('rowPadding', 1) * 2, 0), Math.max(context.rowHeight(i) - context.option('rowPadding', 1) * 2, 0));
     });
   }
 }
@@ -956,7 +1014,7 @@ class StackCellRenderer extends DefaultCellRenderer {
     super();
   }
 
-  renderImpl($base:d3.Selection<any>, col:model.StackColumn, context:IRenderContext, perChild:($child:d3.Selection<model.Column>, col:model.Column, i:number, context:IRenderContext) => void, rowGetter:(index:number) => any, animated = true) {
+  renderImpl($base: d3.Selection<any>, col: model.StackColumn, context: IRenderContext, perChild: ($child: d3.Selection<model.Column>, col: model.Column, i: number, context: IRenderContext) => void, rowGetter: (index: number) => any, animated = true) {
     const $group = $base.datum(col),
       children = col.children,
       stacked = this.nestingPossible && context.showStacked(col);
@@ -1007,13 +1065,13 @@ class StackCellRenderer extends DefaultCellRenderer {
     context.option = ueberOption;
   }
 
-  render($col:d3.Selection<any>, stack:model.StackColumn, rows:any[], context:IRenderContext) {
+  render($col: d3.Selection<any>, stack: model.StackColumn, rows: any[], context: IRenderContext) {
     this.renderImpl($col, stack, context, ($child, col, i, ccontext) => {
       ccontext.render(col, $child, rows, ccontext);
     }, (index) => rows[index]);
   }
 
-  mouseEnter($col:d3.Selection<any>, $row:d3.Selection<any>, stack:model.StackColumn, row:any, index:number, context:IRenderContext) {
+  mouseEnter($col: d3.Selection<any>, $row: d3.Selection<any>, stack: model.StackColumn, row: any, index: number, context: IRenderContext) {
     var baseclass = 'component' + context.option('stackLevel', '');
     this.renderImpl($row, stack, context, ($row_i, col, i, ccontext) => {
       var $col_i = $col.select('g.' + baseclass + '[data-stack="' + i + '"]');
@@ -1023,7 +1081,7 @@ class StackCellRenderer extends DefaultCellRenderer {
     }, (index) => row, false);
   }
 
-  mouseLeave($col:d3.Selection<any>, $row:d3.Selection<any>, satck:model.StackColumn, row:any, index:number, context:IRenderContext) {
+  mouseLeave($col: d3.Selection<any>, $row: d3.Selection<any>, satck: model.StackColumn, row: any, index: number, context: IRenderContext) {
     var baseclass = 'component' + context.option('stackLevel', '');
     this.renderImpl($row, satck, context, ($row_i, col, i, ccontext) => {
       var $col_i = $col.select('g.' + baseclass + '[data-stack="' + i + '"]');
@@ -1034,7 +1092,7 @@ class StackCellRenderer extends DefaultCellRenderer {
     $row.selectAll('*').remove();
   }
 
-  renderCanvas(ctx: CanvasRenderingContext2D, stack:model.StackColumn, rows:any[], context:IRenderContext) {
+  renderCanvas(ctx: CanvasRenderingContext2D, stack: model.StackColumn, rows: any[], context: IRenderContext) {
     const children = stack.children,
       stacked = this.nestingPossible && context.showStacked(stack);
     var offset = 0,
@@ -1074,7 +1132,7 @@ class StackCellRenderer extends DefaultCellRenderer {
 }
 
 export interface IRenderFunction {
-  render($col:d3.Selection<any>, col:model.Column, rows:any[], context:IRenderContext): void;
+  render($col: d3.Selection<any>, col: model.Column, rows: any[], context: IRenderContext): void;
 }
 
 /**
@@ -1084,10 +1142,10 @@ export interface IRenderFunction {
  * @param extras additional functions
  * @returns {DerivedCellRenderer}
  */
-export function createRenderer(selector: string, render: IRenderFunction, extras : any = {}) {
+export function createRenderer(selector: string, render: IRenderFunction, extras: any = {}) {
   extras.selector = selector;
   extras.render = render;
-  extras.findRow = ($col:d3.Selection<any>, index:number) => $col.selectAll(this.selector + '[data-index="' + index + '"]');
+  extras.findRow = ($col: d3.Selection<any>, index: number) => $col.selectAll(this.selector + '[data-index="' + index + '"]');
 
   const r = new DerivedCellRenderer(extras);
   return r;
@@ -1132,6 +1190,6 @@ export function renderers() {
     custom: new MyCustomCellRenderer(),
     heatmapcustom: new HeatmapCellRenderer(),
     sparklinecustom: new SparklineCellRenderer(),
-    boxplotcustom:new BoxplotCellRenderer()
+    boxplotcustom: new BoxplotCellRenderer()
   };
 }

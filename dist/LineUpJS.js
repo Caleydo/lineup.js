@@ -4443,7 +4443,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    MyCustomCellRenderer.prototype.render = function ($col, col, rows, context) {
 	        var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
-	        var $rows_enter = $rows.enter().append('path').attr({
+	        $rows.enter().append('path').attr({
 	            'class': 'shift',
 	            'data-index': function (d, i) {
 	                return i;
@@ -4485,12 +4485,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var p = d3.scale.category20();
 	        var colors = p.range();
 	        var height = 5;
-	        var width = [];
 	        var y = 3;
 	        var scale = d3.scale.linear().range([0, 100]); // Constraint the window width
 	        var max = 0;
 	        rows.forEach(function (d, i) {
-	            max = d3.max([max, d3.sum(d.custom2.x)]);
+	            max = d3.max([max, d3.sum(d.heatmapcustom)]);
 	            scale.domain([0, max]); // Convert any range to fix with in window width
 	        });
 	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
@@ -4504,7 +4503,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        });
 	        var $rects = $rows_enter.selectAll('rect').data(function (d) {
-	            return d.custom2.x;
+	            return d.heatmapcustom;
 	        }); // Select custom2.x data
 	        $rects.enter().append('rect');
 	        $rects.attr({
@@ -4543,25 +4542,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    SparklineCellRenderer.prototype.render = function ($col, col, rows, context) {
 	        var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-	        var $rows_enter = $rows.enter().append('path').attr({
+	        $rows.enter().append('path').attr({
 	            'class': 'spark',
 	            'data-index': function (d, i) {
+	                // console.log(d)
 	                return i;
 	            },
 	            transform: function (d, i) {
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
-	        var data = [3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 9, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9];
-	        var maxY = d3.max(data);
-	        var x = d3.scale.linear().domain([0, data.length]).range([0, 100]);
-	        var y = d3.scale.linear().domain([0, maxY]).range([10, 0]);
-	        // X scale will fit values from 0-10 within pixels 0-100
-	        // create a line object that represents the SVN line we're creating
-	        var line = d3.svg.line()
-	            .x(function (d, i) { return x(i); })
-	            .y(function (d, i) { return y(d); });
-	        $rows.attr('d', line(data));
+	        // var sparks = $rows_enter.selectAll('path').data(function (d) {
+	        //
+	        //         data=d.sparklinecustom
+	        //         var max = d3.max(data);
+	        //         console.log(max,data)
+	        //         return data;
+	        //       })
+	        //console.log( $rows);
+	        $rows.attr('d', function (d, i) {
+	            var data = d.sparklinecustom;
+	            var maxY = d3.max(data);
+	            var x = d3.scale.linear().domain([0, data.length]).range([0, 100]);
+	            var y = d3.scale.linear().domain([0, maxY]).range([10, 0]);
+	            // X scale will fit values from 0-10 within pixels 0-100
+	            // create a line object that represents the SVN line we're creating
+	            var line = d3.svg.line()
+	                .x(function (d, i) {
+	                return x(i);
+	            })
+	                .y(function (d, i) {
+	                return y(d);
+	            });
+	            // console.log(d,i,d.sparklinecustom);
+	            return line(data);
+	        });
+	        //$rows.attr('d', line(data));;
 	        context.animated($rows).attr({
 	            transform: function (d, i) {
 	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
@@ -4579,14 +4595,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	    BoxplotCellRenderer.prototype.render = function ($col, col, rows, context) {
 	        var maxarr = [];
 	        var minarr = [];
+	        var q1arr = [];
+	        var q3arr = [];
+	        var medarr = [];
 	        rows.forEach(function (d, i) {
-	            var value = col.getValue(d);
-	            maxarr.push(value.max);
-	            minarr.push(value.min);
+	            var data = d.boxplotcustom;
+	            // console.log(data);
+	            minarr.push(Math.min.apply(Math, data));
+	            maxarr.push(Math.max.apply(Math, data));
+	            q1arr.push(getPercentile(data, 25));
+	            medarr.push(getPercentile(data, 50));
+	            q3arr.push(getPercentile(data, 75));
 	        });
 	        var scale = d3.scale.linear().domain([0, d3.max(maxarr)]).range([0, 100]); // Constraint the window width
 	        // var x = d3.scale.linear().domain([0, 73]).range([0, 100]);
-	        console.log(scale(10));
 	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'my',
@@ -4597,17 +4619,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
+	        function getPercentile(data, percentile) {
+	            data.sort(numSort);
+	            var index = (percentile / 100) * data.length;
+	            var result;
+	            if (Math.floor(index) === index) {
+	                result = (data[(index - 1)] + data[index]) / 2;
+	            }
+	            else {
+	                result = data[Math.floor(index)];
+	            }
+	            return result;
+	        }
+	        //because .sort() doesn't sort numbers correctly
+	        function numSort(a, b) {
+	            return a - b;
+	        }
 	        // It is not nested selection so we call directly from the enter method.
 	        $rows_enter.append('path').attr('class', 'shift');
 	        var f = col.getWidth() / 100;
 	        $rows.select('path.shift').attr('d', function (d, i) {
-	            var value = col.getValue(d);
-	            // console.log((value));
-	            var left = scale(value.min) * f, right = scale(value.max) * f, center = scale(value.med) * f;
+	            var left = scale(minarr[i]) * f, right = scale(maxarr[i]) * f, center = scale(medarr[i]) * f;
 	            var top = context.option('rowPadding', 1);
 	            var bottom = Math.max(context.rowHeight(i) - top, 0);
 	            var middle = (bottom - top) / 2;
-	            console.log(top, bottom, middle);
+	            // console.log('M' + left + ',' + middle + 'L' + right + ',' + middle +
+	            //   'M' + left + ',' + top + 'L' + left + ',' + bottom +
+	            //   'M' + center + ',' + top + 'L' + center + ',' + bottom +
+	            //   'M' + right + ',' + top + 'L' + right + ',' + bottom);
 	            return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
 	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
 	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
@@ -4617,8 +4656,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $rows_enter.append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
 	            'width': function (d, i) {
-	                var value = col.getValue(d);
-	                return scale(value.q3 - value.q1);
+	                //var data = d.boxplotcustom;
+	                return scale(q3arr[i] - q1arr[i]);
 	            },
 	            'height': function (d, i) {
 	                var top = context.option('rowPadding', 30);
@@ -4626,8 +4665,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            },
 	            'y': 0,
 	            'x': function (d, i) {
-	                var value = col.getValue(d);
-	                return scale(value.q1);
+	                return scale(q1arr[i]);
 	            }
 	        });
 	        //
@@ -4750,6 +4788,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return $col.selectAll('.bar[data-index="' + index + '"]');
 	    };
 	    BarCellRenderer.prototype.mouseEnter = function ($col, $row, col, row, index, context) {
+	        //alert('hi')
 	        var renderValue = this.renderValue || context.option('renderBarValue', false);
 	        if (renderValue) {
 	            return _super.prototype.mouseEnter.call(this, $col, $row, col, row, index, context);
