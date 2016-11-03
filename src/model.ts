@@ -2689,6 +2689,9 @@ export function models() {
     custom: MyColumn,
     heatmapcustom: MyColumn,
     sparklinecustom: MyColumn,
-    boxplotcustom:MyColumn
+    boxplotcustom:MyColumn,
+    verticalbar:MyColumn,
+    vertcontinuous:MyColumn
+
   };
 }

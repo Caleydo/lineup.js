@@ -528,7 +528,7 @@ $lu_drag_over: #979797;
     }
     .shift {
       stroke: black;
-      fill: none;
+      fill:#e0e0e0;
 
     }
      .shift1 {
@@ -538,6 +538,12 @@ $lu_drag_over: #979797;
         .spark {
       stroke: red;
       fill:none;
+
+    }
+      .my1 {
+      //stroke: red;
+       stroke-width:1;
+
 
     }
 

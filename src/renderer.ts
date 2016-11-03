@@ -250,19 +250,46 @@ class MyCustomCellRenderer extends DefaultCellRenderer {
 class HeatmapCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
 
-    var p = d3.scale.category20();
-    var colors = p.range();
-    var height = 5;
 
-    var y = 3;
-    var scale: any = d3.scale.linear().range([0, 100]); // Constraint the window width
-    var max = 0;
-
+    var winsize = [];
+    var data = [];
     rows.forEach(function (d, i) {
 
-      max = d3.max([max, d3.sum(d.heatmapcustom)]);
-      scale.domain([0, max]);  // Convert any range to fix with in window width
+      data.push(d.heatmapcustom.rand);
+
+      winsize.push(data[i].length);
+
     });
+
+
+    function cell_dim(total, cells) {
+      return (total / cells)
+    }
+
+    var total_width = 100;
+    var cols = winsize[0];
+    var col_width = cell_dim(total_width, cols);
+    var color: any;
+
+    var max = 0, min=0;
+    data.forEach(function (d) {
+      var value = d;
+
+      max = d3.max([max, d3.max(value)]);
+      min = d3.min([min, d3.min(value)]);
+
+
+    })
+
+    if (min< 0) {
+      // console.log('yes');
+      color = d3.scale.linear().domain([min,0, max]).range(['blue','white', "red"]);
+    }
+    else {
+      color = d3.scale.linear().domain([min, max]).range(['white', "red"]);
+      // console.log('no');
+    }
+
 
     var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
 
@@ -276,27 +303,28 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
       }
     });
 
-    var $rects = $rows_enter.selectAll('rect').data(function (d) {
-      return d.heatmapcustom;
-    }); // Select custom2.x data
+    var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+
+      return (data[i]);
+    });
+
     $rects.enter().append('rect');
     $rects.attr({
       'data-index': function (d, i) {
         return i;
       },
 
-      'width': function (d) {
-        return scale(d);
+      'width': col_width,
+      'height': function (d, i) {
+        return (context.rowHeight(i) - 0.6);
       },
-      'height': height,
-      'y': y,
       'x': function (d) {
+
         var prev = this.previousSibling; // One previous step information.
         return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
       },
-      'fill': function (d, i) {
-        return colors[i];
-      }
+      'y': 1,
+      'fill': color
     });
 
     context.animated($rows).attr({
@@ -315,10 +343,9 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
 class SparklineCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-    $rows.enter().append('path').attr({
+     $rows.enter().append('path').attr({
       'class': 'spark',
       'data-index': function (d, i) {
-        // console.log(d)
         return i;
       },
       transform: function (d, i) {
@@ -326,41 +353,35 @@ class SparklineCellRenderer extends DefaultCellRenderer {
       }
     });
 
+    var min = 0, max = 0, bits, winheight;
 
-    // var sparks = $rows_enter.selectAll('path').data(function (d) {
-    //
-    //         data=d.sparklinecustom
-    //         var max = d3.max(data);
-    //         console.log(max,data)
-    //         return data;
-    //       })
-
-    //console.log( $rows);
-
-
+ rows.forEach(function (d, i) {
+      var data = d.sparklinecustom.rand;
+      min = d3.min([min, d3.min(data)]);
+      max = d3.max([max, d3.max(data)]);
+      bits = (data.length);
+      winheight = context.rowHeight(i);
+      })
+  //console.log(min, max);
+    var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
+    var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
+    //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
     $rows.attr('d', function (d, i) {
-        var data = d.sparklinecustom;
-        var maxY = d3.max(data);
-        var x: any = d3.scale.linear().domain([0, data.length]).range([0, 100]);
-        var y: any = d3.scale.linear().domain([0, maxY]).range([10, 0]);
-        // X scale will fit values from 0-10 within pixels 0-100
-
-        // create a line object that represents the SVN line we're creating
+        var data = d.sparklinecustom.rand;
         var line = d3.svg.line()
         // assign the X function to plot our line as we wish
         //.interpolate('linear')
-          .x(function (d, i) {
-            return x(i);
-          })
-          .y(function (d, i) {
-            return y(d);
+          .x((function (d,i) {
+                        return x(i);
+          }))
+          .y(function (d: any, i) { return y(d);
+
           });
 
-        // console.log(d,i,d.sparklinecustom);
         return line(data);
       }
     );
-//$rows.attr('d', line(data));;
+
 
 
     context.animated($rows).attr({
@@ -377,36 +398,11 @@ class SparklineCellRenderer extends DefaultCellRenderer {
   //   return $col.selectAll('path.shift[data-index="' + index + '"]');
   // }
 }
-
-class BoxplotCellRenderer extends DefaultCellRenderer {
+class verticalbarCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
-
-    var maxarr = [];
-    var minarr = [];
-    var q1arr = [];
-    var q3arr = [];
-    var medarr = [];
-
-    rows.forEach(function (d, i) {
-
-      var data = d.boxplotcustom;
-      // console.log(data);
-      minarr.push(Math.min.apply(Math, data));
-      maxarr.push(Math.max.apply(Math, data));
-
-      q1arr.push(getPercentile(data, 25));
-      medarr.push(getPercentile(data, 50));
-      q3arr.push(getPercentile(data, 75));
-
-    });
-    var scale = d3.scale.linear().domain([0, d3.max(maxarr)]).range([0, 100]); // Constraint the window width
-    // var x = d3.scale.linear().domain([0, 73]).range([0, 100]);
-
-
-    var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
-
+    var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
     var $rows_enter = $rows.enter().append('g').attr({
-      'class': 'my',
+      'class': 'my1',
       'data-index': function (d, i) {
         return i;
       },
@@ -415,6 +411,173 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       }
     });
 
+
+    var bits = [];
+    var threshold = 50;
+    rows.forEach(function (d, i) {
+      bits.push(d.verticalbar.rand.length)
+    })
+    //
+    // var binarydata=[];
+    // data.forEach(function (d) {
+    //   var root=d.map(function(d) { return (d<50)?0:1
+    //
+    //   });
+    //    binarydata.push(root);
+    // })
+
+    var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+      return (d.verticalbar.rand);
+    });
+
+    $rects.enter().append('rect');
+    $rects.attr({
+      'data-index': function (d, i) {
+        return i;
+      },
+
+      'width': (100 / d3.max(bits)),
+      'height': function (d, i) {
+        return (context.rowHeight(i) - 0.6) / 2;
+      },
+      'x': function (d) {
+        var prev = this.previousSibling; // One previous step information.
+        return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
+      },
+      'y': function (d, i) {
+        return (d < threshold) ? (context.rowHeight(i) / 2) : 0;
+      },
+      'fill': function (d) {
+        return (d < threshold) ? 'blue' : 'red';
+      }
+    });
+
+
+    context.animated($rows).attr({
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
+    });
+    $rows.exit().remove();
+  }
+
+  // findRow($col:d3.Selection<any>, index:number) {
+  //   return $col.selectAll('path.shift[data-index="' + index + '"]');
+  // }
+}
+
+class verticalconbarCellRenderer extends DefaultCellRenderer {
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+    var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
+    var $rows_enter = $rows.enter().append('g').attr({
+      'class': 'my1',
+      'data-index': function (d, i) {
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
+    });
+
+    var bits = [];
+    var max = 0;
+    var min = 0;
+    var scale = d3.scale.linear();
+    var barheight;
+    rows.forEach(function (d, i) {
+      var num = d.vertcontinuous.rand;
+      //var num= (Math.max.apply(null, array.map(Math.abs)))
+
+      bits.push(num.length)
+      max = d3.max([max, d3.max(num)])
+      min = d3.min([min, d3.min(num)])
+      barheight = context.rowHeight(i);
+
+    })
+
+    if (min<0)
+    {
+      scale.domain([min, max]).range([0, barheight/2])
+    }
+    else {
+      scale.domain([min, max]).range([0, barheight])
+    }
+    // console.log(min,max,scale(max),scale(min),scale(50),scale(0))
+    var threshold = 0;
+    var width = 100 / (d3.max(bits));
+    var color: any = d3.scale.linear().domain([min,0, max]).range(['blue','white', "red"]);
+      var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+      return (d.verticalbar.rand);
+    });
+
+    $rects.enter().append('rect');
+    $rects.attr({
+      'data-index': function (d, i) {
+        return i;
+      },
+
+      'width': (100 / d3.max(bits)),
+      'height': function (d: any) {
+        return (d<threshold)?(barheight/2-scale(d)):scale(d) ;
+      },
+      'x': function (d) {
+        var prev = this.previousSibling; // One previous step information.
+        return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
+      },
+      'y': function (d: any, i) {
+            if (min<0){
+             return (d < threshold) ? (context.rowHeight(i) / 2) : context.rowHeight(i) / 2 - scale(d);   // For positive and negative value
+            }
+            else
+            {
+              console.log('false')
+               return context.rowHeight(i)  - scale(d);
+            }
+      },
+      'fill':  color
+    });
+
+
+    // $rects.enter().append('line');
+    //  $rects.attr({
+    //    'data-index': function (d, i) {
+    //        return i;
+    //    },
+    //
+    //    'x1':function (d) {
+    //      var prev = this.previousSibling; // One previous step information.
+    //
+    //      return (prev === null) ? 0 : (width + parseFloat(d3.select(prev).attr('x1')));
+    //    },
+    //    'y1': function (d:any,i) {return (d>0)?(context.rowHeight(i)/2)-scale(Math.abs(d)):(context.rowHeight(i)/2);},
+    //    'x2': function (d) {
+    //      var prev = this.previousSibling; // One previous step information.
+    //      return (prev === null) ? 0 : (width + parseFloat(d3.select(prev).attr('x2')));
+    //    },
+    //    'y2':function (d:any,i) { return (d>0)?(context.rowHeight(i)/2):((context.rowHeight(i)/2)+scale(Math.abs(d))); }
+    //  });
+
+
+    context.animated($rows).attr({
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+      }
+    });
+    $rows.exit().remove();
+  }
+
+  // findRow($col:d3.Selection<any>, index:number) {
+  //   return $col.selectAll('path.shift[data-index="' + index + '"]');
+  // }
+}
+class BoxplotCellRenderer extends DefaultCellRenderer {
+  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+
+    var maxarr = [];
+    var minarr = [];
+    var q1arr = [];
+    var q3arr = [];
+    var medarr = [];
 
     function getPercentile(data, percentile) {
       data.sort(numSort);
@@ -434,35 +597,36 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       return a - b;
     }
 
+    var range: any = 0;
+    rows.forEach(function (d, i) {
 
-    // It is not nested selection so we call directly from the enter method.
-    $rows_enter.append('path').attr('class', 'shift');
+      var data = d.boxplotcustom.rand;
 
+      var m1 = Math.min.apply(Math, data)
+      var m2 = Math.max.apply(Math, data);
+      minarr.push(m1);
+      range = d3.max([range, (m2 - m1)]);
+      maxarr.push(range);
+      //console.log((m2-m1),m1,m2)
+      q1arr.push(getPercentile(data, 25));
+      medarr.push(getPercentile(data, 50));
+      q3arr.push(getPercentile(data, 75));
 
-    var f = col.getWidth() / 100;
-
-    $rows.select('path.shift').attr('d', function (d, i) {
-
-
-      var left = scale(minarr[i]) * f, right = scale(maxarr[i]) * f, center = scale(medarr[i]) * f;
-      var top = context.option('rowPadding', 1);
-
-      var bottom = Math.max(context.rowHeight(i) - top, 0);
-      var middle = (bottom - top) / 2;
-
-      // console.log('M' + left + ',' + middle + 'L' + right + ',' + middle +
-      //   'M' + left + ',' + top + 'L' + left + ',' + bottom +
-      //   'M' + center + ',' + top + 'L' + center + ',' + bottom +
-      //   'M' + right + ',' + top + 'L' + right + ',' + bottom);
-
-      return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
-        'M' + left + ',' + top + 'L' + left + ',' + bottom +
-        'M' + center + ',' + top + 'L' + center + ',' + bottom +
-        'M' + right + ',' + top + 'L' + right + ',' + bottom;
     });
 
+    var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, 100]); // Constraint the window width
 
-    // It is nested selection i.e. we have four rectangles so there is no needed selectall
+    var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+
+    var $rows_enter = $rows.enter().append('g').attr({
+      'class': 'my',
+      'data-index': function (d, i) {
+        return i;
+      },
+      transform: function (d, i) {
+        return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+      }
+    });
 
 
     $rows_enter.append('rect').attr('class', 'shift');
@@ -488,28 +652,37 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
         }
       });
 
+    // It is not nested selection so we call directly from the enter method.
+    $rows_enter.append('path').attr('class', 'shift');
 
-    //
-    //// It is nested selection i.e. we have four rectangles so there is no needed selectall
-    // var $rects = $rows_enter.selectAll('rect').data(function (d) {
-    //     return d.custom2.x
-    // }); // Select custom2.x data
-    //
-    // console.log($rects);
-    // $rects.enter().append('rect');
-    // $rects.attr({
-    //     'data-index': function (d, i) {
-    //         return i;
-    //     },
-    //
-    //     'width':40,
-    //     'height': height,
-    //     'y': y,
-    //     'x': 0,
-    //     'fill': function (d, i) {
-    //         return colors[i];
-    //     }
-    // });
+
+    var f = col.getWidth() / 100;
+
+    $rows.select('path.shift').attr('d', function (d, i) {
+
+
+      var left = scale(minarr[i]) * f, right = scale(maxarr[i]) * f, center = scale(medarr[i]) * f;
+      var top = context.option('rowPadding', 1);
+
+      var bottom = Math.max(context.rowHeight(i) - top, 0);
+      var middle = (bottom - top) / 2;
+
+      // console.log('M' + left + ',' + middle + 'L' + right + ',' + middle +
+      //   'M' + left + ',' + top + 'L' + left + ',' + bottom +
+      //   'M' + center + ',' + top + 'L' + center + ',' + bottom +
+      //   'M' + right + ',' + top + 'L' + right + ',' + bottom);
+
+
+      return 'M' + left + ',' + middle + 'L' + scale(q1arr[i]) + ',' + middle +
+        'M' + left + ',' + top + 'L' + left + ',' + bottom +
+        'M' + center + ',' + top + 'L' + center + ',' + bottom +
+        'M' + (scale(q1arr[i]) + scale(q3arr[i] - q1arr[i])) + ',' + middle + 'L' + (right) + ',' + middle +
+        'M' + right + ',' + top + 'L' + right + ',' + bottom;
+    });
+
+
+    // It is nested selection i.e. we have four rectangles so there is no needed selectall
+
 
     context.animated($rows).attr({
       transform: function (d, i) {
@@ -519,9 +692,6 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
     $rows.exit().remove();
   }
 
-  // findRow($col:d3.Selection<any>, index:number) {
-  //   return $col.selectAll('path.shift[data-index="' + index + '"]');
-  // }
 }
 
 
@@ -1190,6 +1360,9 @@ export function renderers() {
     custom: new MyCustomCellRenderer(),
     heatmapcustom: new HeatmapCellRenderer(),
     sparklinecustom: new SparklineCellRenderer(),
-    boxplotcustom: new BoxplotCellRenderer()
+    boxplotcustom: new BoxplotCellRenderer(),
+    verticalbar: new verticalbarCellRenderer(),
+    vertcontinuous: new verticalconbarCellRenderer()
+
   };
 }

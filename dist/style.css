@@ -309,11 +309,13 @@
       fill: transparent; }
     .lu svg.lu-body .shift, .lu-pool svg.lu-body .shift {
       stroke: black;
-      fill: none; }
+      fill: #e0e0e0; }
     .lu svg.lu-body .shift1, .lu-pool svg.lu-body .shift1 {
       stroke: red; }
     .lu svg.lu-body .spark, .lu-pool svg.lu-body .spark {
       stroke: red;
       fill: none; }
+    .lu svg.lu-body .my1, .lu-pool svg.lu-body .my1 {
+      stroke-width: 1; }
 
 /*# sourceMappingURL=style.css.map*/
