@@ -4484,36 +4484,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    HeatmapCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var winsize = [];
-	        var data = [];
-	        rows.forEach(function (d, i) {
-	            data.push(d.heatmapcustom.rand);
-	            winsize.push(data[i].length);
-	        });
-	        function cell_dim(total, cells) {
-	            return (total / cells);
-	        }
-	        var total_width = 100;
-	        var cols = winsize[0];
-	        var col_width = cell_dim(total_width, cols);
-	        var color;
-	        var max = 0, min = 0;
-	        data.forEach(function (d) {
-	            var value = d;
-	            max = d3.max([max, d3.max(value)]);
-	            min = d3.min([min, d3.min(value)]);
-	        });
-	        if (min < 0) {
-	            color = d3.scale.linear();
-	            color.domain([min, 0, max]).range(['blue', 'white', 'red']);
-	        }
-	        else {
-	            color = d3.scale.linear();
-	            color.domain([min, max]).range(['white', 'red']);
-	        }
-	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows = $col.datum(col).selectAll('g.heatmapcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my',
+	            'class': 'heatmapcell',
 	            'data-index': function (d, i) {
 	                return i;
 	            },
@@ -4521,15 +4494,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
+	        function cell_dim(total, cells) {
+	            return (total / cells);
+	        }
+	        var total_width = 1;
+	        var cols = 1;
+	        var color = d3.scale.linear();
+	        var max = 0, min = 0;
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	            return (data[i]);
+	            var value = col.getValue(d);
+	            max = d3.max([max, d3.max(value.data)]);
+	            min = d3.min([min, d3.min(value.data)]);
+	            cols = value.data.length;
+	            total_width = col.getWidth();
+	            return (value.data);
 	        });
+	        color = (min < 0) ? color.domain([min, 0, max]).range(['blue', 'white', 'red'])
+	            : color.domain([min, max]).range(['white', 'red']);
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) {
 	                return i;
 	            },
-	            'width': col_width,
+	            'width': cell_dim(total_width, cols),
 	            'height': function (d, i) {
 	                return (context.rowHeight(i) - 0.6);
 	            },
@@ -4558,9 +4545,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    SparklineCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows = $col.datum(col).selectAll('g.sparklinecell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my',
+	            'class': 'sparklinecell',
 	            'data-index': function (d, i) {
 	                return i;
 	            },
@@ -4569,18 +4556,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        });
 	        var min = 0, max = 0, bits, winheight;
-	        rows.forEach(function (d, i) {
-	            var data = d.sparklinecustom.rand;
+	        $rows_enter.append('path').attr('class', 'sparkline')
+	            .attr('d', function (d, i) {
+	            var value = col.getValue(d);
+	            var data = value.data;
 	            min = d3.min([min, d3.min(data)]);
 	            max = d3.max([max, d3.max(data)]);
 	            bits = (data.length);
 	            winheight = context.rowHeight(i);
-	        });
-	        var x = d3.scale.linear().domain([0, bits]).range([0, 100]);
-	        var y = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
-	        $rows_enter.append('path').attr('class', 'spark')
-	            .attr('d', function (d, i) {
-	            var data = d.sparklinecustom.rand;
+	            var x = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
+	            var y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
 	            var line = d3.svg.line()
 	                .x((function (d, i) {
 	                return x(i);
@@ -4590,9 +4575,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 	            return line(data);
 	        });
-	        $rows_enter.append('path').attr('class', 'spark')
+	        $rows_enter.append('path').attr('class', 'sparkline')
 	            .attr('d', function (d, i) {
-	            return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + 100 + ',' + context.rowHeight(i) / 2;
+	            return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2;
 	        })
 	            .attr('stroke', 'red');
 	        context.animated($rows).attr({
@@ -4610,9 +4595,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    VerticalbarCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
+	        var $rows = $col.datum(col).selectAll('g.verticalcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my1',
+	            'class': 'verticalcell',
 	            'data-index': function (d, i) {
 	                return i;
 	            },
@@ -4622,20 +4607,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        var bits = [];
 	        var threshold = 50;
-	        rows.forEach(function (d, i) {
-	            bits.push(d.verticalbar.rand.length);
-	        });
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	            return (d.verticalbar.rand);
+	            var value = col.getValue(d);
+	            bits.push(value.data.length);
+	            return (value.data);
 	        });
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) {
 	                return i;
 	            },
-	            'width': (100 / d3.max(bits)),
+	            'width': (col.getWidth() / d3.max(bits)),
 	            'height': function (d, i) {
-	                return (context.rowHeight(i) - 0.6) / 2;
+	                return (context.rowHeight(i)) / 2;
 	            },
 	            'x': function (d) {
 	                var prev = this.previousSibling; // One previous step information.
@@ -4657,15 +4641,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    return VerticalbarCellRenderer;
 	}(DefaultCellRenderer));
-	var VerticalconbarCellRenderer = (function (_super) {
-	    __extends(VerticalconbarCellRenderer, _super);
-	    function VerticalconbarCellRenderer() {
+	var VertcontinuousCellRenderer = (function (_super) {
+	    __extends(VertcontinuousCellRenderer, _super);
+	    function VertcontinuousCellRenderer() {
 	        _super.apply(this, arguments);
 	    }
-	    VerticalconbarCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
+	    VertcontinuousCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var $rows = $col.datum(col).selectAll('g.vertcontinuouscell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my1',
+	            'class': 'vertcontinuouscell',
 	            'data-index': function (d, i) {
 	                return i;
 	            },
@@ -4676,34 +4660,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var bits = [];
 	        var max = 0;
 	        var min = 0;
-	        var scale = d3.scale.linear();
 	        var barheight;
-	        rows.forEach(function (d, i) {
-	            var num = d.vertcontinuous.rand;
-	            //var num= (Math.max.apply(null, array.map(Math.abs)))
-	            bits.push(num.length);
-	            max = d3.max([max, d3.max(num)]);
-	            min = d3.min([min, d3.min(num)]);
-	            barheight = context.rowHeight(i);
-	        });
-	        if (min < 0) {
-	            scale.domain([min, max]).range([0, barheight / 2]);
-	        }
-	        else {
-	            scale.domain([min, max]).range([0, barheight]);
-	        }
 	        var threshold = 0;
+	        var scale = d3.scale.linear();
+	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+	            var value = col.getValue(d);
+	            var data = value.data;
+	            bits.push(data.length);
+	            max = d3.max([max, d3.max(data)]);
+	            min = d3.min([min, d3.min(data)]);
+	            barheight = context.rowHeight(i);
+	            return (data);
+	        });
+	        scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
 	        var color = d3.scale.linear();
 	        color.domain([min, 0, max]).range(['blue', 'white', 'red']);
-	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	            return (d.verticalbar.rand);
-	        });
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) {
 	                return i;
 	            },
-	            'width': (100 / d3.max(bits)),
+	            'width': (col.getWidth() / d3.max(bits)),
 	            'height': function (d) {
 	                return (d < threshold) ? (barheight / 2 - scale(d)) : scale(d);
 	            },
@@ -4715,7 +4692,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (min < 0) {
 	                    return (d < threshold) ? (context.rowHeight(i) / 2) : context.rowHeight(i) / 2 - scale(d); // For positive and negative value
 	                }
-	                if (min >= 0) {
+	                else {
 	                    return context.rowHeight(i) - scale(d);
 	                }
 	            },
@@ -4728,7 +4705,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $rows.exit().remove();
 	    };
-	    return VerticalconbarCellRenderer;
+	    return VertcontinuousCellRenderer;
 	}(DefaultCellRenderer));
 	var BoxplotCellRenderer = (function (_super) {
 	    __extends(BoxplotCellRenderer, _super);
@@ -4736,6 +4713,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    BoxplotCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var $rows = $col.datum(col).selectAll('g.boxplotcell').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'boxplotcell',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
 	        var maxarr = [];
 	        var minarr = [];
 	        var q1arr = [];
@@ -4753,35 +4740,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            return result;
 	        }
-	        //because .sort() doesn't sort numbers correctly
+	        //
 	        function numSort(a, b) {
 	            return a - b;
 	        }
-	        var range = 0;
-	        rows.forEach(function (d, i) {
-	            var data = d.boxplotcustom.rand;
-	            var m1 = Math.min.apply(Math, data);
-	            var m2 = Math.max.apply(Math, data);
-	            minarr.push(m1);
-	            range = d3.max([range, (m2 - m1)]);
-	            maxarr.push(range);
-	            //console.log((m2-m1),m1,m2)
-	            q1arr.push(getPercentile(data, 25));
-	            medarr.push(getPercentile(data, 50));
-	            q3arr.push(getPercentile(data, 75));
-	        });
+	        //
+	        // var range: any = 0;
+	        // rows.forEach(function (d, i) {
+	        //
+	        //   var data = d.boxplotcustom.rand;
+	        //
+	        //   var m1 = Math.min.apply(Math, data);
+	        //   var m2 = Math.max.apply(Math, data);
+	        //   minarr.push(m1);
+	        //   range = d3.max([range, (m2 - m1)]);
+	        //   maxarr.push(range);
+	        //   //console.log((m2-m1),m1,m2)
+	        //   q1arr.push(getPercentile(data, 25));
+	        //   medarr.push(getPercentile(data, 50));
+	        //   q3arr.push(getPercentile(data, 75));
+	        //
+	        // });
 	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, 100]); // Constraint the window width
-	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
-	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
-	        });
-	        $rows_enter.append('rect').attr('class', 'shift');
+	        // var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+	        //   var value = col.getValue(d);
+	        //
+	        //   bits.push(value.data.length);
+	        //
+	        //   return (value.data);
+	        // });
+	        $rows_enter.selectAll('g.boxplotcell').data(function (d) {
+	            var value = col.getValue(d);
+	            console.log(value.data);
+	            return value.data;
+	        }).append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
 	            'width': function (d, i) {
 	                //var data = d.boxplotcustom;
@@ -5467,7 +5459,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        sparklinecustom: new SparklineCellRenderer(),
 	        boxplotcustom: new BoxplotCellRenderer(),
 	        verticalbar: new VerticalbarCellRenderer(),
-	        vertcontinuous: new VerticalconbarCellRenderer()
+	        vertcontinuous: new VertcontinuousCellRenderer()
 	    };
 	}
 	exports.renderers = renderers;

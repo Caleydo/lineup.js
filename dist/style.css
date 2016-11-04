@@ -312,7 +312,7 @@
       fill: #e0e0e0; }
     .lu svg.lu-body .shift1, .lu-pool svg.lu-body .shift1 {
       stroke: red; }
-    .lu svg.lu-body .spark, .lu-pool svg.lu-body .spark {
+    .lu svg.lu-body .sparkline, .lu-pool svg.lu-body .sparkline {
       fill: none;
       stroke: #000; }
     .lu svg.lu-body .my1, .lu-pool svg.lu-body .my1 {

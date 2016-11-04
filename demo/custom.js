@@ -4,7 +4,7 @@
 
 window.onload = function () {
 
-  var negative='false';
+  var negative='true';
   function getrandom(datapoints,min,max) {
    var temparr = [];
     for (var i = 0; i < datapoints; i++) {
@@ -31,16 +31,21 @@ window.onload = function () {
   var rand4=getrandom(datapoints,min,max);
 console.log(rand0);
 
-  function verticalbar(datapoints) {
+  function catdata(datapoints) {
     var temparr = [];
     for (var i = 0; i < datapoints; i++) {
 
-      temparr.push( Math.floor(Math.random() * 2));
+      temparr.push('c'+i,i);
+      //temparr.push( Math.floor(Math.random() * 2));
 
     }
 
     return (temparr);
   }
+ console.log(catdata(10))
+
+var testobj ={min: 10, max: 100, mean: 30}
+  console.log(testobj)
   var arr = [
     {
       a: 10,
@@ -49,11 +54,11 @@ console.log(rand0);
       d: 'Row1',
       cat: 'c1',
       custom: {min: 10, max: 100, mean: 30},
-      heatmapcustom:{rand:rand0.slice()},
-      sparklinecustom:{rand:rand0.slice()},
-      boxplotcustom: {rand:rand0.slice()},
-      verticalbar:{rand:rand0.slice()},
-      vertcontinuous:{rand:rand0.slice()}
+      heatmapcustom:{data:rand0.slice()},
+      sparklinecustom:{data:rand0.slice()},
+      boxplotcustom: {data:rand0.slice()},
+      verticalbar:{data:rand0.slice()},
+      vertcontinuous:{data:rand0.slice()}
 
     },
     {
@@ -63,11 +68,11 @@ console.log(rand0);
       d: 'Row2',
       cat: 'c2',
       custom: {min: 10, max: 100, mean: 80},
-      heatmapcustom:{rand:rand1.slice()},
-      sparklinecustom:{rand:rand1.slice()},
-      boxplotcustom:{rand:rand1.slice()},
-      verticalbar:{rand:rand1.slice()},
-       vertcontinuous:{rand:rand1.slice()}
+     heatmapcustom:{data:rand1.slice()},
+      sparklinecustom:{data:rand1.slice()},
+      boxplotcustom:{data:rand1.slice()},
+      verticalbar:{data:rand1.slice()},
+       vertcontinuous:{data:rand1.slice()}
     },
     {
       a: 20,
@@ -76,11 +81,11 @@ console.log(rand0);
       d: 'Row3',
       cat: 'c3',
       custom: {min: 10, max: 80, mean: 30},
-      heatmapcustom:{rand:rand2.slice()},
-      sparklinecustom: {rand:rand2.slice()},
-      boxplotcustom: {rand:rand2.slice()},
-      verticalbar:{rand:rand2.slice()},
-       vertcontinuous:{rand:rand2.slice()}
+     heatmapcustom:{data:rand2.slice()},
+      sparklinecustom: {data:rand2.slice()},
+      boxplotcustom: {data:rand2.slice()},
+      verticalbar:{data:rand2.slice()},
+       vertcontinuous:{data:rand2.slice()}
     },
     {
       a: 70,
@@ -89,11 +94,11 @@ console.log(rand0);
       d: 'Row4',
       cat: 'c1',
       custom: {min: 20, max: 70, mean: 50},
-      heatmapcustom:{rand:rand3.slice()},
-      sparklinecustom:{rand:rand3.slice()},
-      boxplotcustom:{rand:rand3.slice()},
-      verticalbar:{rand:rand3.slice()},
-       vertcontinuous:{rand:rand3.slice()}
+     heatmapcustom:{data:rand3.slice()},
+      sparklinecustom:{data:rand3.slice()},
+      boxplotcustom:{data:rand3.slice()},
+      verticalbar:{data:rand3.slice()},
+       vertcontinuous:{data:rand3.slice()}
     },
     {
       a: 17,
@@ -102,14 +107,14 @@ console.log(rand0);
       d: 'Row4',
       cat: 'c1',
       custom: {min: 60, max: 90, mean: 80},
-      heatmapcustom:{rand:rand4.slice()},
-      sparklinecustom: {rand:rand4.slice()},
-      boxplotcustom:{rand:rand4.slice()},
-      verticalbar:{rand:rand4.slice()},
-      vertcontinuous:{rand:rand4.slice()}
+      heatmapcustom:{data:rand4.slice()},
+      sparklinecustom: {data:rand4.slice()},
+      boxplotcustom:{data:rand4.slice()},
+      verticalbar:{data:rand4.slice()},
+      vertcontinuous:{data:rand4.slice()}
     }
   ];
-//   console.log(rand0)
+
 // console.log(arr[0].heatmapcustom['rand'])
 console.log(arr)
   var desc = [
