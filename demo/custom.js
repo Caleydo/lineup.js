@@ -23,13 +23,14 @@ window.onload = function () {
   }
 
  var datapoints=50,min=0,max=100;
+
   var rand0=getrandom(datapoints,min,max);
   var rand1= getrandom(datapoints,min,max);
   var rand2= getrandom(datapoints,min,max);
   var rand3=getrandom(datapoints,min,max);
   var rand4=getrandom(datapoints,min,max);
 console.log(rand0);
-
+//console.log(rand0,rand1,rand2,rand3,rand4);
   var arr = [
     {
       a: 10,

@@ -4505,10 +4505,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        if (min < 0) {
 	            // console.log('yes');
-	            color = d3.scale.linear().domain([min, 0, max]).range(['blue', 'white', "red"]);
+	            color = d3.scale.linear();
+	            color.domain([min, 0, max]).range(['blue', 'white', 'red']);
 	        }
 	        else {
-	            color = d3.scale.linear().domain([min, max]).range(['white', "red"]);
+	            color = d3.scale.linear();
+	            color.domain([min, max]).range(['white', 'red']);
 	        }
 	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
@@ -4557,9 +4559,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    SparklineCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-	        $rows.enter().append('path').attr({
-	            'class': 'spark',
+	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'my',
 	            'data-index': function (d, i) {
 	                return i;
 	            },
@@ -4567,6 +4569,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
+	        console.log(rows);
 	        var min = 0, max = 0, bits, winheight;
 	        rows.forEach(function (d, i) {
 	            var data = d.sparklinecustom.rand;
@@ -4578,8 +4581,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        //console.log(min, max);
 	        var x = d3.scale.linear().domain([0, bits]).range([0, 100]);
 	        var y = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
-	        //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
-	        $rows.attr('d', function (d, i) {
+	        $rows_enter.append('path').attr('class', 'spark')
+	            .attr('d', function (d, i) {
+	            console.log('hi');
+	            console.log(d.sparklinecustom.rand);
 	            var data = d.sparklinecustom.rand;
 	            var line = d3.svg.line()
 	                .x((function (d, i) {
@@ -4590,6 +4595,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 	            return line(data);
 	        });
+	        $rows_enter.append('path').attr('class', 'spark')
+	            .attr('d', function (d, i) {
+	            return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + 100 + ',' + context.rowHeight(i) / 2;
+	        })
+	            .attr('stroke', 'red');
 	        context.animated($rows).attr({
 	            transform: function (d, i) {
 	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
@@ -4599,6 +4609,75 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    return SparklineCellRenderer;
 	}(DefaultCellRenderer));
+	// class SparklineCellRenderer extends DefaultCellRenderer {
+	//   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+	//     var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
+	//      $rows.enter().append('path').attr({
+	//       'class': 'spark',
+	//       'data-index': function (d, i) {
+	//         return i;
+	//       },
+	//       transform: function (d, i) {
+	//         return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	//       }
+	//     });
+	//
+	//     var min = 0, max = 0, bits, winheight;
+	//
+	//  rows.forEach(function (d, i) {
+	//       var data = d.sparklinecustom.rand;
+	//       min = d3.min([min, d3.min(data)]);
+	//       max = d3.max([max, d3.max(data)]);
+	//       bits = (data.length);
+	//       winheight = context.rowHeight(i);
+	//       })
+	//   //console.log(min, max);
+	//     var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
+	//     var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
+	//     //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
+	//     $rows.attr('d', function (d, i) {
+	//         var data = d.sparklinecustom.rand;
+	//         var line = d3.svg.line()
+	//         // assign the X function to plot our line as we wish
+	//         //.interpolate('linear')
+	//           .x((function (d,i) {
+	//                         return x(i);
+	//           }))
+	//           .y(function (d: any, i) { return y(d);
+	//
+	//           })
+	//
+	//         return line(data);
+	//       })
+	//      $rows.append('path')
+	//        .attr('class','spark')
+	//        .attr('d', function (d, i) {
+	//        var data = d.sparklinecustom.rand;
+	//
+	//         return 'M' + 0 + ',' + 6.5 + 'L' + 80 + ',' + 6.5;
+	//
+	//      });
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//     context.animated($rows).attr({
+	//       transform: function (d, i) {
+	//         return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	//       }
+	//     });
+	//
+	//     $rows.exit().remove();
+	//
+	//   }
+	//
+	//   // findRow($col:d3.Selection<any>, index:number) {
+	//   //   return $col.selectAll('path.shift[data-index="' + index + '"]');
+	//   // }
+	// }
 	var verticalbarCellRenderer = (function (_super) {
 	    __extends(verticalbarCellRenderer, _super);
 	    function verticalbarCellRenderer() {
@@ -4698,7 +4777,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // console.log(min,max,scale(max),scale(min),scale(50),scale(0))
 	        var threshold = 0;
 	        var width = 100 / (d3.max(bits));
-	        var color = d3.scale.linear().domain([min, 0, max]).range(['blue', 'white', "red"]);
+	        var color = d3.scale.linear();
+	        color.domain([min, 0, max]).range(['blue', 'white', 'red']);
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            return (d.verticalbar.rand);
 	        });

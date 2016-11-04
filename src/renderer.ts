@@ -283,10 +283,13 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
 
     if (min< 0) {
       // console.log('yes');
-      color = d3.scale.linear().domain([min,0, max]).range(['blue','white', "red"]);
+
+      color = d3.scale.linear<number, string>();
+      color.domain([min,0, max]).range(['blue','white', 'red']);
     }
     else {
-      color = d3.scale.linear().domain([min, max]).range(['white', "red"]);
+      color = d3.scale.linear<number, string>();
+       color.domain([min, max]).range(['white', 'red']);
       // console.log('no');
     }
 
@@ -342,9 +345,10 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
 
 class SparklineCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
-    var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-     $rows.enter().append('path').attr({
-      'class': 'spark',
+    var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+
+    var $rows_enter = $rows.enter().append('g').attr({
+      'class': 'my',
       'data-index': function (d, i) {
         return i;
       },
@@ -353,6 +357,7 @@ class SparklineCellRenderer extends DefaultCellRenderer {
       }
     });
 
+    console.log(rows)
     var min = 0, max = 0, bits, winheight;
 
  rows.forEach(function (d, i) {
@@ -365,8 +370,11 @@ class SparklineCellRenderer extends DefaultCellRenderer {
   //console.log(min, max);
     var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
     var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
-    //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
-    $rows.attr('d', function (d, i) {
+
+    $rows_enter.append('path').attr('class', 'spark')
+      .attr('d', function (d, i) {
+      console.log('hi')
+       console.log(d.sparklinecustom.rand)
         var data = d.sparklinecustom.rand;
         var line = d3.svg.line()
         // assign the X function to plot our line as we wish
@@ -376,14 +384,17 @@ class SparklineCellRenderer extends DefaultCellRenderer {
           }))
           .y(function (d: any, i) { return y(d);
 
-          });
+          })
 
         return line(data);
-      }
-    );
+      })
 
+   $rows_enter.append('path').attr('class', 'spark')
+     .attr('d',function (d,i) {
+          return 'M' + 0 + ',' + context.rowHeight(i)/2 + 'L' + 100 + ',' + context.rowHeight(i)/2;
 
-
+     })
+     .attr('stroke','red')
     context.animated($rows).attr({
       transform: function (d, i) {
         return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
@@ -398,6 +409,79 @@ class SparklineCellRenderer extends DefaultCellRenderer {
   //   return $col.selectAll('path.shift[data-index="' + index + '"]');
   // }
 }
+
+
+
+
+// class SparklineCellRenderer extends DefaultCellRenderer {
+//   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+//     var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
+//      $rows.enter().append('path').attr({
+//       'class': 'spark',
+//       'data-index': function (d, i) {
+//         return i;
+//       },
+//       transform: function (d, i) {
+//         return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+//       }
+//     });
+//
+//     var min = 0, max = 0, bits, winheight;
+//
+//  rows.forEach(function (d, i) {
+//       var data = d.sparklinecustom.rand;
+//       min = d3.min([min, d3.min(data)]);
+//       max = d3.max([max, d3.max(data)]);
+//       bits = (data.length);
+//       winheight = context.rowHeight(i);
+//       })
+//   //console.log(min, max);
+//     var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
+//     var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
+//     //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
+//     $rows.attr('d', function (d, i) {
+//         var data = d.sparklinecustom.rand;
+//         var line = d3.svg.line()
+//         // assign the X function to plot our line as we wish
+//         //.interpolate('linear')
+//           .x((function (d,i) {
+//                         return x(i);
+//           }))
+//           .y(function (d: any, i) { return y(d);
+//
+//           })
+//
+//         return line(data);
+//       })
+//      $rows.append('path')
+//        .attr('class','spark')
+//        .attr('d', function (d, i) {
+//        var data = d.sparklinecustom.rand;
+//
+//         return 'M' + 0 + ',' + 6.5 + 'L' + 80 + ',' + 6.5;
+//
+//      });
+//
+//
+//
+//
+//
+//
+//
+//     context.animated($rows).attr({
+//       transform: function (d, i) {
+//         return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+//       }
+//     });
+//
+//     $rows.exit().remove();
+//
+//   }
+//
+//   // findRow($col:d3.Selection<any>, index:number) {
+//   //   return $col.selectAll('path.shift[data-index="' + index + '"]');
+//   // }
+// }
 class verticalbarCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
     var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
@@ -505,7 +589,8 @@ class verticalconbarCellRenderer extends DefaultCellRenderer {
     // console.log(min,max,scale(max),scale(min),scale(50),scale(0))
     var threshold = 0;
     var width = 100 / (d3.max(bits));
-    var color: any = d3.scale.linear().domain([min,0, max]).range(['blue','white', "red"]);
+    var color: any = d3.scale.linear<number,string>()
+      color.domain([min,0, max]).range(['blue','white', 'red']);
       var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       return (d.verticalbar.rand);
     });
