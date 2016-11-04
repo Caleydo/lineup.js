@@ -4504,7 +4504,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            min = d3.min([min, d3.min(value)]);
 	        });
 	        if (min < 0) {
-	            // console.log('yes');
 	            color = d3.scale.linear();
 	            color.domain([min, 0, max]).range(['blue', 'white', 'red']);
 	        }
@@ -4569,7 +4568,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
-	        console.log(rows);
 	        var min = 0, max = 0, bits, winheight;
 	        rows.forEach(function (d, i) {
 	            var data = d.sparklinecustom.rand;
@@ -4578,13 +4576,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            bits = (data.length);
 	            winheight = context.rowHeight(i);
 	        });
-	        //console.log(min, max);
 	        var x = d3.scale.linear().domain([0, bits]).range([0, 100]);
 	        var y = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
 	        $rows_enter.append('path').attr('class', 'spark')
 	            .attr('d', function (d, i) {
-	            console.log('hi');
-	            console.log(d.sparklinecustom.rand);
 	            var data = d.sparklinecustom.rand;
 	            var line = d3.svg.line()
 	                .x((function (d, i) {
@@ -4609,81 +4604,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    return SparklineCellRenderer;
 	}(DefaultCellRenderer));
-	// class SparklineCellRenderer extends DefaultCellRenderer {
-	//   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
-	//     var $rows = $col.datum(col).selectAll('path.spark').data(rows, context.rowKey);
-	//      $rows.enter().append('path').attr({
-	//       'class': 'spark',
-	//       'data-index': function (d, i) {
-	//         return i;
-	//       },
-	//       transform: function (d, i) {
-	//         return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	//       }
-	//     });
-	//
-	//     var min = 0, max = 0, bits, winheight;
-	//
-	//  rows.forEach(function (d, i) {
-	//       var data = d.sparklinecustom.rand;
-	//       min = d3.min([min, d3.min(data)]);
-	//       max = d3.max([max, d3.max(data)]);
-	//       bits = (data.length);
-	//       winheight = context.rowHeight(i);
-	//       })
-	//   //console.log(min, max);
-	//     var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
-	//     var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
-	//     //console.log(y(min),y(max),y(0),y(50),winheight,y(-50))
-	//     $rows.attr('d', function (d, i) {
-	//         var data = d.sparklinecustom.rand;
-	//         var line = d3.svg.line()
-	//         // assign the X function to plot our line as we wish
-	//         //.interpolate('linear')
-	//           .x((function (d,i) {
-	//                         return x(i);
-	//           }))
-	//           .y(function (d: any, i) { return y(d);
-	//
-	//           })
-	//
-	//         return line(data);
-	//       })
-	//      $rows.append('path')
-	//        .attr('class','spark')
-	//        .attr('d', function (d, i) {
-	//        var data = d.sparklinecustom.rand;
-	//
-	//         return 'M' + 0 + ',' + 6.5 + 'L' + 80 + ',' + 6.5;
-	//
-	//      });
-	//
-	//
-	//
-	//
-	//
-	//
-	//
-	//     context.animated($rows).attr({
-	//       transform: function (d, i) {
-	//         return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	//       }
-	//     });
-	//
-	//     $rows.exit().remove();
-	//
-	//   }
-	//
-	//   // findRow($col:d3.Selection<any>, index:number) {
-	//   //   return $col.selectAll('path.shift[data-index="' + index + '"]');
-	//   // }
-	// }
-	var verticalbarCellRenderer = (function (_super) {
-	    __extends(verticalbarCellRenderer, _super);
-	    function verticalbarCellRenderer() {
+	var VerticalbarCellRenderer = (function (_super) {
+	    __extends(VerticalbarCellRenderer, _super);
+	    function VerticalbarCellRenderer() {
 	        _super.apply(this, arguments);
 	    }
-	    verticalbarCellRenderer.prototype.render = function ($col, col, rows, context) {
+	    VerticalbarCellRenderer.prototype.render = function ($col, col, rows, context) {
 	        var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'my1',
@@ -4699,14 +4625,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        rows.forEach(function (d, i) {
 	            bits.push(d.verticalbar.rand.length);
 	        });
-	        //
-	        // var binarydata=[];
-	        // data.forEach(function (d) {
-	        //   var root=d.map(function(d) { return (d<50)?0:1
-	        //
-	        //   });
-	        //    binarydata.push(root);
-	        // })
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            return (d.verticalbar.rand);
 	        });
@@ -4737,14 +4655,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $rows.exit().remove();
 	    };
-	    return verticalbarCellRenderer;
+	    return VerticalbarCellRenderer;
 	}(DefaultCellRenderer));
-	var verticalconbarCellRenderer = (function (_super) {
-	    __extends(verticalconbarCellRenderer, _super);
-	    function verticalconbarCellRenderer() {
+	var VerticalconbarCellRenderer = (function (_super) {
+	    __extends(VerticalconbarCellRenderer, _super);
+	    function VerticalconbarCellRenderer() {
 	        _super.apply(this, arguments);
 	    }
-	    verticalconbarCellRenderer.prototype.render = function ($col, col, rows, context) {
+	    VerticalconbarCellRenderer.prototype.render = function ($col, col, rows, context) {
 	        var $rows = $col.datum(col).selectAll('g.my1').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'my1',
@@ -4774,9 +4692,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        else {
 	            scale.domain([min, max]).range([0, barheight]);
 	        }
-	        // console.log(min,max,scale(max),scale(min),scale(50),scale(0))
 	        var threshold = 0;
-	        var width = 100 / (d3.max(bits));
 	        var color = d3.scale.linear();
 	        color.domain([min, 0, max]).range(['blue', 'white', 'red']);
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
@@ -4799,31 +4715,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (min < 0) {
 	                    return (d < threshold) ? (context.rowHeight(i) / 2) : context.rowHeight(i) / 2 - scale(d); // For positive and negative value
 	                }
-	                else {
-	                    console.log('false');
+	                if (min >= 0) {
 	                    return context.rowHeight(i) - scale(d);
 	                }
 	            },
 	            'fill': color
 	        });
-	        // $rects.enter().append('line');
-	        //  $rects.attr({
-	        //    'data-index': function (d, i) {
-	        //        return i;
-	        //    },
-	        //
-	        //    'x1':function (d) {
-	        //      var prev = this.previousSibling; // One previous step information.
-	        //
-	        //      return (prev === null) ? 0 : (width + parseFloat(d3.select(prev).attr('x1')));
-	        //    },
-	        //    'y1': function (d:any,i) {return (d>0)?(context.rowHeight(i)/2)-scale(Math.abs(d)):(context.rowHeight(i)/2);},
-	        //    'x2': function (d) {
-	        //      var prev = this.previousSibling; // One previous step information.
-	        //      return (prev === null) ? 0 : (width + parseFloat(d3.select(prev).attr('x2')));
-	        //    },
-	        //    'y2':function (d:any,i) { return (d>0)?(context.rowHeight(i)/2):((context.rowHeight(i)/2)+scale(Math.abs(d))); }
-	        //  });
 	        context.animated($rows).attr({
 	            transform: function (d, i) {
 	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
@@ -4831,7 +4728,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $rows.exit().remove();
 	    };
-	    return verticalconbarCellRenderer;
+	    return VerticalconbarCellRenderer;
 	}(DefaultCellRenderer));
 	var BoxplotCellRenderer = (function (_super) {
 	    __extends(BoxplotCellRenderer, _super);
@@ -5569,8 +5466,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        heatmapcustom: new HeatmapCellRenderer(),
 	        sparklinecustom: new SparklineCellRenderer(),
 	        boxplotcustom: new BoxplotCellRenderer(),
-	        verticalbar: new verticalbarCellRenderer(),
-	        vertcontinuous: new verticalconbarCellRenderer()
+	        verticalbar: new VerticalbarCellRenderer(),
+	        vertcontinuous: new VerticalconbarCellRenderer()
 	    };
 	}
 	exports.renderers = renderers;

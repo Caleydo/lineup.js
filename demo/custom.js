@@ -4,7 +4,7 @@
 
 window.onload = function () {
 
-  var negative='true';
+  var negative='false';
   function getrandom(datapoints,min,max) {
    var temparr = [];
     for (var i = 0; i < datapoints; i++) {
@@ -30,7 +30,17 @@ window.onload = function () {
   var rand3=getrandom(datapoints,min,max);
   var rand4=getrandom(datapoints,min,max);
 console.log(rand0);
-//console.log(rand0,rand1,rand2,rand3,rand4);
+
+  function verticalbar(datapoints) {
+    var temparr = [];
+    for (var i = 0; i < datapoints; i++) {
+
+      temparr.push( Math.floor(Math.random() * 2));
+
+    }
+
+    return (temparr);
+  }
   var arr = [
     {
       a: 10,
