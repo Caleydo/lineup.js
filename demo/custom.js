@@ -4,7 +4,7 @@
 
 window.onload = function () {
 
-  var negative='true';
+  var negative='false';
   function getrandom(datapoints,min,max) {
    var temparr = [];
     for (var i = 0; i < datapoints; i++) {
@@ -67,7 +67,7 @@ console.log(b,cat0);
 
 
 var testobj ={min: 10, max: 100, mean: 30}
-  console.log(testobj)
+
   var arr = [
     {
       a: 10,
