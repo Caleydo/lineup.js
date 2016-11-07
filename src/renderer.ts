@@ -285,9 +285,7 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     $rects.enter().append('rect');
     $rects.attr({
 
-      'data-index': function (d, i) {
-        return i;
-      },
+      'data-index': (d, i) => i,
 
       'width': cell_dim(total_width, cols),
       'height': function (d, i) {
@@ -651,7 +649,7 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
 
 
     $circle.enter().append('circle')
-
+      .attr('data-index', (d, i) => i)
       .attr('data-index', function (d, i) {
         return i;
 

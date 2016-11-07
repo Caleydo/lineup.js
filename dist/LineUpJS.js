@@ -4514,9 +4514,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            : color.domain([min, max]).range(['white', 'red']);
 	        $rects.enter().append('rect');
 	        $rects.attr({
-	            'data-index': function (d, i) {
-	                return i;
-	            },
+	            'data-index': function (d, i) { return i; },
 	            'width': cell_dim(total_width, cols),
 	            'height': function (d, i) {
 	                return (context.rowHeight(i) - 0.6);
@@ -4829,6 +4827,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return (data);
 	        });
 	        $circle.enter().append('circle')
+	            .attr('data-index', function (d, i) { return i; })
 	            .attr('data-index', function (d, i) {
 	            return i;
 	        })
