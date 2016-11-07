@@ -35,14 +35,36 @@ console.log(rand0);
     var temparr = [];
     for (var i = 0; i < datapoints; i++) {
 
-      temparr.push('c'+i,i);
-      //temparr.push( Math.floor(Math.random() * 2));
+      //temparr.push('c'+i,i);
+      temparr.push( Math.floor(Math.random() * 2));
 
     }
 
     return (temparr);
   }
- console.log(catdata(10))
+
+  var cat0= catdata(10);
+var cat1= catdata(10);
+var cat2= catdata(10);
+var cat3= catdata(10);
+  var cat4= catdata(10);
+var tmp=[];
+var b=[];
+cat0.reduce(function(a, e, i) {
+    if (e === 1)
+        b.push(i);
+      return b;
+}, []);
+
+console.log(b,cat0);
+
+  console.log(d3.range(5))
+  // var am= array.map(function(d) {
+  //
+  //
+  //
+  // });
+
 
 var testobj ={min: 10, max: 100, mean: 30}
   console.log(testobj)
@@ -58,7 +80,8 @@ var testobj ={min: 10, max: 100, mean: 30}
       sparklinecustom:{data:rand0.slice()},
       boxplotcustom: {data:rand0.slice()},
       verticalbar:{data:rand0.slice()},
-      vertcontinuous:{data:rand0.slice()}
+      vertcontinuous:{data:rand0.slice()},
+      categoricalcustom:{data:cat0.slice()}
 
     },
     {
@@ -72,7 +95,8 @@ var testobj ={min: 10, max: 100, mean: 30}
       sparklinecustom:{data:rand1.slice()},
       boxplotcustom:{data:rand1.slice()},
       verticalbar:{data:rand1.slice()},
-       vertcontinuous:{data:rand1.slice()}
+       vertcontinuous:{data:rand1.slice()},
+      categoricalcustom:{data:cat1.slice()}
     },
     {
       a: 20,
@@ -85,7 +109,8 @@ var testobj ={min: 10, max: 100, mean: 30}
       sparklinecustom: {data:rand2.slice()},
       boxplotcustom: {data:rand2.slice()},
       verticalbar:{data:rand2.slice()},
-       vertcontinuous:{data:rand2.slice()}
+       vertcontinuous:{data:rand2.slice()},
+      categoricalcustom:{data:cat2.slice()}
     },
     {
       a: 70,
@@ -98,7 +123,8 @@ var testobj ={min: 10, max: 100, mean: 30}
       sparklinecustom:{data:rand3.slice()},
       boxplotcustom:{data:rand3.slice()},
       verticalbar:{data:rand3.slice()},
-       vertcontinuous:{data:rand3.slice()}
+       vertcontinuous:{data:rand3.slice()},
+      categoricalcustom:{data:cat3.slice()}
     },
     {
       a: 17,
@@ -111,7 +137,8 @@ var testobj ={min: 10, max: 100, mean: 30}
       sparklinecustom: {data:rand4.slice()},
       boxplotcustom:{data:rand4.slice()},
       verticalbar:{data:rand4.slice()},
-      vertcontinuous:{data:rand4.slice()}
+      vertcontinuous:{data:rand4.slice()},
+      categoricalcustom:{data:cat4.slice()}
     }
   ];
 
@@ -127,7 +154,8 @@ console.log(arr)
     {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
     {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
     {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},
-    {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous'}
+    {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous'},
+    {label: 'categorical', type: 'categoricalcustom', column: 'categoricalcustom'}
   ];
 
   var p = new LineUpJS.provider.LocalDataProvider(arr, desc);

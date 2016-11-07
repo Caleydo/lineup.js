@@ -2929,7 +2929,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        sparklinecustom: MyColumn,
 	        boxplotcustom: MyColumn,
 	        verticalbar: MyColumn,
-	        vertcontinuous: MyColumn
+	        vertcontinuous: MyColumn,
+	        categoricalcustom: MyColumn
 	    };
 	}
 	exports.models = models;
@@ -4713,16 +4714,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    BoxplotCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('g.boxplotcell').data(rows, context.rowKey);
-	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'boxplotcell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
-	        });
 	        var maxarr = [];
 	        var minarr = [];
 	        var q1arr = [];
@@ -4740,40 +4731,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            return result;
 	        }
-	        //
+	        //because .sort() doesn't sort numbers correctly
 	        function numSort(a, b) {
 	            return a - b;
 	        }
-	        //
-	        // var range: any = 0;
-	        // rows.forEach(function (d, i) {
-	        //
-	        //   var data = d.boxplotcustom.rand;
-	        //
-	        //   var m1 = Math.min.apply(Math, data);
-	        //   var m2 = Math.max.apply(Math, data);
-	        //   minarr.push(m1);
-	        //   range = d3.max([range, (m2 - m1)]);
-	        //   maxarr.push(range);
-	        //   //console.log((m2-m1),m1,m2)
-	        //   q1arr.push(getPercentile(data, 25));
-	        //   medarr.push(getPercentile(data, 50));
-	        //   q3arr.push(getPercentile(data, 75));
-	        //
-	        // });
+	        var range = 0;
+	        rows.forEach(function (d, i) {
+	            var data = col.getValue(d).data;
+	            var m1 = Math.min.apply(Math, data);
+	            var m2 = Math.max.apply(Math, data);
+	            minarr.push(m1);
+	            range = d3.max([range, (m2 - m1)]);
+	            maxarr.push(range);
+	            //console.log((m2-m1),m1,m2)
+	            q1arr.push(getPercentile(data, 25));
+	            medarr.push(getPercentile(data, 50));
+	            q3arr.push(getPercentile(data, 75));
+	        });
 	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, 100]); // Constraint the window width
-	        // var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	        //   var value = col.getValue(d);
-	        //
-	        //   bits.push(value.data.length);
-	        //
-	        //   return (value.data);
-	        // });
-	        $rows_enter.selectAll('g.boxplotcell').data(function (d) {
-	            var value = col.getValue(d);
-	            console.log(value.data);
-	            return value.data;
-	        }).append('rect').attr('class', 'shift');
+	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'my',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        $rows_enter.append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
 	            'width': function (d, i) {
 	                //var data = d.boxplotcustom;
@@ -4815,6 +4801,107 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $rows.exit().remove();
 	    };
 	    return BoxplotCellRenderer;
+	}(DefaultCellRenderer));
+	var CategoricalCellRenderer = (function (_super) {
+	    __extends(CategoricalCellRenderer, _super);
+	    function CategoricalCellRenderer() {
+	        _super.apply(this, arguments);
+	    }
+	    CategoricalCellRenderer.prototype.render = function ($col, col, rows, context) {
+	        var $rows = $col.datum(col).selectAll('g.categoricalcell').data(rows, context.rowKey);
+	        var $rows_enter = $rows.enter().append('g').attr({
+	            'class': 'categoricalcell',
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
+	            }
+	        });
+	        var bits = [];
+	        var max = 0;
+	        var min = 0;
+	        var barheight;
+	        var windowsize = 0;
+	        var threshold = 0;
+	        var catindexes = [];
+	        var scale = d3.scale.linear();
+	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
+	            var value = col.getValue(d);
+	            var data = value.data;
+	            bits.push(data.length);
+	            max = d3.max([max, d3.max(data)]);
+	            min = d3.min([min, d3.min(data)]);
+	            barheight = context.rowHeight(i);
+	            return (data);
+	        });
+	        console.log(windowsize);
+	        scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
+	        var color = d3.scale.linear();
+	        color.domain([min, 0, max]).range(['blue', 'white', 'red']);
+	        $rects.enter().append('rect');
+	        $rects.attr({
+	            'data-index': function (d, i) {
+	                return i;
+	            },
+	            'width': (col.getWidth() / d3.max(bits)),
+	            'height': function (d) {
+	                return (barheight);
+	            },
+	            'x': function (d) {
+	                var prev = this.previousSibling; // One previous step information.
+	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
+	            },
+	            'y': function (d, i) {
+	                return 0; // For positive and negative value
+	            },
+	            'fill': 'none',
+	            'stroke': 'black'
+	        });
+	        var minindex = 0;
+	        var maxindex = 0;
+	        var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
+	            var value = col.getValue(d);
+	            var data = value.data;
+	            windowsize = (col.getWidth() / d3.max(bits));
+	            console.log(data);
+	            catindexes.push(data.reduce(function (a, e, i) {
+	                if (e === 1)
+	                    a.push(i);
+	                return a;
+	            }, []));
+	            return catindexes[i];
+	        });
+	        $circle.enter().append('circle')
+	            .attr('data-index', function (d, i) {
+	            return i;
+	        })
+	            .attr("cx", function (d, i) { return (d * windowsize) + (windowsize / 2); })
+	            .attr("cy", function (d, i) { return (context.rowHeight(i) / 2); })
+	            .attr("r", (windowsize / 4))
+	            .attr('stroke', 'red')
+	            .attr('fill', 'none');
+	        var pathdata = [];
+	        var $path = $rows_enter.append('path')
+	            .attr('d', function (d, i) {
+	            var value = col.getValue(d);
+	            var data = value.data;
+	            catindexes.push(data.reduce(function (a, e, i) {
+	                if (e === 1)
+	                    a.push(i);
+	                return a;
+	            }, []));
+	            return 'M' + ((d3.min(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2) + 'L' + ((d3.max(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2);
+	        })
+	            .attr('stroke', 'black');
+	        context.animated($rows).attr({
+	            transform: function (d, i) {
+	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
+	            }
+	        });
+	        $rows.exit().remove();
+	    };
+	    return CategoricalCellRenderer;
 	}(DefaultCellRenderer));
 	/**
 	 * simple derived one where individual elements can be overridden
@@ -5459,7 +5546,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        sparklinecustom: new SparklineCellRenderer(),
 	        boxplotcustom: new BoxplotCellRenderer(),
 	        verticalbar: new VerticalbarCellRenderer(),
-	        vertcontinuous: new VertcontinuousCellRenderer()
+	        vertcontinuous: new VertcontinuousCellRenderer(),
+	        categoricalcustom: new CategoricalCellRenderer()
 	    };
 	}
 	exports.renderers = renderers;

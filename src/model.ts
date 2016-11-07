@@ -2691,7 +2691,8 @@ export function models() {
     sparklinecustom: MyColumn,
     boxplotcustom:MyColumn,
     verticalbar:MyColumn,
-    vertcontinuous:MyColumn
+    vertcontinuous:MyColumn,
+     categoricalcustom:MyColumn
 
   };
 }
