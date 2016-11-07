@@ -4448,12 +4448,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
 	        $rows.enter().append('path').attr({
 	            'class': 'shift',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        var f = col.getWidth() / 100;
 	        $rows.attr('d', function (d, i) {
@@ -4468,9 +4464,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
 	        });
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4488,12 +4482,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.heatmapcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'heatmapcell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        function cell_dim(total, cells) {
 	            return (total / cells);
@@ -4516,9 +4506,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
 	            'width': cell_dim(total_width, cols),
-	            'height': function (d, i) {
-	                return (context.rowHeight(i) - 0.6);
-	            },
+	            'height': function (d, i) { return (context.rowHeight(i) - 0.6); },
 	            'x': function (d) {
 	                var prev = this.previousSibling; // One previous step information.
 	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
@@ -4527,9 +4515,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'fill': color
 	        });
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4566,23 +4552,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var x = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
 	            var y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
 	            var line = d3.svg.line()
-	                .x((function (d, i) {
-	                return x(i);
-	            }))
-	                .y(function (d, i) {
-	                return y(d);
-	            });
+	                .x(function (d, i) { return x(i); })
+	                .y(function (d, i) { return y(d); });
 	            return line(data);
 	        });
 	        $rows_enter.append('path').attr('class', 'sparkline')
-	            .attr('d', function (d, i) {
-	            return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2;
-	        })
+	            .attr('d', function (d, i) { return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2; })
 	            .attr('stroke', 'red');
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4597,12 +4575,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.verticalcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'verticalcell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        var bits = [];
 	        var threshold = 50;
@@ -4613,28 +4587,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $rects.enter().append('rect');
 	        $rects.attr({
-	            'data-index': function (d, i) {
-	                return i;
-	            },
+	            'data-index': function (d, i) { return i; },
 	            'width': (col.getWidth() / d3.max(bits)),
-	            'height': function (d, i) {
-	                return (context.rowHeight(i)) / 2;
-	            },
+	            'height': function (d, i) { return (context.rowHeight(i)) / 2; },
 	            'x': function (d) {
 	                var prev = this.previousSibling; // One previous step information.
 	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
 	            },
-	            'y': function (d, i) {
-	                return (d < threshold) ? (context.rowHeight(i) / 2) : 0;
-	            },
-	            'fill': function (d) {
-	                return (d < threshold) ? 'blue' : 'red';
-	            }
+	            'y': function (d, i) { return (d < threshold) ? (context.rowHeight(i) / 2) : 0; },
+	            'fill': function (d) { return (d < threshold) ? 'blue' : 'red'; }
 	        });
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4649,12 +4613,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.vertcontinuouscell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'vertcontinuouscell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        var bits = [];
 	        var max = 0;
@@ -4676,13 +4636,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        color.domain([min, 0, max]).range(['blue', 'white', 'red']);
 	        $rects.enter().append('rect');
 	        $rects.attr({
-	            'data-index': function (d, i) {
-	                return i;
-	            },
+	            'data-index': function (d, i) { return i; },
 	            'width': (col.getWidth() / d3.max(bits)),
-	            'height': function (d) {
-	                return (d < threshold) ? (barheight / 2 - scale(d)) : scale(d);
-	            },
+	            'height': function (d) { return (d < threshold) ? (barheight / 2 - scale(d)) : scale(d); },
 	            'x': function (d) {
 	                var prev = this.previousSibling; // One previous step information.
 	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
@@ -4698,9 +4654,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'fill': color
 	        });
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4747,32 +4701,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            q3arr.push(getPercentile(data, 75));
 	        });
 	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, 100]); // Constraint the window width
-	        var $rows = $col.datum(col).selectAll('g.my').data(rows, context.rowKey);
+	        var $rows = $col.datum(col).selectAll('g.boxplot').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
-	            'class': 'my',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'class': 'boxplot',
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        $rows_enter.append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
-	            'width': function (d, i) {
-	                //var data = d.boxplotcustom;
-	                return scale(q3arr[i] - q1arr[i]);
-	            },
+	            'width': function (d, i) { return scale(q3arr[i] - q1arr[i]); },
 	            'height': function (d, i) {
 	                var top = context.option('rowPadding', 30);
 	                return (Math.max(context.rowHeight(i) - top, 10));
 	            },
 	            'y': 0,
-	            'x': function (d, i) {
-	                return scale(q1arr[i]);
-	            }
+	            'x': function (d, i) { return scale(q1arr[i]); }
 	        });
-	        // It is not nested selection so we call directly from the enter method.
 	        $rows_enter.append('path').attr('class', 'shift');
 	        var f = col.getWidth() / 100;
 	        $rows.select('path.shift').attr('d', function (d, i) {
@@ -4780,21 +4724,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var top = context.option('rowPadding', 1);
 	            var bottom = Math.max(context.rowHeight(i) - top, 0);
 	            var middle = (bottom - top) / 2;
-	            // console.log('M' + left + ',' + middle + 'L' + right + ',' + middle +
-	            //   'M' + left + ',' + top + 'L' + left + ',' + bottom +
-	            //   'M' + center + ',' + top + 'L' + center + ',' + bottom +
-	            //   'M' + right + ',' + top + 'L' + right + ',' + bottom);
 	            return 'M' + left + ',' + middle + 'L' + scale(q1arr[i]) + ',' + middle +
 	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
 	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
 	                'M' + (scale(q1arr[i]) + scale(q3arr[i] - q1arr[i])) + ',' + middle + 'L' + (right) + ',' + middle +
 	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
 	        });
-	        // It is nested selection i.e. we have four rectangles so there is no needed selectall
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };
@@ -4809,12 +4746,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.categoricalcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'categoricalcell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
-	            }
+	            'data-index': function (d, i) { return i; },
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        var bits = [];
 	        var windowsize = 0;
@@ -4828,20 +4761,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $circle.enter().append('circle')
 	            .attr('data-index', function (d, i) { return i; })
-	            .attr('data-index', function (d, i) {
-	            return i;
-	        })
-	            .attr('cx', function (d, i) {
-	            return (i * windowsize) + (windowsize / 2);
-	        })
-	            .attr('cy', function (d, i) {
-	            return (context.rowHeight(i) / 2);
-	        })
+	            .attr('data-index', function (d, i) { return i; })
+	            .attr('cx', function (d, i) { return (i * windowsize) + (windowsize / 2); })
+	            .attr('cy', function (d, i) { return (context.rowHeight(i) / 2); })
 	            .attr('r', (windowsize / 4))
 	            .attr('stroke', 'black')
-	            .attr('opacity', function (d) {
-	            return (d === 1) ? 1 : 0.1;
-	        })
+	            .attr('opacity', function (d) { return (d === 1) ? 1 : 0.1; })
 	            .attr('fill', 'black');
 	        $rows_enter.append('path')
 	            .attr('d', function (d, i) {
@@ -4858,9 +4783,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            .attr('fill', 'black')
 	            .attr('stroke', 'black');
 	        context.animated($rows).attr({
-	            transform: function (d, i) {
-	                return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')';
-	            }
+	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
 	    };

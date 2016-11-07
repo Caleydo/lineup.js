@@ -4,7 +4,7 @@
 
 window.onload = function () {
 
-  var negative='false';
+  var negative='true';
   function getrandom(datapoints,min,max) {
    var temparr = [];
     for (var i = 0; i < datapoints; i++) {
