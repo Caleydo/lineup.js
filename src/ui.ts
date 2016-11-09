@@ -3,13 +3,13 @@
  */
 
 
-///<reference path='../typings/tsd.d.ts' />
-import d3 = require('d3');
-import utils = require('./utils');
-import model = require('./model');
-import renderer = require('./renderer');
-import provider = require('./provider');
-import dialogs = require('./ui_dialogs');
+import * as d3 from 'd3';
+import {merge} from './utils';
+import * as utils from './utils';
+import * as model from './model';
+import * as renderer from './renderer';
+import * as provider from './provider';
+import {filterDialogs, openEditWeightsDialog, openEditLinkDialog, openEditScriptDialog, openRenameDialog, openSearchDialog} from './ui_dialogs';
 
 class PoolEntry {
   used:number = 0;
@@ -47,7 +47,7 @@ export class PoolRenderer {
   private entries:PoolEntry[];
 
   constructor(private data:provider.DataProvider, parent:Element, options:any = {}) {
-    utils.merge(this.options, options);
+    merge(this.options, options);
 
     this.$node = d3.select(parent).append('div').classed('lu-pool', true);
 
@@ -205,7 +205,7 @@ export class HeaderRenderer {
     manipulative: true,
     histograms: false,
 
-    filterDialogs: dialogs.filterDialogs(),
+    filterDialogs: filterDialogs(),
     linkTemplates: [],
     searchAble: (col:model.Column) => col instanceof model.StringColumn,
     sortOnLabel: true,
@@ -268,7 +268,7 @@ export class HeaderRenderer {
 
 
   constructor(private data:provider.DataProvider, parent:Element, options:any = {}) {
-    utils.merge(this.options, options);
+    merge(this.options, options);
 
     this.$node = d3.select(parent).append('div').classed('lu-header', true);
     this.$node.append('div').classed('drop', true).call(this.dropHandler);
@@ -446,38 +446,38 @@ export class HeaderRenderer {
 
     //edit weights
     $stacked.append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
-      dialogs.openEditWeightsDialog(<model.StackColumn>d, d3.select(this.parentNode.parentNode));
-      d3.event.stopPropagation();
+      openEditWeightsDialog(<model.StackColumn>d, d3.select(this.parentNode.parentNode));
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //rename
     $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
-      dialogs.openRenameDialog(d, d3.select(this.parentNode.parentNode));
-      d3.event.stopPropagation();
+      openRenameDialog(d, d3.select(this.parentNode.parentNode));
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //clone
     $regular.append('i').attr('class', 'fa fa-code-fork').attr('title', 'Generate Snapshot').on('click', function (d) {
       provider.takeSnapshot(d);
-      d3.event.stopPropagation();
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //edit link
     $node.filter((d) => d instanceof model.LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
-      dialogs.openEditLinkDialog(<model.LinkColumn>d, d3.select(this.parentNode.parentNode), [].concat((<any>d.desc).templates || [], that.options.linkTemplates));
-      d3.event.stopPropagation();
+      openEditLinkDialog(<model.LinkColumn>d, d3.select(this.parentNode.parentNode), [].concat((<any>d.desc).templates || [], that.options.linkTemplates));
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //edit script
     $node.filter((d) => d instanceof model.ScriptColumn).append('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
-      dialogs.openEditScriptDialog(<model.ScriptColumn>d, d3.select(this.parentNode.parentNode));
-      d3.event.stopPropagation();
+      openEditScriptDialog(<model.ScriptColumn>d, d3.select(this.parentNode.parentNode));
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //filter
     $node.filter((d) => filterDialogs.hasOwnProperty(d.desc.type)).append('i').attr('class', 'fa fa-filter').attr('title', 'Filter').on('click', function (d) {
       filterDialogs[d.desc.type](d, d3.select(this.parentNode.parentNode), provider);
-      d3.event.stopPropagation();
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //search
     $node.filter((d) => this.options.searchAble(d)).append('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (d) {
-      dialogs.openSearchDialog(d, d3.select(this.parentNode.parentNode), provider);
-      d3.event.stopPropagation();
+      openSearchDialog(d, d3.select(this.parentNode.parentNode), provider);
+      (<MouseEvent>d3.event).stopPropagation();
     });
     //collapse
     $regular.append('i')
@@ -490,7 +490,7 @@ export class HeaderRenderer {
         d3.select(this)
           .classed('fa-toggle-left', !d.getCompressed())
           .classed('fa-toggle-right', d.getCompressed());
-        d3.event.stopPropagation();
+        (<MouseEvent>d3.event).stopPropagation();
       });
     //compress
     $multilevel.append('i')
@@ -503,7 +503,7 @@ export class HeaderRenderer {
         d3.select(this)
           .classed('fa-compress', !d.getCollapsed())
           .classed('fa-expand', d.getCollapsed());
-        d3.event.stopPropagation();
+        (<MouseEvent>d3.event).stopPropagation();
       });
     //remove
     $node.append('i').attr('class', 'fa fa-times').attr('title', 'Hide').on('click', (d) => {
@@ -515,7 +515,7 @@ export class HeaderRenderer {
       } else {
         d.removeMe();
       }
-      d3.event.stopPropagation();
+      (<MouseEvent>d3.event).stopPropagation();
     });
   }
 
@@ -532,13 +532,15 @@ export class HeaderRenderer {
       'class': clazz
     })
     .on('click', (d) => {
-      if (this.options.manipulative && !d3.event.defaultPrevented && d3.event.currentTarget === d3.event.target) {
+      const mevent = <MouseEvent>d3.event;
+      if (this.options.manipulative && !mevent.defaultPrevented && mevent.currentTarget === mevent.target) {
         d.toggleMySorting();
       }
     });
     var $header_enter_div = $headers_enter.append('div').classed('lu-label', true)
       .on('click', (d) => {
-        if (this.options.manipulative && !d3.event.defaultPrevented) {
+        const mevent = <MouseEvent>d3.event;
+        if (this.options.manipulative && !mevent.defaultPrevented) {
           d.toggleMySorting();
         }
       })
@@ -729,7 +731,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
   constructor(private data:provider.DataProvider, parent:Element, private slicer:ISlicer, options = {}) {
     super();
     //merge options
-    utils.merge(this.options, options);
+    merge(this.options, options);
 
     this.$node = d3.select(parent).append('svg').classed('lu-body', true);
 
@@ -988,7 +990,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     }).on('mouseleave', (data_index) => {
       this.mouseOver(data_index.d, false);
     }).on('click', (data_index) => {
-      this.select(data_index.d, d3.event.ctrlKey);
+      this.select(data_index.d, (<MouseEvent>d3.event).ctrlKey);
     });
     $rows.attr({
       'data-index': (d) => d.d
@@ -1215,7 +1217,7 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
   constructor(private data:provider.DataProvider, parent:Element, private slicer:ISlicer, options = {}) {
     super();
     //merge options
-    utils.merge(this.options, options);
+    merge(this.options, options);
 
     this.$node = d3.select(parent).append('canvas').classed('lu-canvas.body', true);
 
