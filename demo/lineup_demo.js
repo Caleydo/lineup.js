@@ -131,11 +131,16 @@
     function loadGist(gistid) {
       d3.json('https://api.github.com/gists/'+gistid, function(error, gistdesc) {
         if (error) {
-          console.error('cant load gist id: '+gistid, error);
+          console.error('cannot load gist id: '+gistid, error);
         } else if (gistdesc) {
           var firstFile = gistdesc.files[Object.keys(gistdesc.files)[0]];
-          var content = JSON.parse(firstFile.content);
-          initLineup(gistdesc.description, content, content.data);
+          d3.json(firstFile.raw_url, function(error, content) {
+            if (error) {
+              console.error('cannot load gist content at: '+firstFile.raw_url, error);
+            } else if (content) {
+              initLineup(gistdesc.description, content, content.data);
+            }
+          });
         }
       });
     }
@@ -414,7 +419,7 @@
     var ds = $selector.selectAll('option').data(data.datasets);
     ds.enter().append('option')
       .attr('value', function (d, i) {
-        return i;
+               return i;
       }).text(function (d) {
       return d.name;
     });

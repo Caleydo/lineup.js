@@ -1290,17 +1290,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return MyColumn;
 	}(ValueColumn));
 	exports.MyColumn = MyColumn;
-	var HeatmapColumn = (function (_super) {
-	    __extends(HeatmapColumn, _super);
-	    function HeatmapColumn() {
-	        _super.apply(this, arguments);
-	    }
-	    HeatmapColumn.prototype.compare = function (a, b) {
-	        return this.getValue(a).mean - this.getValue(b).mean;
-	    };
-	    return HeatmapColumn;
-	}(ValueColumn));
-	exports.HeatmapColumn = HeatmapColumn;
 	/**
 	 * a string column in which the label is a text but the value a link
 	 */
@@ -4494,11 +4483,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var max = 0, min = 0;
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
-	            max = d3.max([max, d3.max(value.data)]);
-	            min = d3.min([min, d3.min(value.data)]);
-	            cols = value.data.length;
+	            max = d3.max([max, d3.max(value)]);
+	            min = d3.min([min, d3.min(value)]);
+	            cols = value.length;
 	            total_width = col.getWidth();
-	            return (value.data);
+	            return (value);
 	        });
 	        color = (min < 0) ? color.domain([min, 0, max]).range(['blue', 'white', 'red'])
 	            : color.domain([min, max]).range(['white', 'red']);
@@ -4533,32 +4522,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.sparklinecell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'sparklinecell',
-	            'data-index': function (d, i) {
-	                return i;
-	            },
 	            transform: function (d, i) {
 	                return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')';
 	            }
 	        });
-	        var min = 0, max = 0, bits, winheight;
-	        $rows_enter.append('path').attr('class', 'sparkline')
-	            .attr('d', function (d, i) {
-	            var value = col.getValue(d);
-	            var data = value.data;
+	        $rows_enter.append('path').attr('class', 'sparkline');
+	        var min, max, bits, winheight;
+	        rows.forEach(function (d, i) {
+	            var data = col.getValue(d);
 	            min = d3.min([min, d3.min(data)]);
 	            max = d3.max([max, d3.max(data)]);
 	            bits = (data.length);
 	            winheight = context.rowHeight(i);
-	            var x = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
-	            var y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
+	        });
+	        var x = d3.scale.linear().domain([0, bits]).range([0, 100]);
+	        var y = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
+	        $rows.attr({
+	            'data-index': function (d, i) {
+	                return i;
+	            }
+	        });
+	        $rows.select('path')
+	            .attr('d', function (d, i) {
 	            var line = d3.svg.line()
 	                .x(function (d, i) { return x(i); })
 	                .y(function (d, i) { return y(d); });
-	            return line(data);
+	            return line(col.getValue(d));
 	        });
-	        $rows_enter.append('path').attr('class', 'sparkline')
-	            .attr('d', function (d, i) { return 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2; })
-	            .attr('stroke', 'red');
+	        // $rows_enter.append('path').attr('class', 'sparkline')
+	        //   .attr('d', (d, i) => 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2)
+	        //   .attr('stroke', 'red');
 	        context.animated($rows).attr({
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
@@ -4575,15 +4568,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.verticalcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'verticalcell',
-	            'data-index': function (d, i) { return i; },
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
+	        $rows.attr({
+	            'data-index': function (d, i) { return i; }
+	        });
 	        var bits = [];
-	        var threshold = 50;
+	        var threshold = 0.1;
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
-	            bits.push(value.data.length);
-	            return (value.data);
+	            bits.push(value.length);
+	            return (value);
 	        });
 	        $rects.enter().append('rect');
 	        $rects.attr({
@@ -4624,7 +4619,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var scale = d3.scale.linear();
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value.data;
+	            var data = value;
 	            bits.push(data.length);
 	            max = d3.max([max, d3.max(data)]);
 	            min = d3.min([min, d3.min(data)]);
@@ -4687,20 +4682,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function numSort(a, b) {
 	            return a - b;
 	        }
-	        var range = 0;
+	        var range;
 	        rows.forEach(function (d, i) {
-	            var data = col.getValue(d).data;
+	            var data = col.getValue(d);
 	            var m1 = Math.min.apply(Math, data);
 	            var m2 = Math.max.apply(Math, data);
 	            minarr.push(m1);
-	            range = d3.max([range, (m2 - m1)]);
-	            maxarr.push(range);
-	            //console.log((m2-m1),m1,m2)
+	            //range = d3.max([range, (m2 - m1)]);
+	            maxarr.push(m2);
 	            q1arr.push(getPercentile(data, 25));
 	            medarr.push(getPercentile(data, 50));
 	            q3arr.push(getPercentile(data, 75));
 	        });
-	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, 100]); // Constraint the window width
+	        console.log(minarr.length, minarr);
+	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, col.getWidth()]); // Constraint the window width
 	        var $rows = $col.datum(col).selectAll('g.boxplot').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'boxplot',
@@ -4709,7 +4704,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        $rows_enter.append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
-	            'width': function (d, i) { return scale(q3arr[i] - q1arr[i]); },
+	            'width': function (d, i) { return scale(q3arr[i]) - scale(q1arr[i]); },
 	            'height': function (d, i) {
 	                var top = context.option('rowPadding', 30);
 	                return (Math.max(context.rowHeight(i) - top, 10));
@@ -4727,7 +4722,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return 'M' + left + ',' + middle + 'L' + scale(q1arr[i]) + ',' + middle +
 	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
 	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
-	                'M' + (scale(q1arr[i]) + scale(q3arr[i] - q1arr[i])) + ',' + middle + 'L' + (right) + ',' + middle +
+	                'M' + (scale(q1arr[i]) + scale(q3arr[i]) - scale(q1arr[i])) + ',' + middle + 'L' + (right) + ',' + middle +
 	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
 	        });
 	        context.animated($rows).attr({

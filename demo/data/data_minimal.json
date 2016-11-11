@@ -5,10 +5,18 @@
   "columns": [
     {
       "column": "schoolname",
+      "label":"Customschol",
       "type": "string"
     },
     {
       "column": "academic",
+      "type": "number",
+      "domain": [0, 100],
+      "numberFormat": ".1f"
+    },
+    {
+      "column": "academic",
+      "label":"Custom",
       "type": "number",
       "domain": [0, 100],
       "numberFormat": ".1f"

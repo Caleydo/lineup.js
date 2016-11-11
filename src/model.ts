@@ -745,9 +745,10 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
   }
 
   getLabel(row:any) {
+
     //if a dedicated format and a number use the formatter in any case
     if ((<any>this.desc).numberFormat) {
-      return this.numberFormat(this.getRawValue(row));
+       return this.numberFormat(this.getRawValue(row));
     }
     const v = super.getValue(row);
     //keep non number if it is not a number else convert using formatter
@@ -859,10 +860,12 @@ export class StringColumn extends ValueColumn<string> {
   static FILTER_MISSING = '__FILTER_MISSING';
   private currentFilter:string|RegExp = null;
 
+
   private _alignment:string = 'left';
 
   constructor(id:string, desc:any) {
     super(id, desc);
+
     this.setWidthImpl(200); //by default 200
     this._alignment = desc.alignment || 'left';
   }
@@ -874,6 +877,7 @@ export class StringColumn extends ValueColumn<string> {
 
   getValue(row:any) {
     var v:any = super.getValue(row);
+
     if (typeof(v) === 'undefined' || v == null) {
       return '';
     }
@@ -949,16 +953,15 @@ export class StringColumn extends ValueColumn<string> {
   }
 }
 
+
+
 export class MyColumn extends ValueColumn<any> {
+
   compare(a:any, b:any) {
     return this.getValue(a).mean - this.getValue(b).mean;
   }
 }
-export class HeatmapColumn extends ValueColumn<any> {
-  compare(a:any, b:any) {
-    return this.getValue(a).mean - this.getValue(b).mean;
-  }
-}
+
 
 /**
  * a string column in which the label is a text but the value a link
@@ -2680,7 +2683,6 @@ export function models() {
     actions: DummyColumn,
     annotate: AnnotateColumn,
     selection: SelectionColumn,
-
     max: MaxColumn,
     min: MinColumn,
     mean: MinColumn,
