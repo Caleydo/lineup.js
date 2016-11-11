@@ -542,10 +542,12 @@ export class ScaleMappingFunction implements IMappingFunction {
   }
 
   get range() {
+
     return this.s.range();
   }
 
   set range(range: number[]) {
+    console.log(this.s.range())
     this.s.range(range);
   }
 

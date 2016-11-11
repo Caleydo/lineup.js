@@ -69,6 +69,17 @@ window.onload = function () {
     }, 0)
 
 
+    var min,max;
+  newdata.forEach(function (d) {
+
+    var tmp = (d.health_score.map(function(d) { return parseFloat((d)) ;}))
+
+   min =d3.min([min,d3.min(tmp)]);
+     max =d3.max([max,d3.max(tmp)]);
+  })
+
+  console.log(min,max)
+
     var arr1 = [];
     newdata.reduce(function (a, b, i) {
       var arraydata = b.health_score.map(function (x) {
@@ -88,14 +99,13 @@ window.onload = function () {
 
     }, 0)
 
-
  var desc1 = [
         {label: 'Country', type: 'string', column: 'country'},
-        {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom'},
-        {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
+        {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom',sdomain:[min,max],srange:['blue','white','red']} ,
+        {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom',sdomain:[min,max]},
         {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
-        {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},
-        {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous'}]
+        {label: 'Vertical', type: 'verticalbar', column: 'verticalbar',threshold:0},
+        {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous',sdomain:[min,max],srange:['blue','red']}]
 
   console.log(desc1)
     var p = new LineUpJS.provider.LocalDataProvider(arr1, desc1);
@@ -106,7 +116,7 @@ window.onload = function () {
     desc1.forEach(function (d) {
       r.push(p.create(d));
     })
-    console.log(p)
+
     var body = LineUpJS.create(p, root.node(), {
       body: {
         visibleRowsOnly: false
@@ -221,7 +231,7 @@ window.onload = function () {
     {label: 'A', type: 'number', column: 'a', 'domain': [0, 120], color: 'green'},
     {label: 'Cat', type: 'categorical', column: 'cat', categories: ['c1', 'c2', 'c3']},
     {label: 'Custom1', type: 'custom', column: 'custom'},
-    {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom'},
+    {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom','domain': [0, 120],min:5,test:100},
     {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
     {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
     {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},

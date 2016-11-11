@@ -117,6 +117,17 @@ export interface ICellRenderer {
 /**
  * default renderer instance rendering the value as a text
  */
+
+
+export  interface IMappingFunction{
+
+
+
+
+}
+
+
+
 export class DefaultCellRenderer implements ICellRenderer {
   /**
    * class to append to the text elements
@@ -255,24 +266,22 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     function cell_dim(total, cells) {
       return (total / cells);
     }
-
     var total_width = 1;
     var cols = 1;
     var color: any = d3.scale.linear<number, string>();
-    var max = 0, min = 0;
+    var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
+    var colorrange = col.desc['srange'];
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
 
-      max = d3.max([max, d3.max(value)]);
-      min = d3.min([min, d3.min(value)]);
       cols = value.length;
       total_width = col.getWidth();
       return (value);
     });
 
-    color = (min < 0) ? color.domain([min, 0, max]).range(['blue', 'white', 'red'])
-      : color.domain([min, max]).range(['white', 'red']);
+    color = (min < 0) ? color.domain([min, 0, max]).range(colorrange)
+      : color.domain([min, max]).range([colorrange[1],colorrange[2]]);
 
     $rects.enter().append('rect');
     $rects.attr({
@@ -280,7 +289,7 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
       'data-index': (d, i) => i,
 
       'width': cell_dim(total_width, cols),
-      'height': (d, i) => (context.rowHeight(i) - 0.6),
+      'height': (d, i) => (context.rowHeight(i)),
       'x': function (d) {
 
         var prev = this.previousSibling; // One previous step information.
@@ -313,18 +322,18 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     });
     $rows_enter.append('path').attr('class', 'sparkline');
 
-
-    var min , max , bits, winheight;
+       var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
+    var bits, winheight;
 
      rows.forEach(function (d, i) {
       var data = col.getValue(d);
-      min = d3.min([min, d3.min(data)]);
-      max = d3.max([max, d3.max(data)]);
+
       bits = (data.length);
+
       winheight = context.rowHeight(i);
       });
 
-    var x: any = d3.scale.linear().domain([0, bits]).range([0, 100]);
+    var x: any = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
     var y: any = y = d3.scale.linear().domain([min,max]).range([winheight,0]);
 
 
@@ -336,10 +345,10 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     });
     $rows.select('path')
       .attr('d', function (d, i) {
-
+//console.log(i,x(i));
         var line = d3.svg.line()
           .x((d, i) => x(i))
-          .y((d: any, i) => y(d));
+           .y(function (d: any, i){ return y(d)});
         return line(col.getValue(d));
       });
 
@@ -370,8 +379,9 @@ class VerticalbarCellRenderer extends DefaultCellRenderer {
     });
 
 
+
     var bits = [];
-    var threshold = 0.1;
+    var threshold = col.desc['threshold'];
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
@@ -413,25 +423,26 @@ class VertcontinuousCellRenderer extends DefaultCellRenderer {
 
 
     var bits = [];
-    var max = 0;
-    var min = 0;
+    var min = col.desc['sdomain'][0];
+    var max = col.desc['sdomain'][1];
+    var mincolor = col.desc['srange'][0];
+    var maxcolor = col.desc['srange'][1];
     var barheight;
     var threshold = 0;
     var scale = d3.scale.linear();
+
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
       var data = value;
-
       bits.push(data.length);
-      max = d3.max([max, d3.max(data)]);
-      min = d3.min([min, d3.min(data)]);
+
       barheight = context.rowHeight(i);
       return (data);
     });
 
     scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
     var color: any = d3.scale.linear<number,string>();
-    color.domain([min, 0, max]).range(['blue', 'white', 'red']);
+    color.domain([min, 0, max]).range([mincolor, 'white', maxcolor]);
 
     $rects.enter().append('rect');
     $rects.attr({
@@ -439,6 +450,7 @@ class VertcontinuousCellRenderer extends DefaultCellRenderer {
       'width': (col.getWidth() / d3.max(bits)),
       'height': (d: any) => (d < threshold) ? (barheight / 2 - scale(d)) : scale(d),
       'x': function (d) {
+
         var prev = this.previousSibling; // One previous step information.
         return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
       },
@@ -509,7 +521,7 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
 
     });
 
-    console.log(minarr.length, minarr);
+
 
     var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, col.getWidth()]); // Constraint the window width
 
