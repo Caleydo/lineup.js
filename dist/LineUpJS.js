@@ -893,7 +893,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return this.s.range();
 	        },
 	        set: function (range) {
-	            console.log(this.s.range());
 	            this.s.range(range);
 	        },
 	        enumerable: true,
@@ -1302,7 +1301,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    HeatmapcustomColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        //sort numbers correctly
+	        //sort numbers
 	        function numSort(a, b) {
 	            return a - b;
 	        }
@@ -1332,37 +1331,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b1_q1 = getPercentile(b_val, 25);
 	        var b1_median = getPercentile(b_val, 50);
 	        var b1_q3 = getPercentile(b_val, 75);
-	        if (this.desc['sort'] == 'min') {
-	            console.log('I am inside min');
+	        if (this.desc.sort === 'min') {
 	            return (a1_min) - (b1_min);
 	        }
-	        else if (this.desc['sort'] == 'max') {
-	            console.log(this.desc);
-	            console.log('I am inside max');
+	        else if (this.desc.sort === 'max') {
 	            return (a1_max) - (b1_max);
 	        }
-	        else if (this.desc['sort'] == 'mean') {
-	            console.log(this.desc);
-	            console.log('I am inside mean');
+	        else if (this.desc.sort === 'mean') {
 	            return (a1_mean) - (b1_mean);
 	        }
-	        else if (this.desc['sort'] == 'median') {
-	            console.log(this.desc);
-	            console.log('I am inside median');
+	        else if (this.desc.sort === 'median') {
 	            return (a1_median) - (b1_median);
 	        }
-	        else if (this.desc['sort'] == 'q1') {
-	            console.log(this.desc);
-	            console.log('I am inside Q1');
+	        else if (this.desc.sort === 'q1') {
 	            return (a1_q1) - (b1_q1);
 	        }
-	        else if (this.desc['sort'] == 'q3') {
-	            console.log(this.desc);
-	            console.log('I am inside Q3');
+	        else if (this.desc.sort === 'q3') {
 	            return (a1_q3) - (b1_q3);
 	        }
 	        else {
-	            console.log('I am inside sum');
 	            return (d3.sum(a_val)) - (d3.sum(b_val));
 	        }
 	    };
@@ -1377,7 +1364,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    SparklineColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	        var a1_min = d3.min(a_val);
+	        var a1_max = d3.max(a_val);
+	        var b1_min = d3.min(b_val);
+	        var b1_max = d3.max(b_val);
+	        if (this.desc.sort === 'min') {
+	            return (a1_min) - (b1_min);
+	        }
+	        else if (this.desc.sort === 'max') {
+	            return (a1_max) - (b1_max);
+	        }
+	        else {
+	            return (d3.sum(a_val)) - (d3.sum(b_val));
+	        }
 	    };
 	    return SparklineColumn;
 	}(ValueColumn));
@@ -1390,7 +1389,57 @@ return /******/ (function(modules) { // webpackBootstrap
 	    BoxplotColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	        //sort numbers
+	        function numSort(a, b) {
+	            return a - b;
+	        }
+	        function getPercentile(data, percentile) {
+	            data.sort(numSort);
+	            var index = (percentile / 100) * data.length;
+	            var result;
+	            if (Math.floor(index) === index) {
+	                result = (data[(index - 1)] + data[index]) / 2;
+	            }
+	            else {
+	                result = data[Math.floor(index)];
+	            }
+	            return result;
+	        }
+	        var a1_sum = d3.sum(a_val);
+	        var a1_min = d3.min(a_val);
+	        var a1_max = d3.max(a_val);
+	        var a1_mean = a1_sum / a_val.length;
+	        var a1_q1 = getPercentile(a_val, 25);
+	        var a1_median = getPercentile(a_val, 50);
+	        var a1_q3 = getPercentile(a_val, 75);
+	        var b1_sum = d3.sum(b_val);
+	        var b1_min = d3.min(b_val);
+	        var b1_max = d3.max(b_val);
+	        var b1_mean = b1_sum / b_val.length;
+	        var b1_q1 = getPercentile(b_val, 25);
+	        var b1_median = getPercentile(b_val, 50);
+	        var b1_q3 = getPercentile(b_val, 75);
+	        if (this.desc.sort === 'min') {
+	            return (a1_min) - (b1_min);
+	        }
+	        else if (this.desc.sort === 'max') {
+	            return (a1_max) - (b1_max);
+	        }
+	        else if (this.desc.sort === 'mean') {
+	            return (a1_mean) - (b1_mean);
+	        }
+	        else if (this.desc.sort === 'median') {
+	            return (a1_median) - (b1_median);
+	        }
+	        else if (this.desc.sort === 'q1') {
+	            return (a1_q1) - (b1_q1);
+	        }
+	        else if (this.desc.sort === 'q3') {
+	            return (a1_q3) - (b1_q3);
+	        }
+	        else {
+	            return (d3.sum(a_val)) - (d3.sum(b_val));
+	        }
 	    };
 	    return BoxplotColumn;
 	}(ValueColumn));
@@ -1403,7 +1452,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    VerticalbarColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	        var a1_sum = d3.sum(a_val);
+	        var a1_min = d3.min(a_val);
+	        var a1_max = d3.max(a_val);
+	        var a1_mean = a1_sum / a_val.length;
+	        var b1_sum = d3.sum(b_val);
+	        var b1_min = d3.min(b_val);
+	        var b1_max = d3.max(b_val);
+	        var b1_mean = b1_sum / b_val.length;
+	        if (this.desc.sort === 'min') {
+	            return (a1_min) - (b1_min);
+	        }
+	        else if (this.desc.sort === 'max') {
+	            return (a1_max) - (b1_max);
+	        }
+	        else if (this.desc.sort === 'mean') {
+	            return (a1_mean) - (b1_mean);
+	        }
+	        else {
+	            return (d3.sum(a_val)) - (d3.sum(b_val));
+	        }
 	    };
 	    return VerticalbarColumn;
 	}(ValueColumn));
@@ -1416,7 +1484,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    VerticalconColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	        var a1_sum = d3.sum(a_val);
+	        var a1_min = d3.min(a_val);
+	        var a1_max = d3.max(a_val);
+	        var a1_mean = a1_sum / a_val.length;
+	        var b1_sum = d3.sum(b_val);
+	        var b1_min = d3.min(b_val);
+	        var b1_max = d3.max(b_val);
+	        var b1_mean = b1_sum / b_val.length;
+	        if (this.desc.sort === 'min') {
+	            return (a1_min) - (b1_min);
+	        }
+	        else if (this.desc.sort === 'max') {
+	            return (a1_max) - (b1_max);
+	        }
+	        else if (this.desc.sort === 'mean') {
+	            return (a1_mean) - (b1_mean);
+	        }
+	        else {
+	            return (d3.sum(a_val)) - (d3.sum(b_val));
+	        }
 	    };
 	    return VerticalconColumn;
 	}(ValueColumn));
@@ -4621,8 +4708,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var total_width = 1;
 	        var cols = 1;
 	        var color = d3.scale.linear();
-	        var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
-	        var colorrange = col.desc['srange'];
+	        var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
+	        var colorrange = col.desc.colorrange;
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
 	            cols = value.length;
@@ -4667,7 +4754,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        });
 	        $rows_enter.append('path').attr('class', 'sparkline');
-	        var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
+	        var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
 	        var bits, winheight;
 	        rows.forEach(function (d, i) {
 	            var data = col.getValue(d);
@@ -4714,7 +4801,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'data-index': function (d, i) { return i; }
 	        });
 	        var bits = [];
-	        var threshold = col.desc['threshold'];
+	        var threshold = col.desc.threshold;
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
 	            bits.push(value.length);
@@ -4752,10 +4839,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        var bits = [];
-	        var min = col.desc['sdomain'][0];
-	        var max = col.desc['sdomain'][1];
-	        var mincolor = col.desc['srange'][0];
-	        var maxcolor = col.desc['srange'][1];
+	        var min = col.desc.sdomain[0];
+	        var max = col.desc.sdomain[1];
+	        var mincolor = col.desc.colorrange[0];
+	        var maxcolor = col.desc.colorrange[1];
 	        var barheight;
 	        var threshold = 0;
 	        var scale = d3.scale.linear();
@@ -4822,13 +4909,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function numSort(a, b) {
 	            return a - b;
 	        }
-	        var range;
 	        rows.forEach(function (d, i) {
 	            var data = col.getValue(d);
 	            var m1 = Math.min.apply(Math, data);
 	            var m2 = Math.max.apply(Math, data);
 	            minarr.push(m1);
-	            //range = d3.max([range, (m2 - m1)]);
 	            maxarr.push(m2);
 	            q1arr.push(getPercentile(data, 25));
 	            medarr.push(getPercentile(data, 50));
@@ -6005,8 +6090,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	            provider.takeSnapshot(d);
 	            d3.event.stopPropagation();
 	        });
-	        $node.filter(function (d) { return d instanceof model.HeatmapcustomColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Edit Combine Script').on('click', function (d) {
-	            dialogs.sortDialog(d, d3.select(this.parentNode.parentNode));
+	        $node.filter(function (d) { return d instanceof model.HeatmapcustomColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+	            dialogs.sortDialogHeatmap(d, d3.select(this.parentNode.parentNode));
+	            d3.event.stopPropagation();
+	        });
+	        $node.filter(function (d) { return d instanceof model.SparklineColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+	            dialogs.sortDialogSparkline(d, d3.select(this.parentNode.parentNode));
+	            d3.event.stopPropagation();
+	        });
+	        $node.filter(function (d) { return d instanceof model.BoxplotColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+	            dialogs.sortDialogBoxplot(d, d3.select(this.parentNode.parentNode));
+	            d3.event.stopPropagation();
+	        });
+	        $node.filter(function (d) { return d instanceof model.VerticalbarColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+	            dialogs.sortDialogVerticalBar(d, d3.select(this.parentNode.parentNode));
+	            d3.event.stopPropagation();
+	        });
+	        $node.filter(function (d) { return d instanceof model.VerticalconColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+	            dialogs.sortDialogVerticalconBar(d, d3.select(this.parentNode.parentNode));
 	            d3.event.stopPropagation();
 	        });
 	        //edit link
@@ -6961,7 +7062,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var newColor = popup.select('input[type="color"]').property('value');
 	        var newDescription = popup.select('textarea').property('value');
 	        column.setMetaData({ label: newValue, color: newColor, description: newDescription });
-	        console.log(column);
 	        popup.remove();
 	    });
 	    popup.select('.cancel').on('click', function () {
@@ -6991,37 +7091,136 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	}
 	exports.openEditLinkDialog = openEditLinkDialog;
-	function sortDialog(column, $header) {
-	    console.log(column);
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n \n  \n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n   <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n   <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"rank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"rank\" id=\"q3\">Q3\n  \n  \n</form>\n\n   ");
+	function sortDialogHeatmap(column, $header) {
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"rank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"rank\" id=\"q3\">Q3\n    </form>\n   ");
 	    popup.select('.ok').on('click', function () {
 	        var rank;
-	        if (popup.select("#min").property('checked')) {
+	        if (popup.select('#min').property('checked')) {
 	            rank = 'min';
 	        }
-	        else if (popup.select("#max").property('checked')) {
+	        else if (popup.select('#max').property('checked')) {
 	            rank = 'max';
 	        }
-	        else if (popup.select("#mean").property('checked')) {
+	        else if (popup.select('#mean').property('checked')) {
 	            rank = 'mean';
 	        }
-	        else if (popup.select("#median").property('checked')) {
+	        else if (popup.select('#median').property('checked')) {
 	            rank = 'median';
 	        }
-	        else if (popup.select("#q1").property('checked')) {
+	        else if (popup.select('#q1').property('checked')) {
 	            rank = 'q1';
 	        }
-	        else if (popup.select("#q3").property('checked')) {
+	        else if (popup.select('#q3').property('checked')) {
 	            rank = 'q3';
 	        }
 	        else {
 	            rank = 'sum';
 	        }
-	        column.desc['sort'] = rank;
-	        console.log(column.desc['sort']);
+	        column.desc.sort = rank;
+	    });
+	    popup.select('.cancel').on('click', function () {
+	        popup.remove();
 	    });
 	}
-	exports.sortDialog = sortDialog;
+	exports.sortDialogHeatmap = sortDialogHeatmap;
+	function sortDialogSparkline(column, $header) {
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n      </form>\n   ");
+	    popup.select('.ok').on('click', function () {
+	        var rank;
+	        if (popup.select('#min').property('checked')) {
+	            rank = 'min';
+	        }
+	        else if (popup.select('#max').property('checked')) {
+	            rank = 'max';
+	        }
+	        else {
+	            rank = 'sum';
+	        }
+	        column.desc.sort = rank;
+	    });
+	    popup.select('.cancel').on('click', function () {
+	        popup.remove();
+	    });
+	}
+	exports.sortDialogSparkline = sortDialogSparkline;
+	function sortDialogBoxplot(column, $header) {
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"rank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"rank\" id=\"q3\">Q3\n    </form>\n   ");
+	    popup.select('.ok').on('click', function () {
+	        var rank;
+	        if (popup.select('#min').property('checked')) {
+	            rank = 'min';
+	        }
+	        else if (popup.select('#max').property('checked')) {
+	            rank = 'max';
+	        }
+	        else if (popup.select('#mean').property('checked')) {
+	            rank = 'mean';
+	        }
+	        else if (popup.select('#median').property('checked')) {
+	            rank = 'median';
+	        }
+	        else if (popup.select('#q1').property('checked')) {
+	            rank = 'q1';
+	        }
+	        else if (popup.select('#q3').property('checked')) {
+	            rank = 'q3';
+	        }
+	        else {
+	            rank = 'sum';
+	        }
+	        column.desc.sort = rank;
+	    });
+	    popup.select('.cancel').on('click', function () {
+	        popup.remove();
+	    });
+	}
+	exports.sortDialogBoxplot = sortDialogBoxplot;
+	function sortDialogVerticalBar(column, $header) {
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n      </form>\n   ");
+	    popup.select('.ok').on('click', function () {
+	        var rank;
+	        if (popup.select('#min').property('checked')) {
+	            rank = 'min';
+	        }
+	        else if (popup.select('#max').property('checked')) {
+	            rank = 'max';
+	        }
+	        else if (popup.select('#mean').property('checked')) {
+	            rank = 'mean';
+	        }
+	        else {
+	            rank = 'sum';
+	        }
+	        column.desc.sort = rank;
+	    });
+	    popup.select('.cancel').on('click', function () {
+	        popup.remove();
+	    });
+	}
+	exports.sortDialogVerticalBar = sortDialogVerticalBar;
+	function sortDialogVerticalconBar(column, $header) {
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n      </form>\n   ");
+	    popup.select('.ok').on('click', function () {
+	        var rank;
+	        if (popup.select('#min').property('checked')) {
+	            rank = 'min';
+	        }
+	        else if (popup.select('#max').property('checked')) {
+	            rank = 'max';
+	        }
+	        else if (popup.select('#mean').property('checked')) {
+	            rank = 'mean';
+	        }
+	        else {
+	            rank = 'sum';
+	        }
+	        column.desc.sort = rank;
+	    });
+	    popup.select('.cancel').on('click', function () {
+	        popup.remove();
+	    });
+	}
+	exports.sortDialogVerticalconBar = sortDialogVerticalconBar;
 	/**
 	 * opens a search dialog for the given column
 	 * @param column the column to rename
@@ -7363,7 +7562,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var $popup = makePopup($header, 'Edit Categorical Mapping', '<div class="selectionTable"><table><thead><th class="selectAll"></th><th colspan="2">Scale</th><th>Category</th></thead><tbody></tbody></table></div>');
 	    var range = column.getScale().range, colors = column.categoryColors, labels = column.categoryLabels;
 	    var trData = column.categories.map(function (d, i) {
-	        return { cat: d, label: labels[i], isChecked: bak.length === 0 || bak.indexOf(d) >= 0, range: range[i] * 100, color: colors[i] };
+	        return {
+	            cat: d,
+	            label: labels[i],
+	            isChecked: bak.length === 0 || bak.indexOf(d) >= 0,
+	            range: range[i] * 100,
+	            color: colors[i]
+	        };
 	    }).sort(sortbyName('label'));
 	    var $rows = $popup.select('tbody').selectAll('tr').data(trData);
 	    var $rows_enter = $rows.enter().append('tr');

@@ -12,9 +12,9 @@ import provider = require('./provider');
 import dialogs = require('./ui_dialogs');
 
 class PoolEntry {
-  used:number = 0;
+  used: number = 0;
 
-  constructor(public desc:model.IColumnDesc) {
+  constructor(public desc: model.IColumnDesc) {
 
   }
 }
@@ -26,7 +26,7 @@ class PoolEntry {
 function toFullTooltip(col: { label: string, description?: string}) {
   var base = col.label;
   if (col.description != null && col.description !== '') {
-    base += '\n'+col.description;
+    base += '\n' + col.description;
   }
   return base;
 }
@@ -43,10 +43,10 @@ export class PoolRenderer {
     addAtEndOnClick: false
   };
 
-  private $node:d3.Selection<any>;
-  private entries:PoolEntry[];
+  private $node: d3.Selection<any>;
+  private entries: PoolEntry[];
 
-  constructor(private data:provider.DataProvider, parent:Element, options:any = {}) {
+  constructor(private data: provider.DataProvider, parent: Element, options: any = {}) {
     utils.merge(this.options, options);
 
     this.$node = d3.select(parent).append('div').classed('lu-pool', true);
@@ -54,7 +54,7 @@ export class PoolRenderer {
     this.changeDataStorage(data);
   }
 
-  changeDataStorage(data:provider.DataProvider) {
+  changeDataStorage(data: provider.DataProvider) {
     if (this.data) {
       this.data.on(['addColumn.pool', 'removeColumn.pool', 'addRanking.pool', 'removeRanking.pool', 'addDesc.pool'], null);
     }
@@ -174,7 +174,7 @@ export class PoolRenderer {
     }
   }
 
-  private layout(i:number) {
+  private layout(i: number) {
     switch (this.options.layout) {
       case 'horizontal':
         return {x: i * this.options.elemWidth, y: 0};
@@ -189,7 +189,7 @@ export class PoolRenderer {
 }
 
 export interface IRankingHook {
-  ($node: d3.Selection<model.Ranking>):void;
+  ($node: d3.Selection<model.Ranking>): void;
 }
 
 export function dummyRankingButtonHook() {
@@ -207,7 +207,7 @@ export class HeaderRenderer {
 
     filterDialogs: dialogs.filterDialogs(),
     linkTemplates: [],
-    searchAble: (col:model.Column) => col instanceof model.StringColumn,
+    searchAble: (col: model.Column) => col instanceof model.StringColumn,
     sortOnLabel: true,
 
     autoRotateLabels: false,
@@ -219,12 +219,12 @@ export class HeaderRenderer {
     rankingButtons: <IRankingHook>dummyRankingButtonHook
   };
 
-  $node:d3.Selection<any>;
+  $node: d3.Selection<any>;
 
   private histCache = d3.map<Promise<any>>();
 
   private dragHandler = d3.behavior.drag<model.Column>()
-    //.origin((d) => d)
+  //.origin((d) => d)
     .on('dragstart', function () {
       d3.select(this).classed('dragging', true);
       (<any>d3.event).sourceEvent.stopPropagation();
@@ -244,8 +244,8 @@ export class HeaderRenderer {
       (<any>d3.event).sourceEvent.preventDefault();
     });
 
-  private dropHandler = utils.dropAble(['application/caleydo-lineup-column-ref', 'application/caleydo-lineup-column'], (data, d:model.Column, copy) => {
-    var col:model.Column = null;
+  private dropHandler = utils.dropAble(['application/caleydo-lineup-column-ref', 'application/caleydo-lineup-column'], (data, d: model.Column, copy) => {
+    var col: model.Column = null;
     if ('application/caleydo-lineup-column-ref' in data) {
       var id = data['application/caleydo-lineup-column-ref'];
       col = this.data.find(id);
@@ -267,7 +267,7 @@ export class HeaderRenderer {
   });
 
 
-  constructor(private data:provider.DataProvider, parent:Element, options:any = {}) {
+  constructor(private data: provider.DataProvider, parent: Element, options: any = {}) {
     utils.merge(this.options, options);
 
     this.$node = d3.select(parent).append('div').classed('lu-header', true);
@@ -276,7 +276,7 @@ export class HeaderRenderer {
     this.changeDataStorage(data);
   }
 
-  changeDataStorage(data:provider.DataProvider) {
+  changeDataStorage(data: provider.DataProvider) {
     if (this.data) {
       this.data.on(['dirtyHeader.headerRenderer', 'orderChanged.headerRenderer', 'selectionChanged.headerRenderer'], null);
     }
@@ -301,7 +301,7 @@ export class HeaderRenderer {
    * @returns {number}
    */
   currentHeight() {
-    return parseInt(this.$node.style('height'),10);
+    return parseInt(this.$node.style('height'), 10);
   }
 
   private updateHist() {
@@ -310,11 +310,11 @@ export class HeaderRenderer {
       const order = ranking.getOrder();
       const cols = ranking.flatColumns;
       const histo = order == null ? null : this.data.stats(order);
-      cols.filter((d) => d instanceof model.NumberColumn && !d.isHidden()).forEach((col:any) => {
-        this.histCache.set(col.id,histo === null ? null : histo.stats(col));
+      cols.filter((d) => d instanceof model.NumberColumn && !d.isHidden()).forEach((col: any) => {
+        this.histCache.set(col.id, histo === null ? null : histo.stats(col));
       });
-      cols.filter((d) => model.isCategoricalColumn(d) && !d.isHidden()).forEach((col:any) => {
-        this.histCache.set(col.id,histo === null ? null : histo.hist(col));
+      cols.filter((d) => model.isCategoricalColumn(d) && !d.isHidden()).forEach((col: any) => {
+        this.histCache.set(col.id, histo === null ? null : histo.hist(col));
       });
     });
   }
@@ -342,15 +342,15 @@ export class HeaderRenderer {
       rankings.forEach((ranking) => {
         const cols = ranking.flatColumns;
         //find all number histograms
-        cols.filter((d) => d instanceof model.NumberColumn && !d.isHidden()).forEach((col:model.NumberColumn) => {
+        cols.filter((d) => d instanceof model.NumberColumn && !d.isHidden()).forEach((col: model.NumberColumn) => {
           const bars = [].slice.call(node.querySelectorAll(`div.header[data-id="${col.id}"] div.bar`));
           data.forEach((d) => {
             const v = col.getValue(d);
             //choose the right bin
-            for (let i = 1 ; i < bars.length; ++i) {
+            for (let i = 1; i < bars.length; ++i) {
               let bar = bars[i];
               if (bar.dataset.x > v) { //previous bin
-                bars[i-1].classList.add('selected');
+                bars[i - 1].classList.add('selected');
                 break;
               } else if (i === bars.length - 1) { //last bin
                 bar.classList.add('selected');
@@ -359,7 +359,7 @@ export class HeaderRenderer {
             }
           });
         });
-        cols.filter((d) => model.isCategoricalColumn(d) && !d.isHidden()).forEach((col:model.CategoricalColumn) => {
+        cols.filter((d) => model.isCategoricalColumn(d) && !d.isHidden()).forEach((col: model.CategoricalColumn) => {
           const header = node.querySelector(`div.header[data-id="${col.id}"]`);
           data.forEach((d) => {
             const cats = col.getCategories(d);
@@ -377,7 +377,7 @@ export class HeaderRenderer {
     $rankingbuttons.enter().append('div')
       .classed('rankingbuttons', true)
       .call(this.options.rankingButtons);
-    $rankingbuttons.style('left', (d,i) => rankingsOffsets[i]+'px');
+    $rankingbuttons.style('left', (d, i) => rankingsOffsets[i] + 'px');
     $rankingbuttons.exit().remove();
   }
 
@@ -406,7 +406,7 @@ export class HeaderRenderer {
       this.renderRankingButtons(rankings, rankingOffsets);
     }
 
-    function countMultiLevel(c:model.Column):number {
+    function countMultiLevel(c: model.Column): number {
       if (model.isMultiLevelColumn(c) && !(<model.IMultiLevelColumn>c).getCollapsed() && !c.getCompressed()) {
         return 1 + Math.max.apply(Math, (<model.IMultiLevelColumn>c).children.map(countMultiLevel));
       }
@@ -414,7 +414,7 @@ export class HeaderRenderer {
     }
 
     const levels = Math.max.apply(Math, columns.map(countMultiLevel));
-    var height = (this.options.histograms ? this.options.headerHistogramHeight : this.options.headerHeight) + (levels-1)*this.options.headerHeight;
+    var height = (this.options.histograms ? this.options.headerHistogramHeight : this.options.headerHeight) + (levels - 1) * this.options.headerHeight;
 
     if (this.options.autoRotateLabels) {
       //check if we have overflows
@@ -423,11 +423,11 @@ export class HeaderRenderer {
         .style('height', height + 'px').select('div.lu-label').each(function (d) {
         const w = this.querySelector('span.lu-label').offsetWidth;
         const actWidth = d.getWidth();
-        if (w > (actWidth+30)) { //rotate
-          d3.select(this).style('transform',`rotate(${that.options.rotationDegree}deg)`);
+        if (w > (actWidth + 30)) { //rotate
+          d3.select(this).style('transform', `rotate(${that.options.rotationDegree}deg)`);
           rotatedAny = true;
         } else {
-          d3.select(this).style('transform',null);
+          d3.select(this).style('transform', null);
         }
       });
       this.$node.selectAll('div.header').style('margin-top', rotatedAny ? this.options.rotationHeight + 'px' : null);
@@ -436,7 +436,7 @@ export class HeaderRenderer {
     this.$node.style('height', height + 'px');
   }
 
-  private createToolbar($node:d3.Selection<model.Column>) {
+  private createToolbar($node: d3.Selection<model.Column>) {
     const filterDialogs = this.options.filterDialogs,
       provider = this.data,
       that = this;
@@ -451,7 +451,7 @@ export class HeaderRenderer {
     });
     //rename
     $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
-            dialogs.openRenameDialog(d, d3.select(this.parentNode.parentNode));
+      dialogs.openRenameDialog(d, d3.select(this.parentNode.parentNode));
       d3.event.stopPropagation();
     });
     //clone
@@ -460,15 +460,41 @@ export class HeaderRenderer {
       d3.event.stopPropagation();
     });
 
-
-
-
-     $node.filter((d) => d instanceof model.HeatmapcustomColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Edit Combine Script').on('click', function (d) {
-
-
-      dialogs.sortDialog(<model.HeatmapcustomColumn>d, d3.select(this.parentNode.parentNode));
+    $node.filter((d) => d instanceof model.HeatmapcustomColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+      dialogs.sortDialogHeatmap(<model.HeatmapcustomColumn>d, d3.select(this.parentNode.parentNode));
       d3.event.stopPropagation();
     });
+
+
+    $node.filter((d) => d instanceof model.SparklineColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+      dialogs.sortDialogSparkline(<model.SparklineColumn>d, d3.select(this.parentNode.parentNode));
+      d3.event.stopPropagation();
+    });
+
+
+    $node.filter((d) => d instanceof model.BoxplotColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+      dialogs.sortDialogBoxplot(<model.BoxplotColumn>d, d3.select(this.parentNode.parentNode));
+      d3.event.stopPropagation();
+    });
+
+
+    $node.filter((d) => d instanceof model.VerticalbarColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+      dialogs.sortDialogVerticalBar(<model.VerticalbarColumn>d, d3.select(this.parentNode.parentNode));
+      d3.event.stopPropagation();
+    });
+
+
+    $node.filter((d) => d instanceof model.VerticalconColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+      dialogs.sortDialogVerticalconBar(<model.VerticalconColumn>d, d3.select(this.parentNode.parentNode));
+      d3.event.stopPropagation();
+    });
+
+
+
+
+
+
+
 
     //edit link
     $node.filter((d) => d instanceof model.LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
@@ -496,10 +522,10 @@ export class HeaderRenderer {
     //collapse
     $regular.append('i')
       .attr('class', 'fa')
-      .classed('fa-toggle-left', (d:model.Column) => !d.getCompressed())
-      .classed('fa-toggle-right', (d:model.Column) => d.getCompressed())
+      .classed('fa-toggle-left', (d: model.Column) => !d.getCompressed())
+      .classed('fa-toggle-right', (d: model.Column) => d.getCompressed())
       .attr('title', '(Un)Collapse')
-      .on('click', function (d:model.Column) {
+      .on('click', function (d: model.Column) {
         d.setCompressed(!d.getCompressed());
         d3.select(this)
           .classed('fa-toggle-left', !d.getCompressed())
@@ -509,10 +535,10 @@ export class HeaderRenderer {
     //compress
     $multilevel.append('i')
       .attr('class', 'fa')
-      .classed('fa-compress', (d:model.IMultiLevelColumn) => !d.getCollapsed())
-      .classed('fa-expand', (d:model.IMultiLevelColumn) => d.getCollapsed())
+      .classed('fa-compress', (d: model.IMultiLevelColumn) => !d.getCollapsed())
+      .classed('fa-expand', (d: model.IMultiLevelColumn) => d.getCollapsed())
       .attr('title', 'Compress/Expand')
-      .on('click', function (d:model.IMultiLevelColumn) {
+      .on('click', function (d: model.IMultiLevelColumn) {
         d.setCollapsed(!d.getCollapsed());
         d3.select(this)
           .classed('fa-compress', !d.getCollapsed())
@@ -533,23 +559,23 @@ export class HeaderRenderer {
     });
   }
 
-  updateFreeze(left:number) {
+  updateFreeze(left: number) {
     const numColumns = this.options.freezeCols;
     this.$node.selectAll('div.header')
       .style('z-index', (d, i) => i < numColumns ? 1 : null)
       .style('transform', (d, i) => i < numColumns ? `translate(${left}px,0)` : null);
   }
 
-  private renderColumns(columns:model.Column[], shifts, $base:d3.Selection<any> = this.$node, clazz:string = 'header') {
+  private renderColumns(columns: model.Column[], shifts, $base: d3.Selection<any> = this.$node, clazz: string = 'header') {
     var $headers = $base.selectAll('div.' + clazz).data(columns, (d) => d.id);
     var $headers_enter = $headers.enter().append('div').attr({
       'class': clazz
     })
-    .on('click', (d) => {
-      if (this.options.manipulative && !d3.event.defaultPrevented && d3.event.currentTarget === d3.event.target) {
-        d.toggleMySorting();
-      }
-    });
+      .on('click', (d) => {
+        if (this.options.manipulative && !d3.event.defaultPrevented && d3.event.currentTarget === d3.event.target) {
+          d.toggleMySorting();
+        }
+      });
     var $header_enter_div = $headers_enter.append('div').classed('lu-label', true)
       .on('click', (d) => {
         if (this.options.manipulative && !d3.event.defaultPrevented) {
@@ -591,7 +617,7 @@ export class HeaderRenderer {
       'background-color': (d) => d.color
     });
     $headers.attr({
-      'class': (d) => `${clazz} ${d.cssClass||''} ${(d.getCompressed() ? 'compressed' : '')} ${d.headerCssClass} ${this.options.autoRotateLabels ? 'rotateable': ''} ${d.isFiltered() ? 'filtered' : ''}`,
+      'class': (d) => `${clazz} ${d.cssClass || ''} ${(d.getCompressed() ? 'compressed' : '')} ${d.headerCssClass} ${this.options.autoRotateLabels ? 'rotateable' : ''} ${d.isFiltered() ? 'filtered' : ''}`,
       title: (d) => toFullTooltip(d),
       'data-id': (d) => d.id,
     });
@@ -605,7 +631,7 @@ export class HeaderRenderer {
     $headers.select('span.lu-label').text((d) => d.label);
 
     var that = this;
-    $headers.filter((d) => model.isMultiLevelColumn(d)).each(function (col:model.IMultiLevelColumn) {
+    $headers.filter((d) => model.isMultiLevelColumn(d)).each(function (col: model.IMultiLevelColumn) {
       if (col.getCollapsed() || col.getCompressed()) {
         d3.select(this).selectAll('div.' + clazz + '_i').remove();
       } else {
@@ -615,8 +641,8 @@ export class HeaderRenderer {
         let s_columns = s_shifts.map((d) => d.col);
         that.renderColumns(s_columns, s_shifts, d3.select(this), clazz + (clazz.substr(clazz.length - 2) !== '_i' ? '_i' : ''));
       }
-    }).select('div.lu-label').call(utils.dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d:model.IMultiLevelColumn, copy) => {
-      var col:model.Column = null;
+    }).select('div.lu-label').call(utils.dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: model.IMultiLevelColumn, copy) => {
+      var col: model.Column = null;
       if ('application/caleydo-lineup-column-number-ref' in data) {
         var id = data['application/caleydo-lineup-column-number-ref'];
         col = this.data.find(id);
@@ -634,11 +660,11 @@ export class HeaderRenderer {
 
     if (this.options.histograms) {
 
-      $headers.filter((d) => model.isCategoricalColumn(d)).each(function (col:model.CategoricalColumn) {
+      $headers.filter((d) => model.isCategoricalColumn(d)).each(function (col: model.CategoricalColumn) {
         var $this = d3.select(this).select('div.histogram');
         var hist = that.histCache.get(col.id);
         if (hist) {
-          hist.then((stats:model.ICategoricalStatistics) => {
+          hist.then((stats: model.ICategoricalStatistics) => {
             const $bars = $this.selectAll('div.bar').data(stats.hist);
             $bars.enter().append('div').classed('bar', true);
             const sx = d3.scale.ordinal().domain(col.categories).rangeBands([0, 100], 0.1);
@@ -657,29 +683,29 @@ export class HeaderRenderer {
           });
         }
       });
-      $headers.filter((d) => d instanceof model.NumberColumn).each(function (col:model.Column) {
+      $headers.filter((d) => d instanceof model.NumberColumn).each(function (col: model.Column) {
         var $this = d3.select(this).select('div.histogram');
         var hist = that.histCache.get(col.id);
         if (hist) {
-          hist.then((stats:model.IStatistics) => {
+          hist.then((stats: model.IStatistics) => {
             const $bars = $this.selectAll('div.bar').data(stats.hist);
             $bars.enter().append('div').classed('bar', true);
             const sx = d3.scale.ordinal().domain(d3.range(stats.hist.length).map(String)).rangeBands([0, 100], 0.1);
             const sy = d3.scale.linear().domain([0, stats.maxBin]).range([0, 100]);
             $bars.style({
-              left: (d,i) => sx(String(i)) + '%',
-              width: (d,i) => sx.rangeBand() + '%',
+              left: (d, i) => sx(String(i)) + '%',
+              width: (d, i) => sx.rangeBand() + '%',
               top: (d) => (100 - sy(d.y)) + '%',
               height: (d) => sy(d.y) + '%'
             }).attr({
-              title: (d,i) => `Bin ${i}: ${d.y}`,
+              title: (d, i) => `Bin ${i}: ${d.y}`,
               'data-x': (d) => d.x
             });
             $bars.exit().remove();
 
             var $mean = $this.select('div.mean');
             if ($mean.empty()) {
-              $mean = $this.append('div').classed('mean',true);
+              $mean = $this.append('div').classed('mean', true);
             }
             $mean.style('left', (stats.mean * 100) + '%');
           });
@@ -693,27 +719,27 @@ export class HeaderRenderer {
 
 
 export interface ISlicer {
-  (start:number, length:number, row2y:(i:number) => number) : { from: number; to: number };
+  (start: number, length: number, row2y: (i: number) => number): { from: number; to: number };
 }
 
 export interface IBodyRenderer extends utils.AEventDispatcher {
-  histCache : d3.Map<Promise<model.IStatistics>>;
+  histCache: d3.Map<Promise<model.IStatistics>>;
 
   node: Element;
 
   setOption(key: string, value: any);
 
-  changeDataStorage(data:provider.DataProvider);
+  changeDataStorage(data: provider.DataProvider);
 
-  select(dataIndex:number, additional?: boolean);
+  select(dataIndex: number, additional?: boolean);
 
-  updateFreeze(left:number);
+  updateFreeze(left: number);
 
   update();
 }
 
 export class BodyRenderer extends utils.AEventDispatcher implements IBodyRenderer {
-  private mouseOverItem:(dataIndex:number, hover:boolean) => void;
+  private mouseOverItem: (dataIndex: number, hover: boolean) => void;
   private options = {
     rowHeight: 20,
     rowPadding: 1,
@@ -734,13 +760,13 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     freezeCols: 0
   };
 
-  private $node:d3.Selection<any>;
+  private $node: d3.Selection<any>;
 
   private currentFreezeLeft = 0;
 
   histCache = d3.map<Promise<model.IStatistics>>();
 
-  constructor(private data:provider.DataProvider, parent:Element, private slicer:ISlicer, options = {}) {
+  constructor(private data: provider.DataProvider, parent: Element, private slicer: ISlicer, options = {}) {
     super();
     //merge options
     utils.merge(this.options, options);
@@ -758,11 +784,11 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     return <Element>this.$node.node();
   }
 
-  setOption(key:string, value:any) {
+  setOption(key: string, value: any) {
     this.options[key] = value;
   }
 
-  changeDataStorage(data:provider.DataProvider) {
+  changeDataStorage(data: provider.DataProvider) {
     if (this.data) {
       this.data.on(['dirtyValues.bodyRenderer', 'selectionChanged.bodyRenderer'], null);
     }
@@ -776,23 +802,23 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     }, 1));
   }
 
-  createContext(index_shift:number):renderer.IRenderContext {
+  createContext(index_shift: number): renderer.IRenderContext {
     var options = this.options;
     return {
       rowKey: this.options.animation ? this.data.rowKey : undefined,
-      cellY(index:number) {
+      cellY(index: number) {
         return (index + index_shift) * (options.rowHeight);
       },
-      cellPrevY(index:number) {
+      cellPrevY(index: number) {
         return (index + index_shift) * (options.rowHeight);
       },
-      cellX(index:number) {
+      cellX(index: number) {
         return 0;
       },
-      rowHeight(index:number) {
+      rowHeight(index: number) {
         return options.rowHeight * (1 - options.rowPadding);
       },
-      renderer(col:model.Column) {
+      renderer(col: model.Column) {
         if (col.getCompressed() && model.isNumberColumn(col)) {
           return options.renderers.heatmap;
         }
@@ -805,7 +831,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
         var l = options.renderers[col.desc.type];
         return l || renderer.defaultRenderer();
       },
-      render(col:model.Column, $this:d3.Selection<model.Column>, data:any[], context:renderer.IRenderContext = this) {
+      render(col: model.Column, $this: d3.Selection<model.Column>, data: any[], context: renderer.IRenderContext = this) {
         //if renderers change delete old stuff
         const tthis = <any>($this.node());
         const old_renderer = tthis.__renderer__;
@@ -816,24 +842,24 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
         }
         act_renderer.render($this, col, data, context);
       },
-      renderCanvas(col:model.Column, ctx:CanvasRenderingContext2D, data:any[], context:renderer.IRenderContext = this) {
+      renderCanvas(col: model.Column, ctx: CanvasRenderingContext2D, data: any[], context: renderer.IRenderContext = this) {
         //dummy impl
       },
-      showStacked(col:model.Column) {
+      showStacked(col: model.Column) {
         return col instanceof model.StackColumn && options.stacked;
       },
       idPrefix: options.idPrefix,
 
-      animated: ($sel:d3.Selection<any>) => options.animation ? $sel.transition().duration(options.animationDuration) : $sel,
+      animated: ($sel: d3.Selection<any>) => options.animation ? $sel.transition().duration(options.animationDuration) : $sel,
 
       //show mean line if option is enabled and top level
       showMeanLine: (col: model.Column) => options.meanLine && model.isNumberColumn(col) && !col.getCompressed() && col.parent instanceof model.Ranking,
 
-      option: (key:string, default_:any) => (key in options) ? options[key] : default_
+      option: (key: string, default_: any) => (key in options) ? options[key] : default_
     };
   }
 
-  updateClipPathsImpl(r:model.Column[], context:renderer.IRenderContext, height:number) {
+  updateClipPathsImpl(r: model.Column[], context: renderer.IRenderContext, height: number) {
     var $base = this.$node.select('defs.body');
     if ($base.empty()) {
       $base = this.$node.append('defs').classed('body', true);
@@ -859,7 +885,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       });
   }
 
-  updateClipPaths(rankings:model.Ranking[], context:renderer.IRenderContext, height:number) {
+  updateClipPaths(rankings: model.Ranking[], context: renderer.IRenderContext, height: number) {
     var shifts = [], offset = 0;
     rankings.forEach((r) => {
       var w = r.flatten(shifts, offset, 2, this.options.columnPadding);
@@ -880,7 +906,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     });
   }
 
-  renderRankings($body:d3.Selection<any>, rankings:model.Ranking[], orders:number[][], shifts:any[], context:renderer.IRenderContext, height: number) {
+  renderRankings($body: d3.Selection<any>, rankings: model.Ranking[], orders: number[][], shifts: any[], context: renderer.IRenderContext, height: number) {
     const that = this;
     const dataPromises = orders.map((r) => this.data.view(r));
 
@@ -920,7 +946,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       if (context.showMeanLine(d)) {
         const h = that.histCache.get(d.id);
         if (h) {
-          h.then((stats:model.IStatistics) => {
+          h.then((stats: model.IStatistics) => {
             const $mean = $col.selectAll('line.meanline').data([stats.mean]);
             $mean.enter().append('line').attr('class', 'meanline');
             $mean.exit().remove();
@@ -939,7 +965,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       this.fire('renderFinished');
     });
 
-    function mouseOverRow($row:d3.Selection<number>, $cols:d3.Selection<model.Ranking>, index:number, ranking:model.Ranking, rankingIndex:number) {
+    function mouseOverRow($row: d3.Selection<number>, $cols: d3.Selection<model.Ranking>, index: number, ranking: model.Ranking, rankingIndex: number) {
       $row.classed('hover', true);
       var $value_cols = $row.select('g.values').selectAll('g.uchild').data(ranking.children.filter((d) => !d.isHidden()), (d) => d.id);
       $value_cols.enter().append('g').attr({
@@ -950,7 +976,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
         transform: (d, i) => {
           return 'translate(' + shifts[rankingIndex].shifts[i] + ',0)';
         }
-      }).each(function (d:model.Column, i) {
+      }).each(function (d: model.Column, i) {
         dataPromises[rankingIndex].then((data) => {
           context.renderer(d).mouseEnter($cols.selectAll('g.child[data-index="' + i + '"]'), d3.select(this), d, data[index], index, context);
 
@@ -961,9 +987,9 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       //data.mouseOver(d, i);
     }
 
-    function mouseLeaveRow($row:d3.Selection<number>, $cols:d3.Selection<model.Ranking>, index:number, ranking:model.Ranking, rankingIndex:number) {
+    function mouseLeaveRow($row: d3.Selection<number>, $cols: d3.Selection<model.Ranking>, index: number, ranking: model.Ranking, rankingIndex: number) {
       $row.classed('hover', false);
-      $row.select('g.values').selectAll('g.uchild').each(function (d:model.Column, i) {
+      $row.select('g.values').selectAll('g.uchild').each(function (d: model.Column, i) {
         dataPromises[rankingIndex].then((data) => {
           context.renderer(d).mouseLeave($cols.selectAll('g.child[data-index="' + i + '"]'), d3.select(this).select('g.child'), d, data[index], index, context);
         });
@@ -971,7 +997,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       //data.mouseLeave(d, i);
     }
 
-    this.mouseOverItem = function (data_index:number, hover = true) {
+    this.mouseOverItem = function (data_index: number, hover = true) {
       $rankings.each(function (ranking, rankingIndex) {
         var $ranking = d3.select(this);
         var $row = $ranking.selectAll('g.row[data-index="' + data_index + '"]');
@@ -1035,7 +1061,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     //
   }
 
-  select(dataIndex:number, additional = false) {
+  select(dataIndex: number, additional = false) {
     var selected = this.data.toggleSelection(dataIndex, additional);
     this.$node.selectAll('g.row[data-index="' + dataIndex + '"], line.slope[data-index="' + dataIndex + '"]').classed('selected', selected);
   }
@@ -1058,14 +1084,14 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     }
   }
 
-  mouseOver(dataIndex:number, hover = true) {
+  mouseOver(dataIndex: number, hover = true) {
     this.fire('hoverChanged', hover ? dataIndex : -1);
     this.mouseOverItem(dataIndex, hover);
     //update the slope graph
     this.$node.selectAll('line.slope[data-index="' + dataIndex + '"]').classed('hover', hover);
   }
 
-  renderSlopeGraphs($body:d3.Selection<any>, rankings:model.Ranking[], orders:number[][], shifts:any[], context:renderer.IRenderContext) {
+  renderSlopeGraphs($body: d3.Selection<any>, rankings: model.Ranking[], orders: number[][], shifts: any[], context: renderer.IRenderContext) {
     var slopes = orders.slice(1).map((d, i) => ({left: orders[i], left_i: i, right: d, right_i: i + 1}));
     var $slopes = $body.selectAll('g.slopegraph').data(slopes);
     $slopes.enter().append('g').attr({
@@ -1097,10 +1123,10 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
       'data-index': (d) => d.data_index
     });
     $lines.attr({
-      y1: (d:any) => {
+      y1: (d: any) => {
         return context.rowHeight(d.lpos) * 0.5 + context.cellY(d.lpos);
       },
-      y2: (d:any) => {
+      y2: (d: any) => {
         return context.rowHeight(d.rpos) * 0.5 + context.cellY(d.rpos);
       }
     });
@@ -1109,14 +1135,14 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     $slopes.exit().remove();
   }
 
-  updateFreeze(left:number) {
+  updateFreeze(left: number) {
     const numColumns = this.options.freezeCols;
     const $cols = this.$node.select('g.cols');
     const $n = this.$node.select('#c' + this.options.idPrefix + 'Freeze').select('rect');
     var $col = $cols.select(`g.child[data-index="${numColumns}"]`);
     if ($col.empty()) {
       //use the last one
-      $col =  $cols.select('g.child:last-of-type');
+      $col = $cols.select('g.child:last-of-type');
     }
     var x = d3.transform($col.attr('transform') || '').translate[0];
     $n.attr('x', left + x);
@@ -1153,7 +1179,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     var maxElems = d3.max(rankings, (d) => d.getOrder().length) || 0;
     var height = this.options.rowHeight * maxElems;
     var visibleRange = this.slicer(0, maxElems, (i) => i * this.options.rowHeight);
-    var orderSlicer = (order:number[]) => {
+    var orderSlicer = (order: number[]) => {
       if (visibleRange.from === 0 && order.length <= visibleRange.to) {
         return order;
       }
@@ -1192,7 +1218,6 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
     this.updateClipPaths(rankings, context, height);
 
 
-
     var $body = this.$node.select('g.body');
     if ($body.empty()) {
       $body = this.$node.append('g').classed('body', true);
@@ -1205,7 +1230,7 @@ export class BodyRenderer extends utils.AEventDispatcher implements IBodyRendere
 }
 
 
-export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyRenderer  {
+export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyRenderer {
   private options = {
     rowHeight: 20,
     rowPadding: 1,
@@ -1222,11 +1247,11 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     freezeCols: 0
   };
 
-  private $node:d3.Selection<any>;
+  private $node: d3.Selection<any>;
 
   histCache = d3.map<Promise<model.IStatistics>>();
 
-  constructor(private data:provider.DataProvider, parent:Element, private slicer:ISlicer, options = {}) {
+  constructor(private data: provider.DataProvider, parent: Element, private slicer: ISlicer, options = {}) {
     super();
     //merge options
     utils.merge(this.options, options);
@@ -1244,7 +1269,7 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     return <Element>this.$node.node();
   }
 
-  setOption(key:string, value:any) {
+  setOption(key: string, value: any) {
     this.options[key] = value;
   }
 
@@ -1252,11 +1277,11 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     //dummy impl
   }
 
-  select(dataIndex:number, additional = false) {
+  select(dataIndex: number, additional = false) {
     //dummy impl
   }
 
-  changeDataStorage(data:provider.DataProvider) {
+  changeDataStorage(data: provider.DataProvider) {
     if (this.data) {
       this.data.on(['dirtyValues.bodyRenderer', 'selectionChanged.bodyRenderer'], null);
     }
@@ -1265,23 +1290,23 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     //data.on('selectionChanged.bodyRenderer', utils.delayedCall(this.drawSelection.bind(this), 1));
   }
 
-  createContext(index_shift:number):renderer.IRenderContext {
+  createContext(index_shift: number): renderer.IRenderContext {
     var options = this.options;
     return {
       rowKey: undefined,
-      cellY(index:number) {
+      cellY(index: number) {
         return (index + index_shift) * (options.rowHeight);
       },
-      cellPrevY(index:number) {
+      cellPrevY(index: number) {
         return (index + index_shift) * (options.rowHeight);
       },
-      cellX(index:number) {
+      cellX(index: number) {
         return 0;
       },
-      rowHeight(index:number) {
+      rowHeight(index: number) {
         return options.rowHeight * (1 - options.rowPadding);
       },
-      renderer(col:model.Column) {
+      renderer(col: model.Column) {
         if (col.getCompressed() && model.isNumberColumn(col)) {
           return options.renderers.heatmap;
         }
@@ -1294,29 +1319,29 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
         var l = options.renderers[col.desc.type];
         return l || renderer.defaultRenderer();
       },
-      render(col:model.Column, $this:d3.Selection<model.Column>, data:any[], context:renderer.IRenderContext = this) {
+      render(col: model.Column, $this: d3.Selection<model.Column>, data: any[], context: renderer.IRenderContext = this) {
         //dummy impl
       },
-      renderCanvas(col:model.Column, ctx:CanvasRenderingContext2D, data:any[], context:renderer.IRenderContext = this) {
+      renderCanvas(col: model.Column, ctx: CanvasRenderingContext2D, data: any[], context: renderer.IRenderContext = this) {
         const act_renderer = this.renderer(col);
         act_renderer.renderCanvas(ctx, col, data, context);
       },
-      showStacked(col:model.Column) {
+      showStacked(col: model.Column) {
         return col instanceof model.StackColumn && options.stacked;
       },
       idPrefix: options.idPrefix,
 
-      animated: ($sel:d3.Selection<any>) => $sel,
+      animated: ($sel: d3.Selection<any>) => $sel,
 
       //show mean line if option is enabled and top level
       showMeanLine: (col: model.Column) => options.meanLine && model.isNumberColumn(col) && !col.getCompressed() && col.parent instanceof model.Ranking,
 
-      option: (key:string, default_:any) => (key in options) ? options[key] : default_
+      option: (key: string, default_: any) => (key in options) ? options[key] : default_
     };
   }
 
 
-  renderRankings(ctx: CanvasRenderingContext2D, rankings:model.Ranking[], orders:number[][], shifts:any[], context:renderer.IRenderContext, height: number) {
+  renderRankings(ctx: CanvasRenderingContext2D, rankings: model.Ranking[], orders: number[][], shifts: any[], context: renderer.IRenderContext, height: number) {
     const dataPromises = orders.map((r) => this.data.view(r));
     ctx.save();
 
@@ -1329,14 +1354,14 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
 
         ctx.save();
         ctx.fillStyle = '#f7f7f7';
-        orders[j].forEach((order,i) => {
-          if (i%2 === 0) {
+        orders[j].forEach((order, i) => {
+          if (i % 2 === 0) {
             ctx.fillRect(0, context.cellY(i), shifts[j].width, context.rowHeight(i));
           }
         });
         ctx.restore();
 
-        ranking.children.forEach((child, i) =>  {
+        ranking.children.forEach((child, i) => {
           ctx.save();
           ctx.translate(shifts[j].shifts[i], 0);
           context.renderCanvas(child, ctx, data, context);
@@ -1348,7 +1373,7 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     ctx.restore();
   }
 
-  renderSlopeGraphs(ctx: CanvasRenderingContext2D, rankings:model.Ranking[], orders:number[][], shifts:any[], context:renderer.IRenderContext) {
+  renderSlopeGraphs(ctx: CanvasRenderingContext2D, rankings: model.Ranking[], orders: number[][], shifts: any[], context: renderer.IRenderContext) {
     var slopes = orders.slice(1).map((d, i) => ({left: orders[i], left_i: i, right: d, right_i: i + 1}));
     ctx.save();
     ctx.fillStyle = 'darkgray';
@@ -1386,7 +1411,7 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     var maxElems = d3.max(rankings, (d) => d.getOrder().length) || 0;
     var height = this.options.rowHeight * maxElems;
     var visibleRange = this.slicer(0, maxElems, (i) => i * this.options.rowHeight);
-    var orderSlicer = (order:number[]) => {
+    var orderSlicer = (order: number[]) => {
       if (visibleRange.from === 0 && order.length <= visibleRange.to) {
         return order;
       }
@@ -1426,7 +1451,7 @@ export class BodyCanvasRenderer extends utils.AEventDispatcher implements IBodyR
     const ctx = (<HTMLCanvasElement>this.$node.node()).getContext('2d');
     ctx.font = '10pt Times New Roman';
     ctx.textBaseline = 'top';
-    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     this.renderRankings(ctx, rankings, orders, shifts, context, height);
     this.renderSlopeGraphs(ctx, rankings, orders, shifts, context);

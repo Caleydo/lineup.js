@@ -119,7 +119,7 @@ export interface ICellRenderer {
  */
 
 
-export  interface IMappingFunction{
+export  interface IMappingFunction {
 
 
 
@@ -271,8 +271,8 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     var total_width = 1;
     var cols = 1;
     var color: any = d3.scale.linear<number, string>();
-    var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
-    var colorrange = col.desc['srange'];
+    var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
+    var colorrange = col.desc.colorrange;
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
@@ -324,7 +324,7 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     });
     $rows_enter.append('path').attr('class', 'sparkline');
 
-       var min = col.desc['sdomain'][0], max = col.desc['sdomain'][1];
+       var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
     var bits, winheight;
 
      rows.forEach(function (d, i) {
@@ -350,7 +350,7 @@ class SparklineCellRenderer extends DefaultCellRenderer {
 //console.log(i,x(i));
         var line = d3.svg.line<number>()
           .x((d, i) => x(i))
-           .y(function (d: any, i){ return y(d)});
+           .y(function (d: any, i){ return y(d);});
         return line(col.getValue(d));
       });
 
@@ -383,7 +383,7 @@ class VerticalbarCellRenderer extends DefaultCellRenderer {
 
 
     var bits = [];
-    var threshold = col.desc['threshold'];
+    var threshold = col.desc.threshold;
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
@@ -425,10 +425,10 @@ class VertcontinuousCellRenderer extends DefaultCellRenderer {
 
 
     var bits = [];
-    var min = col.desc['sdomain'][0];
-    var max = col.desc['sdomain'][1];
-    var mincolor = col.desc['srange'][0];
-    var maxcolor = col.desc['srange'][1];
+    var min = col.desc.sdomain[0];
+    var max = col.desc.sdomain[1];
+    var mincolor = col.desc.colorrange[0];
+    var maxcolor = col.desc.colorrange[1];
     var barheight;
     var threshold = 0;
     var scale = d3.scale.linear();
@@ -504,7 +504,6 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       return a - b;
     }
 
-    var range: any;
 
     rows.forEach(function (d, i) {
 
@@ -513,7 +512,7 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       var m1 = Math.min.apply(Math, data);
       var m2 = Math.max.apply(Math, data);
       minarr.push(m1);
-      //range = d3.max([range, (m2 - m1)]);
+
       maxarr.push(m2);
 
       q1arr.push(getPercentile(data, 25));

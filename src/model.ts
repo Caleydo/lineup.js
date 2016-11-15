@@ -65,6 +65,25 @@ export interface IColumnDesc {
    * css class to append to elements of this column
    */
   cssClass?: string;
+  /**
+   * User Sorting
+   */
+  sort?:string;
+
+  /**
+   * Domain of the data
+   */
+  sdomain?:Array<number>;
+
+  /**
+   * Color Range
+   */
+  colorrange?:Array<string>;
+  /**
+   * Threshold to define
+   */
+
+  threshold?:number;
 }
 
 export interface IStatistics {
@@ -547,8 +566,7 @@ export class ScaleMappingFunction implements IMappingFunction {
   }
 
   set range(range: number[]) {
-    console.log(this.s.range())
-    this.s.range(range);
+      this.s.range(range);
   }
 
   apply(v: number): number {
@@ -976,8 +994,122 @@ export class HeatmapcustomColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
+    //sort numbers
+    function numSort(a, b) {
+      return a - b;
+    }
 
-    //sort numbers correctly
+    function getPercentile(data, percentile) {
+      data.sort(numSort);
+      var index = (percentile / 100) * data.length;
+      var result;
+      if (Math.floor(index) === index) {
+        result = (data[(index - 1)] + data[index]) / 2;
+      } else {
+        result = data[Math.floor(index)];
+      }
+      return result;
+    }
+
+    const a1_sum = d3.sum(a_val);
+    const a1_min = d3.min(a_val);
+    const a1_max = d3.max(a_val);
+    const a1_mean = a1_sum / a_val.length;
+    const a1_q1 = getPercentile(a_val, 25);
+    const a1_median = getPercentile(a_val, 50);
+    const a1_q3 = getPercentile(a_val, 75);
+
+
+    const b1_sum = d3.sum(b_val);
+    const b1_min = d3.min(b_val);
+    const b1_max = d3.max(b_val);
+    const b1_mean = b1_sum / b_val.length;
+    const b1_q1 = getPercentile(b_val, 25);
+    const b1_median = getPercentile(b_val, 50);
+    const b1_q3 = getPercentile(b_val, 75);
+
+
+    if (this.desc.sort === 'min') {
+
+      return (a1_min) - (b1_min);
+    } else if (this.desc.sort === 'max') {
+
+
+      return (a1_max) - (b1_max);
+    } else if (this.desc.sort === 'mean') {
+
+
+      return (a1_mean) - (b1_mean);
+    } else if (this.desc.sort === 'median') {
+
+
+      return (a1_median) - (b1_median);
+    } else if (this.desc.sort === 'q1') {
+
+
+      return (a1_q1) - (b1_q1);
+    } else if (this.desc.sort === 'q3') {
+
+
+      return (a1_q3) - (b1_q3);
+    } else {
+
+      return (d3.sum(a_val)) - (d3.sum(b_val));
+
+    }
+
+  }
+
+}
+
+
+export class SparklineColumn extends ValueColumn<number[]> {
+
+  compare(a: any, b: any) {
+
+
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+
+    const a1_min = d3.min(a_val);
+    const a1_max = d3.max(a_val);
+
+
+
+
+    const b1_min = d3.min(b_val);
+    const b1_max = d3.max(b_val);
+
+
+    if (this.desc.sort === 'min') {
+
+
+      return (a1_min) - (b1_min);
+    } else if (this.desc.sort === 'max') {
+
+
+      return (a1_max) - (b1_max);
+    } else {
+
+      return (d3.sum(a_val)) - (d3.sum(b_val));
+
+    }
+
+
+  }
+}
+
+export class BoxplotColumn extends ValueColumn<number[]> {
+
+  compare(a: any, b: any) {
+
+
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+
+    //sort numbers
     function numSort(a, b) {
       return a - b;
     }
@@ -1013,69 +1145,37 @@ export class HeatmapcustomColumn extends ValueColumn<number[]> {
     const b1_q3 = getPercentile(b_val, 75);
 
 
-    if (this.desc['sort'] == 'min') {
+    if (this.desc.sort === 'min') {
 
-      console.log('I am inside min');
+
       return (a1_min) - (b1_min);
-    }
+    } else if (this.desc.sort === 'max') {
 
-    else if (this.desc['sort'] == 'max') {
-      console.log(this.desc)
-      console.log('I am inside max');
+
 
       return (a1_max) - (b1_max);
-    }
+    } else if (this.desc.sort === 'mean') {
 
-    else if (this.desc['sort'] == 'mean') {
-      console.log(this.desc)
-      console.log('I am inside mean');
+
       return (a1_mean) - (b1_mean);
-    }
-    else if (this.desc['sort'] == 'median') {
-      console.log(this.desc)
-      console.log('I am inside median');
-      return (a1_median) - (b1_median);
-    }
-    else if (this.desc['sort'] == 'q1') {
-      console.log(this.desc)
-      console.log('I am inside Q1');
-      return (a1_q1) - (b1_q1);
-    }
+    } else if (this.desc.sort === 'median') {
 
-    else if (this.desc['sort'] == 'q3') {
-      console.log(this.desc)
-      console.log('I am inside Q3');
+
+      return (a1_median) - (b1_median);
+    } else if (this.desc.sort === 'q1') {
+
+
+      return (a1_q1) - (b1_q1);
+    } else if (this.desc.sort === 'q3') {
+
+
       return (a1_q3) - (b1_q3);
-    }
-   else {
-      console.log('I am inside sum');
+    } else {
+
       return (d3.sum(a_val)) - (d3.sum(b_val));
 
     }
 
-
-  }
-
-}
-
-
-export class SparklineColumn extends ValueColumn<number[]> {
-
-  compare(a: any, b: any) {
-    const a_val = this.getValue(a);
-    const b_val = this.getValue(b);
-
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
-  }
-}
-
-export class BoxplotColumn extends ValueColumn<number[]> {
-
-  compare(a: any, b: any) {
-    const a_val = this.getValue(a);
-    const b_val = this.getValue(b);
-
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 export class VerticalbarColumn extends ValueColumn<number[]> {
@@ -1084,7 +1184,37 @@ export class VerticalbarColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+    const a1_sum = d3.sum(a_val);
+    const a1_min = d3.min(a_val);
+    const a1_max = d3.max(a_val);
+    const a1_mean = a1_sum / a_val.length;
+
+
+    const b1_sum = d3.sum(b_val);
+    const b1_min = d3.min(b_val);
+    const b1_max = d3.max(b_val);
+    const b1_mean = b1_sum / b_val.length;
+
+
+    if (this.desc.sort === 'min') {
+
+
+      return (a1_min) - (b1_min);
+    } else if (this.desc.sort === 'max') {
+
+
+
+      return (a1_max) - (b1_max);
+    } else if (this.desc.sort === 'mean') {
+
+
+      return (a1_mean) - (b1_mean);
+    } else {
+
+      return (d3.sum(a_val)) - (d3.sum(b_val));
+
+    }
+
   }
 }
 export class VerticalconColumn extends ValueColumn<number[]> {
@@ -1093,7 +1223,37 @@ export class VerticalconColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+    const a1_sum = d3.sum(a_val);
+    const a1_min = d3.min(a_val);
+    const a1_max = d3.max(a_val);
+    const a1_mean = a1_sum / a_val.length;
+
+
+    const b1_sum = d3.sum(b_val);
+    const b1_min = d3.min(b_val);
+    const b1_max = d3.max(b_val);
+    const b1_mean = b1_sum / b_val.length;
+
+
+    if (this.desc.sort === 'min') {
+
+
+      return (a1_min) - (b1_min);
+    } else if (this.desc.sort === 'max') {
+
+
+
+      return (a1_max) - (b1_max);
+    } else if (this.desc.sort === 'mean') {
+
+
+      return (a1_mean) - (b1_mean);
+    } else {
+
+      return (d3.sum(a_val)) - (d3.sum(b_val));
+
+    }
+
   }
 }
 

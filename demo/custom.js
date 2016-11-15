@@ -106,13 +106,15 @@ window.onload = function () {
 //   console.log(sum);
 //
 // })
+
+console.log(arr1)
  var desc1 = [
         {label: 'Country', type: 'string', column: 'country'},
-        {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom',sdomain:[min,max],srange:['blue','white','red'],sort:'min'} ,
+        {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom',sdomain:[min,max],colorrange:['blue','white','red'],sort:'min'} ,
         {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom',sdomain:[min,max]},
         {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
         {label: 'Vertical', type: 'verticalbar', column: 'verticalbar',threshold:0},
-        {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous',sdomain:[min,max],srange:['blue','red']}]
+        {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous',sdomain:[min,max],colorrange:['blue','red']}]
 
 
     var p = new LineUpJS.provider.LocalDataProvider(arr1, desc1);
