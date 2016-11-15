@@ -114,8 +114,15 @@ export function sortDialog(column:model.HeatmapcustomColumn, $header:d3.Selectio
   var popup = makePopup($header, 'Sort By', `
     <form>
  
-  <input type="radio" name="rank" id="mean">Mean<br>
-  <input type="radio" name="rank" id="min">Minimum
+  
+  <input type="radio" name="rank" id="min">Minimum<br>
+   <input type="radio" name="rank" id="max">Maximum<br>
+   <input type="radio" name="rank" id="mean">Mean<br>
+  <input type="radio" name="rank" id="median">Median<br>
+  <input type="radio" name="rank" id="q1">Q1<br>
+  <input type="radio" name="rank" id="q3">Q3
+  
+  
 </form>
 
    `);
@@ -123,18 +130,42 @@ export function sortDialog(column:model.HeatmapcustomColumn, $header:d3.Selectio
 
   popup.select('.ok').on('click', function () {
     var rank;
-if( popup.select("#mean").property('checked')) {
-  rank = 'mean';
-  column.desc['sort'] = 'mean';
-    console.log(column.desc['sort'])
-}
-
-if ( popup.select("#min").property('checked')) {
+if( popup.select("#min").property('checked')) {
   rank = 'min';
-  column.desc['sort'] = 'min';
-  console.log(column.desc['sort'])
+}
+
+else if ( popup.select("#max").property('checked')) {
+  rank = 'max';
+
+ }
+
+else if ( popup.select("#mean").property('checked')) {
+  rank = 'mean';
+
+ }
+else if ( popup.select("#median").property('checked')) {
+  rank = 'median';
 
 }
+else if ( popup.select("#q1").property('checked')) {
+  rank = 'q1';
+
+}
+else if ( popup.select("#q3").property('checked')) {
+  rank = 'q3';
+
+}
+else {
+
+ rank ='sum';
+}
+
+ column.desc['sort'] = rank;
+
+    console.log( column.desc['sort'])
+
+
+
   });
 
 }

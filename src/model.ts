@@ -20,7 +20,7 @@ function fixCSS(id) {
  * @param b
  * @return {number}
  */
-function numberCompare(a:number, b:number) {
+function numberCompare(a: number, b: number) {
   if (a === b || (isNaN(a) && isNaN(b))) {
     return 0;
   }
@@ -34,10 +34,10 @@ interface IFlatColumn {
 }
 
 export interface IColumnParent {
-  remove(col:Column): boolean;
-  insert(col: Column, index?:number): Column;
-  insertAfter(col:Column, reference:Column): Column;
-  findMyRanker() : Ranking;
+  remove(col: Column): boolean;
+  insert(col: Column, index?: number): Column;
+  insertAfter(col: Column, reference: Column): Column;
+  findMyRanker(): Ranking;
   fqid: string;
 
   indexOf(col: Column): number;
@@ -46,11 +46,11 @@ export interface IColumnParent {
 }
 
 export interface IColumnDesc {
-  label:string;
+  label: string;
   /**
    * the column type
    */
-  type:string;
+    type: string;
 
   /**
    * column description
@@ -73,12 +73,12 @@ export interface IStatistics {
   mean: number;
   count: number;
   maxBin: number;
-  hist: { x : number; dx : number; y : number;}[];
+  hist: { x: number; dx: number; y: number;}[];
 }
 
 export interface ICategoricalStatistics {
   maxBin: number;
-  hist: { cat: string; y : number }[];
+  hist: { cat: string; y: number }[];
 }
 
 export interface IColumnMetaData {
@@ -107,24 +107,24 @@ export class Column extends utils.AEventDispatcher {
    */
   static COMPRESSED_WIDTH = 16;
 
-  id:string;
+  id: string;
 
   /**
    * width of the column
    * @type {number}
    * @private
    */
-  private width:number = 100;
+  private width: number = 100;
 
-  parent:IColumnParent = null;
+  parent: IColumnParent = null;
 
-  label:string;
+  label: string;
   description: string;
-  color:string;
+  color: string;
   /**
    * alternative to specifying a color is defining a css class that should be used
    */
-  cssClass:string;
+  cssClass: string;
 
   /**
    * whether this column is compressed i.e. just shown in a minimal version
@@ -133,7 +133,7 @@ export class Column extends utils.AEventDispatcher {
    */
   private compressed = false;
 
-  constructor(id:string, public desc:IColumnDesc) {
+  constructor(id: string, public desc: IColumnDesc) {
     super();
     this.id = fixCSS(id);
     this.label = this.desc.label || this.id;
@@ -146,11 +146,11 @@ export class Column extends utils.AEventDispatcher {
     return this.desc.type;
   }
 
-  assignNewId(idGenerator:() => string) {
+  assignNewId(idGenerator: () => string) {
     this.id = fixCSS(idGenerator());
   }
 
-  init(callback:(desc:IColumnDesc) => Promise<IStatistics>):Promise<boolean> {
+  init(callback: (desc: IColumnDesc) => Promise<IStatistics>): Promise<boolean> {
     return Promise.resolve(true);
   }
 
@@ -189,7 +189,7 @@ export class Column extends utils.AEventDispatcher {
     return this.width <= 0;
   }
 
-  setCompressed(value:boolean) {
+  setCompressed(value: boolean) {
     if (this.compressed === value) {
       return;
     }
@@ -208,20 +208,20 @@ export class Column extends utils.AEventDispatcher {
    * @param padding padding between columns
    * @returns {number} the used width by this column
    */
-  flatten(r:IFlatColumn[], offset:number, levelsToGo = 0, padding = 0):number {
+  flatten(r: IFlatColumn[], offset: number, levelsToGo = 0, padding = 0): number {
     const w = this.compressed ? Column.COMPRESSED_WIDTH : this.getWidth();
     r.push({col: this, offset: offset, width: w});
     return w;
   }
 
-  setWidth(value:number) {
+  setWidth(value: number) {
     if (this.width === value) {
       return;
     }
     this.fire(['widthChanged', 'dirtyHeader', 'dirtyValues', 'dirty'], this.width, this.width = value);
   }
 
-  setWidthImpl(value:number) {
+  setWidthImpl(value: number) {
     this.width = value;
   }
 
@@ -229,7 +229,7 @@ export class Column extends utils.AEventDispatcher {
     if (value.label === this.label && this.color === value.color && this.description === value.description) {
       return;
     }
-    var events = this.color === value.color ? ['labelChanged', 'metaDataChanged','dirtyHeader', 'dirty'] : ['labelChanged', 'metaDataChanged','dirtyHeader', 'dirtyValues', 'dirty'];
+    var events = this.color === value.color ? ['labelChanged', 'metaDataChanged', 'dirtyHeader', 'dirty'] : ['labelChanged', 'metaDataChanged', 'dirtyHeader', 'dirtyValues', 'dirty'];
     this.fire(events, this.getMetaData(), {
       label: this.label = value.label,
       color: this.color = value.color,
@@ -237,7 +237,7 @@ export class Column extends utils.AEventDispatcher {
     });
   }
 
-  getMetaData() : IColumnMetaData {
+  getMetaData(): IColumnMetaData {
     return {
       label: this.label,
       color: this.color,
@@ -286,7 +286,7 @@ export class Column extends utils.AEventDispatcher {
    * @param col
    * @returns {boolean}
    */
-  insertAfterMe(col:Column) {
+  insertAfterMe(col: Column) {
     if (this.parent) {
       return this.parent.insertAfter(col, this) != null;
     }
@@ -297,7 +297,7 @@ export class Column extends utils.AEventDispatcher {
    * finds the underlying ranking column
    * @returns {Ranking}
    */
-  findMyRanker():Ranking {
+  findMyRanker(): Ranking {
     if (this.parent) {
       return this.parent.findMyRanker();
     }
@@ -309,8 +309,8 @@ export class Column extends utils.AEventDispatcher {
    * @param toDescRef
    * @returns {any}
    */
-  dump(toDescRef:(desc:any) => any):any {
-    var r:any = {
+  dump(toDescRef: (desc: any) => any): any {
+    var r: any = {
       id: this.id,
       desc: toDescRef(this.desc),
       width: this.width,
@@ -330,7 +330,7 @@ export class Column extends utils.AEventDispatcher {
    * @param dump
    * @param factory
    */
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     this.width = dump.width || this.width;
     this.label = dump.label || this.label;
     this.color = dump.color || this.color;
@@ -342,7 +342,7 @@ export class Column extends utils.AEventDispatcher {
    * @param row
    * @return {string}
    */
-  getLabel(row:any):string {
+  getLabel(row: any): string {
     return '' + this.getValue(row);
   }
 
@@ -351,7 +351,7 @@ export class Column extends utils.AEventDispatcher {
    * @param row
    * @return
    */
-  getValue(row:any):any {
+  getValue(row: any): any {
     return ''; //no value
   }
 
@@ -361,7 +361,7 @@ export class Column extends utils.AEventDispatcher {
    * @param b
    * @return {number}
    */
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return 0; //can't compare
   }
 
@@ -378,7 +378,7 @@ export class Column extends utils.AEventDispatcher {
    * @param row
    * @return {boolean}
    */
-  filter(row:any) {
+  filter(row: any) {
     return row !== null;
   }
 }
@@ -386,23 +386,23 @@ export class Column extends utils.AEventDispatcher {
  * a column having an accessor to get the cell value
  */
 export class ValueColumn<T> extends Column {
-  protected accessor:(row:any, id:string, desc:any, ranking: Ranking) => T;
+  protected accessor: (row: any, id: string, desc: any, ranking: Ranking) => T;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     //find accessor
     this.accessor = desc.accessor || (() => null);
   }
 
-  getLabel(row:any) {
+  getLabel(row: any) {
     return '' + this.getValue(row);
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     return this.accessor(row, this.id, this.desc, this.findMyRanker());
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return 0; //can't compare
   }
 }
@@ -412,25 +412,25 @@ export class ValueColumn<T> extends Column {
  */
 export class DummyColumn extends Column {
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
-  getLabel(row:any) {
+  getLabel(row: any) {
     return '';
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     return '';
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return 0; //can't compare
   }
 }
 
 export interface INumberColumn {
-  getNumber(row:any): number;
+  getNumber(row: any): number;
 }
 
 export interface ICategoricalColumn {
@@ -445,7 +445,7 @@ export interface ICategoricalColumn {
  * @param col
  * @returns {boolean}
  */
-export function isNumberColumn(col:Column|IColumnDesc) {
+export function isNumberColumn(col: Column|IColumnDesc) {
   return (col instanceof Column && typeof (<any>col).getNumber === 'function' || (!(col instanceof Column) && (<IColumnDesc>col).type.match(/(number|stack|ordinal)/) != null));
 }
 
@@ -454,7 +454,7 @@ export function isNumberColumn(col:Column|IColumnDesc) {
  * @param col
  * @returns {boolean}
  */
-export function isCategoricalColumn(col:Column|IColumnDesc) {
+export function isCategoricalColumn(col: Column|IColumnDesc) {
   return (col instanceof Column && typeof (<any>col).getCategories === 'function' || (!(col instanceof Column) && (<IColumnDesc>col).type.match(/(categorical|ordinal)/) != null));
 }
 
@@ -462,13 +462,13 @@ export function isCategoricalColumn(col:Column|IColumnDesc) {
  * interface of a d3 scale
  */
 export interface IScale {
-  (v:number): number;
+  (v: number): number;
 
-  domain():number[];
-  domain(domain:number[]);
+  domain(): number[];
+  domain(domain: number[]);
 
-  range():number[];
-  range(range:number[]);
+  range(): number[];
+  range(range: number[]);
 }
 
 export interface IMappingFunction {
@@ -492,7 +492,7 @@ export interface INumberFilter {
   max: number;
 }
 
-function toScale(type = 'linear'):IScale {
+function toScale(type = 'linear'): IScale {
   switch (type) {
     case 'log':
       return d3.scale.log().clamp(true);
@@ -527,10 +527,10 @@ function fixDomain(domain: number[], type: string) {
  * a mapping function based on a d3 scale (linear, sqrt, log)
  */
 export class ScaleMappingFunction implements IMappingFunction {
-  private s:IScale;
+  private s: IScale;
 
-  constructor(domain:number[] = [0,1], private type = 'linear', range : number[] = [0,1]) {
-    this.s = toScale(type).domain(fixDomain(domain,this.type)).range(range);
+  constructor(domain: number[] = [0, 1], private type = 'linear', range: number[] = [0, 1]) {
+    this.s = toScale(type).domain(fixDomain(domain, this.type)).range(range);
   }
 
   get domain() {
@@ -538,7 +538,7 @@ export class ScaleMappingFunction implements IMappingFunction {
   }
 
   set domain(domain: number[]) {
-    this.s.domain(fixDomain(domain,this.type));
+    this.s.domain(fixDomain(domain, this.type));
   }
 
   get range() {
@@ -551,7 +551,7 @@ export class ScaleMappingFunction implements IMappingFunction {
     this.s.range(range);
   }
 
-  apply(v:number):number {
+  apply(v: number): number {
     return this.s(v);
   }
 
@@ -559,7 +559,7 @@ export class ScaleMappingFunction implements IMappingFunction {
     return this.type;
   }
 
-  dump():any {
+  dump(): any {
     return {
       type: this.type,
       domain: this.domain,
@@ -575,7 +575,7 @@ export class ScaleMappingFunction implements IMappingFunction {
     return that.type === this.type && isSame(this.domain, that.domain) && isSame(this.range, that.range);
   }
 
-  restore(dump:any) {
+  restore(dump: any) {
     this.type = dump.type;
     this.s = toScale(dump.type).domain(dump.domain).range(dump.range);
   }
@@ -589,9 +589,9 @@ export class ScaleMappingFunction implements IMappingFunction {
  * a mapping function based on a custom user function using 'value' as the current value
  */
 export class ScriptMappingFunction implements IMappingFunction {
-  private f:Function;
+  private f: Function;
 
-  constructor(private domain_:number[] = [0,1], private code_:string = 'return this.linear(value,this.value_min,this.value_max);') {
+  constructor(private domain_: number[] = [0, 1], private code_: string = 'return this.linear(value,this.value_min,this.value_max);') {
     this.f = new Function('value', code_);
   }
 
@@ -615,15 +615,15 @@ export class ScriptMappingFunction implements IMappingFunction {
     this.f = new Function('value', code);
   }
 
-  apply(v:number):number {
+  apply(v: number): number {
     const min = this.domain_[0],
-      max = this.domain_[this.domain_.length-1];
+      max = this.domain_[this.domain_.length - 1];
     const r = this.f.call({
       value_min: min,
       value_max: max,
       value_range: max - min,
       value_domain: this.domain_.slice(),
-      linear : (v, mi, ma) => (v-mi)/(ma-mi)
+      linear: (v, mi, ma) => (v - mi) / (ma - mi)
     }, v);
 
     if (typeof r === 'number') {
@@ -632,7 +632,7 @@ export class ScriptMappingFunction implements IMappingFunction {
     return NaN;
   }
 
-  dump():any {
+  dump(): any {
     return {
       type: 'script',
       code: this.code
@@ -647,7 +647,7 @@ export class ScriptMappingFunction implements IMappingFunction {
     return that.code === this.code;
   }
 
-  restore(dump:any) {
+  restore(dump: any) {
     this.code = dump.code;
   }
 
@@ -674,26 +674,26 @@ export function createMappingFunction(dump: any): IMappingFunction {
 export class NumberColumn extends ValueColumn<number> implements INumberColumn {
   missingValue = 0;
 
-  private mapping : IMappingFunction;
+  private mapping: IMappingFunction;
 
-  private original : IMappingFunction;
+  private original: IMappingFunction;
 
   /**
    * currently active filter
    * @type {{min: number, max: number}}
    * @private
    */
-  private currentFilter : INumberFilter = {min: -Infinity, max: Infinity};
+  private currentFilter: INumberFilter = {min: -Infinity, max: Infinity};
 
-  private numberFormat : (n: number) => string = d3.format('.3n');
+  private numberFormat: (n: number) => string = d3.format('.3n');
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
 
     if (desc.map) {
       this.mapping = createMappingFunction(desc.map);
     } else if (desc.domain) {
-      this.mapping = new ScaleMappingFunction(desc.domain, 'linear', desc.range || [0,1]);
+      this.mapping = new ScaleMappingFunction(desc.domain, 'linear', desc.range || [0, 1]);
     }
     this.original = this.mapping.clone();
 
@@ -702,7 +702,7 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     }
   }
 
-  init(callback:(desc:IColumnDesc) => Promise<IStatistics>):Promise<boolean> {
+  init(callback: (desc: IColumnDesc) => Promise<IStatistics>): Promise<boolean> {
 
     var d = this.mapping.domain;
     //if any of the values is not given use the statistics to compute them
@@ -716,7 +716,7 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     return Promise.resolve(true);
   }
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     var r = super.dump(toDescRef);
     r.map = this.mapping.dump();
     r.filter = this.currentFilter;
@@ -724,12 +724,12 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     if (dump.map) {
       this.mapping = createMappingFunction(dump.map);
     } else if (dump.domain) {
-      this.mapping = new ScaleMappingFunction(dump.domain, 'linear', dump.range || [0,1]);
+      this.mapping = new ScaleMappingFunction(dump.domain, 'linear', dump.range || [0, 1]);
     }
     if (dump.currentFilter) {
       this.currentFilter = dump.currentFilter;
@@ -746,26 +746,26 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     return super.createEventList().concat(['mappingChanged']);
   }
 
-  getLabel(row:any) {
+  getLabel(row: any) {
 
     //if a dedicated format and a number use the formatter in any case
     if ((<any>this.desc).numberFormat) {
-       return this.numberFormat(this.getRawValue(row));
+      return this.numberFormat(this.getRawValue(row));
     }
     const v = super.getValue(row);
     //keep non number if it is not a number else convert using formatter
     return '' + (typeof v === 'number' ? this.numberFormat(+v) : v);
   }
 
-  getRawValue(row:any) {
-    var v:any = super.getValue(row);
+  getRawValue(row: any) {
+    var v: any = super.getValue(row);
     if (typeof(v) === 'undefined' || v == null || isNaN(v) || v === '' || v === 'NA' || (typeof(v) === 'string' && (v.toLowerCase() === 'na'))) {
       return this.missingValue;
     }
     return +v;
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     var v = this.getRawValue(row);
     if (isNaN(v)) {
       return v;
@@ -773,11 +773,11 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     return this.mapping.apply(v);
   }
 
-  getNumber(row:any) {
+  getNumber(row: any) {
     return this.getValue(row);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return numberCompare(this.getValue(a), this.getValue(b));
   }
 
@@ -815,13 +815,13 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
     };
   }
 
-  set filterMin(min:number) {
+  set filterMin(min: number) {
     var bak = {min: this.currentFilter.min, max: this.currentFilter.max};
     this.currentFilter.min = isNaN(min) ? -Infinity : min;
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], bak, this.currentFilter);
   }
 
-  set filterMax(max:number) {
+  set filterMax(max: number) {
     var bak = {min: this.currentFilter.min, max: this.currentFilter.max};
     this.currentFilter.max = isNaN(max) ? Infinity : max;
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], bak, this.currentFilter);
@@ -832,7 +832,7 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
       return;
     }
     const bak = this.getFilter();
-    this.currentFilter.min = isNaN(value.min) ? -Infinity :value. min;
+    this.currentFilter.min = isNaN(value.min) ? -Infinity : value.min;
     this.currentFilter.max = isNaN(value.max) ? Infinity : value.max;
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], bak, this.currentFilter);
   }
@@ -842,7 +842,7 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
    * @param row
    * @returns {boolean}
    */
-  filter(row:any) {
+  filter(row: any) {
     if (!this.isFiltered()) {
       return true;
     }
@@ -860,12 +860,12 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
 export class StringColumn extends ValueColumn<string> {
   //magic key for filtering missing ones
   static FILTER_MISSING = '__FILTER_MISSING';
-  private currentFilter:string|RegExp = null;
+  private currentFilter: string|RegExp = null;
 
 
-  private _alignment:string = 'left';
+  private _alignment: string = 'left';
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
 
     this.setWidthImpl(200); //by default 200
@@ -877,8 +877,8 @@ export class StringColumn extends ValueColumn<string> {
     return this._alignment;
   }
 
-  getValue(row:any) {
-    var v:any = super.getValue(row);
+  getValue(row: any) {
+    var v: any = super.getValue(row);
 
     if (typeof(v) === 'undefined' || v == null) {
       return '';
@@ -886,7 +886,7 @@ export class StringColumn extends ValueColumn<string> {
     return String(v);
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = super.dump(toDescRef);
     if (this.currentFilter instanceof RegExp) {
       r.filter = 'REGEX:' + (<RegExp>this.currentFilter).source;
@@ -897,7 +897,7 @@ export class StringColumn extends ValueColumn<string> {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     if (dump.filter && dump.filter.slice(0, 6) === 'REGEX:') {
       this.currentFilter = new RegExp(dump.filter.slice(6));
@@ -911,7 +911,7 @@ export class StringColumn extends ValueColumn<string> {
     return this.currentFilter != null;
   }
 
-  filter(row:any) {
+  filter(row: any) {
     if (!this.isFiltered()) {
       return true;
     }
@@ -934,7 +934,7 @@ export class StringColumn extends ValueColumn<string> {
     return this.currentFilter;
   }
 
-  setFilter(filter:string|RegExp) {
+  setFilter(filter: string|RegExp) {
     if (filter === '') {
       filter = null;
     }
@@ -944,11 +944,11 @@ export class StringColumn extends ValueColumn<string> {
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], this.currentFilter, this.currentFilter = filter);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     var a_val: string, b_val: string;
-    if((a_val = this.getValue(a)) === '') {
+    if ((a_val = this.getValue(a)) === '') {
       return this.getValue(b) === '' ? 0 : +1; //same = 0
-    } else if((b_val = this.getValue(b)) === '') {
+    } else if ((b_val = this.getValue(b)) === '') {
       return -1;
     }
     return a_val.localeCompare(b_val);
@@ -956,97 +956,154 @@ export class StringColumn extends ValueColumn<string> {
 }
 
 
-
 export class MyColumn extends ValueColumn<number[]> {
 
 
-
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-    console.log(a_val.length,d3.sum(a_val)/4,a_val,b_val);
+    console.log(a_val.length, d3.sum(a_val) / 4, a_val, b_val);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 
 export class HeatmapcustomColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
+
 
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    if (this.desc['sort']=='mean')
-    {console.log(this.desc)
-      console.log('I am inside mean');
-      return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+
+    //sort numbers correctly
+    function numSort(a, b) {
+      return a - b;
     }
-    if (this.desc['sort']=='min'){
-      console.log(this.desc)
+
+    function getPercentile(data, percentile) {
+      data.sort(numSort);
+      var index = (percentile / 100) * data.length;
+      var result;
+      if (Math.floor(index) === index) {
+        result = (data[(index - 1)] + data[index]) / 2;
+      } else {
+        result = data[Math.floor(index)];
+      }
+      return result;
+    }
+
+
+    const a1_sum = d3.sum(a_val);
+    const a1_min = d3.min(a_val);
+    const a1_max = d3.max(a_val);
+    const a1_mean = a1_sum / a_val.length;
+    const a1_q1 = getPercentile(a_val, 25);
+    const a1_median = getPercentile(a_val, 50);
+    const a1_q3 = getPercentile(a_val, 75);
+
+
+    const b1_sum = d3.sum(b_val);
+    const b1_min = d3.min(b_val);
+    const b1_max = d3.max(b_val);
+    const b1_mean = b1_sum / b_val.length;
+    const b1_q1 = getPercentile(b_val, 25);
+    const b1_median = getPercentile(b_val, 50);
+    const b1_q3 = getPercentile(b_val, 75);
+
+
+    if (this.desc['sort'] == 'min') {
+
       console.log('I am inside min');
+      return (a1_min) - (b1_min);
+    }
 
-      return (d3.min(a_val))-(d3.min(b_val));
-    }else {
-  console.log('I am inside sum');
-      return (d3.sum(a_val))-(d3.sum(b_val));
+    else if (this.desc['sort'] == 'max') {
+      console.log(this.desc)
+      console.log('I am inside max');
+
+      return (a1_max) - (b1_max);
+    }
+
+    else if (this.desc['sort'] == 'mean') {
+      console.log(this.desc)
+      console.log('I am inside mean');
+      return (a1_mean) - (b1_mean);
+    }
+    else if (this.desc['sort'] == 'median') {
+      console.log(this.desc)
+      console.log('I am inside median');
+      return (a1_median) - (b1_median);
+    }
+    else if (this.desc['sort'] == 'q1') {
+      console.log(this.desc)
+      console.log('I am inside Q1');
+      return (a1_q1) - (b1_q1);
+    }
+
+    else if (this.desc['sort'] == 'q3') {
+      console.log(this.desc)
+      console.log('I am inside Q3');
+      return (a1_q3) - (b1_q3);
+    }
+   else {
+      console.log('I am inside sum');
+      return (d3.sum(a_val)) - (d3.sum(b_val));
 
     }
 
 
-
-
-    }
+  }
 
 }
 
 
-
 export class SparklineColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 
 export class BoxplotColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 export class VerticalbarColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 export class VerticalconColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 
 export class CategorycustomColumn extends ValueColumn<number[]> {
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
   }
 }
 
@@ -1061,7 +1118,7 @@ export class LinkColumn extends StringColumn {
    */
   private link = null;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.link = desc.link;
   }
@@ -1088,7 +1145,7 @@ export class LinkColumn extends StringColumn {
     return this.link || '';
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = super.dump(toDescRef);
     /* tslint:disable */
     if (this.link != (<any>this.desc).link) {
@@ -1098,15 +1155,15 @@ export class LinkColumn extends StringColumn {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     if (dump.link) {
       this.link = dump.link;
     }
   }
 
-  getLabel(row:any) {
-    var v:any = super.getValue(row);
+  getLabel(row: any) {
+    var v: any = super.getValue(row);
     if (v.alt) {
       return v.alt;
     }
@@ -1118,14 +1175,14 @@ export class LinkColumn extends StringColumn {
       return true;
     }
     //get original value
-    var v:any = super.getValue(row);
+    var v: any = super.getValue(row);
     //convert to link
     return v.href != null;
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     //get original value
-    var v:any = super.getValue(row);
+    var v: any = super.getValue(row);
     //convert to link
     if (v.href) {
       return v.href;
@@ -1142,7 +1199,7 @@ export class LinkColumn extends StringColumn {
 export class AnnotateColumn extends StringColumn {
   private annotations = d3.map<string>();
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
@@ -1150,7 +1207,7 @@ export class AnnotateColumn extends StringColumn {
     return super.createEventList().concat(['valueChanged']);
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     var index = String(row._index);
     if (this.annotations.has(index)) {
       return this.annotations.get(index);
@@ -1158,7 +1215,7 @@ export class AnnotateColumn extends StringColumn {
     return super.getValue(row);
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = super.dump(toDescRef);
     r.annotations = {};
     this.annotations.forEach((k, v) => {
@@ -1167,7 +1224,7 @@ export class AnnotateColumn extends StringColumn {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     if (dump.annotations) {
       Object.keys(dump.annotations).forEach((k) => {
@@ -1176,7 +1233,7 @@ export class AnnotateColumn extends StringColumn {
     }
   }
 
-  setValue(row:any, value:string) {
+  setValue(row: any, value: string) {
     var old = this.getValue(row);
     if (old === value) {
       return true;
@@ -1200,7 +1257,7 @@ function arrayEquals<T>(a: T[], b: T[]) {
   if (al === 0) {
     return true;
   }
-  return a.every((ai,i) => ai === b[i]);
+  return a.every((ai, i) => ai === b[i]);
 }
 
 /**
@@ -1212,12 +1269,12 @@ export class SelectionColumn extends ValueColumn<boolean> {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'S') {
+  static desc(label: string = 'S') {
     return {type: 'selection', label: label};
   }
 
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.setCompressed(true);
   }
@@ -1226,7 +1283,7 @@ export class SelectionColumn extends ValueColumn<boolean> {
     return super.createEventList().concat(['select']);
   }
 
-  setValue(row:any, value:boolean) {
+  setValue(row: any, value: boolean) {
     const old = this.getValue(row);
     if (old === value) {
       return true;
@@ -1242,13 +1299,13 @@ export class SelectionColumn extends ValueColumn<boolean> {
     return true;
   }
 
-  toggleValue(row:any) {
+  toggleValue(row: any) {
     const old = this.getValue(row);
     this.setImpl(row, !old);
     return !old;
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return d3.ascending(this.getValue(a), this.getValue(b));
   }
 }
@@ -1258,19 +1315,19 @@ export class SelectionColumn extends ValueColumn<boolean> {
  * a string column with optional alignment
  */
 export class BooleanColumn extends ValueColumn<boolean> {
-  private currentFilter:boolean = null;
+  private currentFilter: boolean = null;
   private trueMarker = 'X';
   private falseMarker = '';
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.setWidthImpl(30);
     this.trueMarker = desc.trueMarker || this.trueMarker;
     this.falseMarker = desc.falseMarker || this.falseMarker;
   }
 
-  getValue(row:any) {
-    var v:any = super.getValue(row);
+  getValue(row: any) {
+    var v: any = super.getValue(row);
     if (typeof(v) === 'undefined' || v == null) {
       return false;
     }
@@ -1282,7 +1339,7 @@ export class BooleanColumn extends ValueColumn<boolean> {
     return v ? this.trueMarker : this.falseMarker;
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = super.dump(toDescRef);
     if (this.currentFilter !== null) {
       r.filter = this.currentFilter;
@@ -1290,7 +1347,7 @@ export class BooleanColumn extends ValueColumn<boolean> {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     if (typeof dump.filter !== 'undefined') {
       this.currentFilter = dump.filter;
@@ -1301,7 +1358,7 @@ export class BooleanColumn extends ValueColumn<boolean> {
     return this.currentFilter !== null;
   }
 
-  filter(row:any) {
+  filter(row: any) {
     if (!this.isFiltered()) {
       return true;
     }
@@ -1313,14 +1370,14 @@ export class BooleanColumn extends ValueColumn<boolean> {
     return this.currentFilter;
   }
 
-  setFilter(filter:boolean) {
+  setFilter(filter: boolean) {
     if (this.currentFilter === filter) {
       return;
     }
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], this.currentFilter, this.currentFilter = filter);
   }
 
-  compare(a:any[], b:any[]) {
+  compare(a: any[], b: any[]) {
     return d3.ascending(this.getValue(a), this.getValue(b));
   }
 }
@@ -1346,7 +1403,7 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
    * @type {null}
    * @private
    */
-  private currentFilter:string[] = null;
+  private currentFilter: string[] = null;
 
   /**
    * split multiple categories
@@ -1354,14 +1411,14 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
    */
   private separator = ';';
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.separator = desc.separator || this.separator;
     this.initCategories(desc);
     //TODO infer categories from data
   }
 
-  initCategories(desc:any) {
+  initCategories(desc: any) {
     if (desc.categories) {
       var cats = [],
         cols = this.colors.range(),
@@ -1409,7 +1466,7 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.colors(cat);
   }
 
-  getLabel(row:any) {
+  getLabel(row: any) {
     //no mapping
     if (this.catLabels === null || this.catLabels.empty()) {
       return '' + StringColumn.prototype.getValue.call(this, row);
@@ -1417,15 +1474,15 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.getLabels(row).join(this.separator);
   }
 
-  getFirstLabel(row:any) {
+  getFirstLabel(row: any) {
     const l = this.getLabels(row);
     return l.length > 0 ? l[0] : null;
   }
 
 
-  getLabels(row:any) {
+  getLabels(row: any) {
     var v = StringColumn.prototype.getValue.call(this, row);
-    const r = v ? v.split(this.separator): [];
+    const r = v ? v.split(this.separator) : [];
 
     const mapToLabel = (values: string[]) => {
       if (this.catLabels === null || this.catLabels.empty()) {
@@ -1436,14 +1493,14 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return mapToLabel(r);
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     const r = this.getValues(row);
     return r.length > 0 ? r[0] : null;
   }
 
-  getValues(row:any) {
+  getValues(row: any) {
     var v = StringColumn.prototype.getValue.call(this, row);
-    const r = v ? v.split(this.separator): [];
+    const r = v ? v.split(this.separator) : [];
     return r;
   }
 
@@ -1451,7 +1508,7 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.getValues(row);
   }
 
-  getColor(row:any) {
+  getColor(row: any) {
     var cat = this.getValue(row);
     if (cat === null || cat === '') {
       return null;
@@ -1459,11 +1516,11 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.colors(cat);
   }
 
-  getColors(row:any) {
+  getColors(row: any) {
     return this.getCategories(row).map(this.colors);
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = super.dump(toDescRef);
     r.filter = this.currentFilter;
     r.colors = {
@@ -1477,7 +1534,7 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
     this.currentFilter = dump.filter || null;
     if (dump.colors) {
@@ -1494,12 +1551,12 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.currentFilter != null;
   }
 
-  filter(row:any):boolean {
+  filter(row: any): boolean {
     if (!this.isFiltered()) {
       return true;
     }
     var vs = this.getCategories(row),
-      filter:any = this.currentFilter;
+      filter: any = this.currentFilter;
     return vs.every((v) => {
       if (Array.isArray(filter) && filter.length > 0) { //array mode
         return filter.indexOf(v) >= 0;
@@ -1516,14 +1573,14 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
     return this.currentFilter;
   }
 
-  setFilter(filter:string[]) {
-    if (arrayEquals(this.currentFilter,filter)) {
+  setFilter(filter: string[]) {
+    if (arrayEquals(this.currentFilter, filter)) {
       return;
     }
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], this.currentFilter, this.currentFilter = filter);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const va = this.getValues(a);
     const vb = this.getValues(b);
     //check all categories
@@ -1552,7 +1609,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
 
   private scale = d3.scale.ordinal().rangeRoundPoints([0, 1]);
 
-  private currentFilter:string[] = null;
+  private currentFilter: string[] = null;
   /**
    * separator for multi handling
    * @type {string}
@@ -1560,7 +1617,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
   private separator = ';';
   private combiner = d3.max;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.separator = desc.separator || this.separator;
     CategoricalColumn.prototype.initCategories.call(this, desc);
@@ -1598,24 +1655,24 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return this.colors(cat);
   }
 
-  getLabel(row:any) {
+  getLabel(row: any) {
     return CategoricalColumn.prototype.getLabel.call(this, row);
   }
 
-  getFirstLabel(row:any) {
+  getFirstLabel(row: any) {
     return CategoricalColumn.prototype.getFirstLabel.call(this, row);
   }
 
-  getLabels(row:any) {
+  getLabels(row: any) {
     return CategoricalColumn.prototype.getLabels.call(this, row);
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     const r = this.getValues(row);
     return r.length > 0 ? this.combiner(r) : 0;
   }
 
-  getValues(row:any) {
+  getValues(row: any) {
     const r = CategoricalColumn.prototype.getValues.call(this, row);
     return r.map(this.scale);
   }
@@ -1624,11 +1681,11 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return CategoricalColumn.prototype.getValues.call(this, row);
   }
 
-  getNumber(row:any) {
+  getNumber(row: any) {
     return this.getValue(row);
   }
 
-  getColor(row:any) {
+  getColor(row: any) {
     const vs = this.getValues(row);
     const cs = this.getColors(row);
     if (this.combiner === d3.max) {
@@ -1653,7 +1710,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return CategoricalColumn.prototype.getColors.call(this, row);
   }
 
-  dump(toDescRef:(desc:any) => any):any {
+  dump(toDescRef: (desc: any) => any): any {
     var r = CategoricalColumn.prototype.dump.call(this, toDescRef);
     r.scale = {
       domain: this.scale.domain(),
@@ -1663,7 +1720,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     CategoricalColumn.prototype.restore.call(this, dump, factory);
     if (dump.scale) {
       this.scale.domain(dump.scale.domain).range(dump.scale.range);
@@ -1682,7 +1739,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return this.scale.range().slice();
   }
 
-  setMapping(range:number[]) {
+  setMapping(range: number[]) {
     var bak = this.getScale();
     this.scale.range(range);
     this.fire(['mappingChanged', 'dirtyValues', 'dirty'], bak, this.getScale());
@@ -1692,7 +1749,7 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return this.currentFilter != null;
   }
 
-  filter(row:any):boolean {
+  filter(row: any): boolean {
     return CategoricalColumn.prototype.filter.call(this, row);
   }
 
@@ -1700,14 +1757,14 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
     return this.currentFilter;
   }
 
-  setFilter(filter:string[]) {
+  setFilter(filter: string[]) {
     if (this.currentFilter === filter) {
       return;
     }
     this.fire(['filterChanged', 'dirtyValues', 'dirty'], this.currentFilter, this.currentFilter = filter);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return NumberColumn.prototype.compare.call(this, a, b);
   }
 }
@@ -1717,13 +1774,13 @@ export class CategoricalNumberColumn extends ValueColumn<number> implements INum
  * implementation of a combine column, standard operations how to select
  */
 export class CompositeColumn extends Column implements IColumnParent {
-  protected _children:Column[] = [];
+  protected _children: Column[] = [];
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
-  assignNewId(idGenerator:() => string) {
+  assignNewId(idGenerator: () => string) {
     super.assignNewId(idGenerator);
     this._children.forEach((c) => c.assignNewId(idGenerator));
   }
@@ -1736,7 +1793,7 @@ export class CompositeColumn extends Column implements IColumnParent {
     return this._children.length;
   }
 
-  flatten(r:IFlatColumn[], offset:number, levelsToGo = 0, padding = 0) {
+  flatten(r: IFlatColumn[], offset: number, levelsToGo = 0, padding = 0) {
     var self = null;
     //no more levels or just this one
     if (levelsToGo === 0 || levelsToGo <= Column.FLAT_ALL_COLUMNS) {
@@ -1755,13 +1812,13 @@ export class CompositeColumn extends Column implements IColumnParent {
     return w;
   }
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     var r = super.dump(toDescRef);
     r.children = this._children.map((d) => d.dump(toDescRef));
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     dump.children.map((child) => {
       var c = factory(child);
       if (c) {
@@ -1778,7 +1835,7 @@ export class CompositeColumn extends Column implements IColumnParent {
    * @param weight
    * @returns {any}
    */
-  insert(col:Column, index:number) {
+  insert(col: Column, index: number) {
     this._children.splice(index, 0, col);
     //listen and propagate events
     return this.insertImpl(col, index);
@@ -1791,7 +1848,7 @@ export class CompositeColumn extends Column implements IColumnParent {
     return col;
   }
 
-  push(col:Column) {
+  push(col: Column) {
     return this.insert(col, this._children.length);
   }
 
@@ -1799,18 +1856,19 @@ export class CompositeColumn extends Column implements IColumnParent {
     return this._children[index];
   }
 
-  indexOf(col:Column) {
+  indexOf(col: Column) {
     return this._children.indexOf(col);
   }
 
-  insertAfter(col:Column, ref:Column) {
+  insertAfter(col: Column, ref: Column) {
     var i = this.indexOf(ref);
     if (i < 0) {
       return null;
     }
     return this.insert(col, i + 1);
   }
-  remove(child:Column) {
+
+  remove(child: Column) {
     var i = this._children.indexOf(child);
     if (i < 0) {
       return false;
@@ -1834,7 +1892,7 @@ export class CompositeColumn extends Column implements IColumnParent {
     return this._children.some((d) => d.isFiltered());
   }
 
-  filter(row:any) {
+  filter(row: any) {
     return this._children.every((d) => d.filter(row));
   }
 }
@@ -1845,9 +1903,9 @@ export class CompositeColumn extends Column implements IColumnParent {
 export class CompositeNumberColumn extends CompositeColumn implements INumberColumn {
   public missingValue = 0;
 
-  private numberFormat : (n: number) => string = d3.format('.3n');
+  private numberFormat: (n: number) => string = d3.format('.3n');
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
 
     if (desc.numberFormat) {
@@ -1856,13 +1914,13 @@ export class CompositeNumberColumn extends CompositeColumn implements INumberCol
   }
 
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     var r = super.dump(toDescRef);
     r.missingValue = this.missingValue;
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     if (dump.missingValue) {
       this.missingValue = dump.missingValue;
     }
@@ -1879,7 +1937,7 @@ export class CompositeNumberColumn extends CompositeColumn implements INumberCol
    * @param weight
    * @returns {any}
    */
-  insert(col:Column, index:number) {
+  insert(col: Column, index: number) {
     if (!isNumberColumn(col)) { //indicator it is a number type
       return null;
     }
@@ -1892,7 +1950,7 @@ export class CompositeNumberColumn extends CompositeColumn implements INumberCol
     return '' + (typeof v === 'number' ? this.numberFormat(v) : v);
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     //weighted sum
     const v = this.compute(row);
     if (typeof(v) === 'undefined' || v == null || isNaN(v)) {
@@ -1905,11 +1963,11 @@ export class CompositeNumberColumn extends CompositeColumn implements INumberCol
     return NaN;
   }
 
-  getNumber(row:any) {
+  getNumber(row: any) {
     return this.getValue(row);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     return numberCompare(this.getValue(a), this.getValue(b));
   }
 }
@@ -1932,7 +1990,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Combined') {
+  static desc(label: string = 'Combined') {
     return {type: 'stack', label: label};
   }
 
@@ -1945,7 +2003,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
    */
   private collapsed = false;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
 
     const that = this;
@@ -1958,7 +2016,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
     return super.createEventList().concat(['collapseChanged', 'weightsChanged']);
   }
 
-  setCollapsed(value:boolean) {
+  setCollapsed(value: boolean) {
     if (this.collapsed === value) {
       return;
     }
@@ -1969,9 +2027,9 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
     return this.collapsed;
   }
 
-  flatten(r:IFlatColumn[], offset:number, levelsToGo = 0, padding = 0) {
+  flatten(r: IFlatColumn[], offset: number, levelsToGo = 0, padding = 0) {
     var self = null;
-    const children =  levelsToGo <= Column.FLAT_ALL_COLUMNS ? this._children : this._children.filter((c) => !c.isHidden());
+    const children = levelsToGo <= Column.FLAT_ALL_COLUMNS ? this._children : this._children.filter((c) => !c.isHidden());
     //no more levels or just this one
     if (levelsToGo === 0 || levelsToGo <= Column.FLAT_ALL_COLUMNS) {
       var w = this.getCompressed() ? Column.COMPRESSED_WIDTH : this.getWidth();
@@ -1994,13 +2052,13 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
     return acc - offset - padding;
   }
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     const r = super.dump(toDescRef);
     r.collapsed = this.collapsed;
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     this.collapsed = dump.collapsed === true;
     super.restore(dump, factory);
   }
@@ -2012,7 +2070,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
    * @param weight
    * @returns {any}
    */
-  insert(col:Column, index:number, weight = NaN) {
+  insert(col: Column, index: number, weight = NaN) {
     if (!isNaN(weight)) {
       col.setWidth((weight / (1 - weight) * this.getWidth()));
     }
@@ -2023,11 +2081,11 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
     return super.insert(col, index);
   }
 
-  push(col:Column, weight = NaN) {
+  push(col: Column, weight = NaN) {
     return this.insert(col, this.length, weight);
   }
 
-  insertAfter(col:Column, ref:Column, weight = NaN) {
+  insertAfter(col: Column, ref: Column, weight = NaN) {
     const i = this.indexOf(ref);
     if (i < 0) {
       return null;
@@ -2041,7 +2099,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
    * @param old
    * @param new_
    */
-  private adaptWidthChange(col:Column, old: number, new_: number) {
+  private adaptWidthChange(col: Column, old: number, new_: number) {
     if (old === new_) {
       return;
     }
@@ -2065,7 +2123,7 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
     return this._children.map((d) => d.getWidth() / w);
   }
 
-  setWeights(weights:number[]) {
+  setWeights(weights: number[]) {
     const bak = this.getWeights();
     var s,
       delta = weights.length - this.length;
@@ -2092,13 +2150,13 @@ export class StackColumn extends CompositeNumberColumn implements IMultiLevelCol
 
   }
 
-  removeImpl(child:Column) {
+  removeImpl(child: Column) {
     child.on('widthChanged.stack', null);
     super.setWidth(this.length === 1 ? 100 : this.getWidth() - child.getWidth());
     return super.removeImpl(child);
   }
 
-  setWidth(value:number) {
+  setWidth(value: number) {
     const factor = value / this.getWidth();
     this._children.forEach((child) => {
       //disable since we change it
@@ -2122,11 +2180,11 @@ export class MaxColumn extends CompositeNumberColumn {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Max') {
+  static desc(label: string = 'Max') {
     return {type: 'max', label: label};
   }
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
@@ -2137,7 +2195,7 @@ export class MaxColumn extends CompositeNumberColumn {
       return this.color;
     }
     var max_i = 0, max_v = c[0].getValue(row);
-    for(let i = 1; i < c.length; ++i) {
+    for (let i = 1; i < c.length; ++i) {
       let v = c[i].getValue(row);
       if (v > max_v) {
         max_i = i;
@@ -2158,11 +2216,11 @@ export class MinColumn extends CompositeNumberColumn {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Min') {
+  static desc(label: string = 'Min') {
     return {type: 'min', label: label};
   }
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
@@ -2173,7 +2231,7 @@ export class MinColumn extends CompositeNumberColumn {
       return this.color;
     }
     var min_i = 0, min_v = c[0].getValue(row);
-    for(let i = 1; i < c.length; ++i) {
+    for (let i = 1; i < c.length; ++i) {
       let v = c[i].getValue(row);
       if (v < min_v) {
         min_i = i;
@@ -2194,11 +2252,11 @@ export class MeanColumn extends CompositeNumberColumn {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Mean') {
+  static desc(label: string = 'Mean') {
     return {type: 'mean', label: label};
   }
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
@@ -2217,7 +2275,7 @@ export class MultiLevelCompositeColumn extends CompositeColumn implements IMulti
    */
   private collapsed = false;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     const that = this;
     this.adaptChange = function (old, new_) {
@@ -2229,7 +2287,7 @@ export class MultiLevelCompositeColumn extends CompositeColumn implements IMulti
     return super.createEventList().concat(['collapseChanged']);
   }
 
-  setCollapsed(value:boolean) {
+  setCollapsed(value: boolean) {
     if (this.collapsed === value) {
       return;
     }
@@ -2240,18 +2298,18 @@ export class MultiLevelCompositeColumn extends CompositeColumn implements IMulti
     return this.collapsed;
   }
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     const r = super.dump(toDescRef);
     r.collapsed = this.collapsed;
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     this.collapsed = dump.collapsed === true;
     super.restore(dump, factory);
   }
 
-  flatten(r:IFlatColumn[], offset:number, levelsToGo = 0, padding = 0) {
+  flatten(r: IFlatColumn[], offset: number, levelsToGo = 0, padding = 0) {
     return StackColumn.prototype.flatten.call(this, r, offset, levelsToGo, padding);
   }
 
@@ -2262,7 +2320,7 @@ export class MultiLevelCompositeColumn extends CompositeColumn implements IMulti
    * @param weight
    * @returns {any}
    */
-  insert(col:Column, index:number) {
+  insert(col: Column, index: number) {
     col.on('widthChanged.stack', this.adaptChange);
     //increase my width
     super.setWidth(this.length === 0 ? col.getWidth() : (this.getWidth() + col.getWidth()));
@@ -2276,20 +2334,20 @@ export class MultiLevelCompositeColumn extends CompositeColumn implements IMulti
    * @param old
    * @param new_
    */
-  private adaptWidthChange(col:Column, old: number, new_: number) {
+  private adaptWidthChange(col: Column, old: number, new_: number) {
     if (old === new_) {
       return;
     }
-    super.setWidth(this.getWidth()+(new_ - old));
+    super.setWidth(this.getWidth() + (new_ - old));
   }
 
-  removeImpl(child:Column) {
+  removeImpl(child: Column) {
     child.on('widthChanged.stack', null);
     super.setWidth(this.length === 1 ? 100 : this.getWidth() - child.getWidth());
     return super.removeImpl(child);
   }
 
-  setWidth(value:number) {
+  setWidth(value: number) {
     const factor = this.length / this.getWidth();
     this._children.forEach((child) => {
       //disable since we change it
@@ -2308,15 +2366,15 @@ export class NestedColumn extends MultiLevelCompositeColumn {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Nested') {
+  static desc(label: string = 'Nested') {
     return {type: 'nested', label: label};
   }
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
   }
 
-  compare(a:any, b:any) {
+  compare(a: any, b: any) {
     const c = this.children;
     for (let ci of c) {
       let ci_result = ci.compare(a, b);
@@ -2331,7 +2389,7 @@ export class NestedColumn extends MultiLevelCompositeColumn {
     return this.children.map((d) => d.getLabel(row)).join(';');
   }
 
-  getValue(row:any) {
+  getValue(row: any) {
     return this.children.map((d) => d.getValue(row)).join(';');
   }
 }
@@ -2342,16 +2400,16 @@ export class ScriptColumn extends CompositeColumn {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'script') {
+  static desc(label: string = 'script') {
     return {type: 'script', label: label, script: ScriptColumn.DEFAULT_SCRIPT};
   }
 
   static DEFAULT_SCRIPT = 'return d3.max(values)';
 
   private script = ScriptColumn.DEFAULT_SCRIPT;
-  private f : Function = null;
+  private f: Function = null;
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.script = desc.script || this.script;
   }
@@ -2372,20 +2430,20 @@ export class ScriptColumn extends CompositeColumn {
     return this.script;
   }
 
-  dump(toDescRef:(desc:any) => any) {
+  dump(toDescRef: (desc: any) => any) {
     const r = super.dump(toDescRef);
     r.script = this.script;
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     this.script = dump.script || this.script;
     super.restore(dump, factory);
   }
 
   protected compute(row: any) {
     if (this.f == null) {
-      this.f = new Function('children','values', this.script);
+      this.f = new Function('children', 'values', this.script);
     }
     return this.f.call(this, this._children, this._children.map((d) => d.getValue(row)));
   }
@@ -2400,19 +2458,19 @@ export class RankColumn extends ValueColumn<number> {
    * @param label
    * @returns {{type: string, label: string}}
    */
-  static desc(label:string = 'Rank') {
+  static desc(label: string = 'Rank') {
     return {type: 'rank', label: label};
   }
 
-  constructor(id:string, desc:any) {
+  constructor(id: string, desc: any) {
     super(id, desc);
     this.setWidthImpl(50);
   }
 }
 
 export interface ISortCriteria {
-  col:Column;
-  asc:boolean;
+  col: Column;
+  asc: boolean;
 }
 
 /**
@@ -2425,7 +2483,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
    * @type {null}
    * @private
    */
-  private sortColumn:Column = null;
+  private sortColumn: Column = null;
   /**
    * ascending or descending order
    * @type {boolean}
@@ -2437,9 +2495,9 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
    * @type {Array}
    * @private
    */
-  private columns:Column[] = [];
+  private columns: Column[] = [];
 
-  comparator = (a:any, b:any) => {
+  comparator = (a: any, b: any) => {
     if (this.sortColumn === null) {
       return 0;
     }
@@ -2455,9 +2513,9 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
    * the current ordering as an sorted array of indices
    * @type {Array}
    */
-  private order:number[] = [];
+  private order: number[] = [];
 
-  constructor(public id : string) {
+  constructor(public id: string) {
     super();
     this.id = fixCSS(id);
   }
@@ -2466,12 +2524,12 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return super.createEventList().concat(['widthChanged', 'filterChanged', 'labelChanged', 'compressChanged', 'addColumn', 'removeColumn', 'dirty', 'dirtyHeader', 'dirtyValues', 'sortCriteriaChanged', 'dirtyOrder', 'orderChanged']);
   }
 
-  assignNewId(idGenerator:() => string) {
+  assignNewId(idGenerator: () => string) {
     this.id = fixCSS(idGenerator());
     this.columns.forEach((c) => c.assignNewId(idGenerator));
   }
 
-  setOrder(order:number[]) {
+  setOrder(order: number[]) {
     this.fire(['orderChanged', 'dirtyValues', 'dirty'], this.order, this.order = order);
   }
 
@@ -2479,8 +2537,8 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.order;
   }
 
-  dump(toDescRef:(desc:any) => any) {
-    var r : any = {};
+  dump(toDescRef: (desc: any) => any) {
+    var r: any = {};
     r.columns = this.columns.map((d) => d.dump(toDescRef));
     r.sortColumn = {
       asc: this.ascending
@@ -2491,7 +2549,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return r;
   }
 
-  restore(dump:any, factory:(dump:any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column) {
     this.clear();
     dump.columns.map((child) => {
       var c = factory(child);
@@ -2508,7 +2566,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     }
   }
 
-  flatten(r:IFlatColumn[], offset:number, levelsToGo = 0, padding = 0) {
+  flatten(r: IFlatColumn[], offset: number, levelsToGo = 0, padding = 0) {
     var acc = offset; // + this.getWidth() + padding;
     if (levelsToGo > 0 || levelsToGo <= Column.FLAT_ALL_COLUMNS) {
       this.columns.forEach((c) => {
@@ -2527,7 +2585,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     };
   }
 
-  toggleSorting(col:Column) {
+  toggleSorting(col: Column) {
     if (this.sortColumn === col) {
       return this.sortBy(col, !this.ascending);
     }
@@ -2538,7 +2596,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.sortBy(value.col, value.asc);
   }
 
-  sortBy(col:Column, ascending = false) {
+  sortBy(col: Column, ascending = false) {
     if (col !== null && col.findMyRanker() !== this) {
       return false; //not one of mine
     }
@@ -2566,7 +2624,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.columns.length;
   }
 
-  insert(col:Column, index:number = this.columns.length) {
+  insert(col: Column, index: number = this.columns.length) {
     this.columns.splice(index, 0, col);
     col.parent = this;
     this.forward(col, 'dirtyValues.ranking', 'dirtyHeader.ranking', 'dirty.ranking', 'filterChanged.ranking');
@@ -2586,9 +2644,9 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
   }
 
   findByPath(fqpath: string): Column {
-    var p : IColumnParent|Column = <any>this;
+    var p: IColumnParent|Column = <any>this;
     const indices = fqpath.split('@').map(Number).slice(1); //ignore the first entry = ranking
-    while(indices.length > 0) {
+    while (indices.length > 0) {
       let i = indices.shift();
       p = (<IColumnParent>p).at(i);
     }
@@ -2603,7 +2661,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.columns[index];
   }
 
-  insertAfter(col:Column, ref:Column) {
+  insertAfter(col: Column, ref: Column) {
     var i = this.columns.indexOf(ref);
     if (i < 0) {
       return null;
@@ -2611,11 +2669,11 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.insert(col, i + 1);
   }
 
-  push(col:Column) {
+  push(col: Column) {
     return this.insert(col);
   }
 
-  remove(col:Column) {
+  remove(col: Column) {
     var i = this.columns.indexOf(col);
     if (i < 0) {
       return false;
@@ -2649,12 +2707,12 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
   }
 
   get flatColumns() {
-    var r:IFlatColumn[] = [];
+    var r: IFlatColumn[] = [];
     this.flatten(r, 0, Column.FLAT_ALL_COLUMNS);
     return r.map((d) => d.col);
   }
 
-  find(id_or_filter:(col:Column) => boolean | string) {
+  find(id_or_filter: (col: Column) => boolean | string) {
     var filter = typeof(id_or_filter) === 'string' ? (col) => col.id === id_or_filter : id_or_filter;
     var r = this.flatColumns;
     for (var i = 0; i < r.length; ++i) {
@@ -2670,9 +2728,9 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
    * @param toId
    * @return {any}
    */
-  toSortingDesc(toId:(desc:any) => string) {
+  toSortingDesc(toId: (desc: any) => string) {
     //TODO describe also all the filter settings
-    var resolve = (s:Column):any => {
+    var resolve = (s: Column): any => {
       if (s === null) {
         return null;
       }
@@ -2701,7 +2759,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
     return this.columns.some((d) => d.isFiltered());
   }
 
-  filter(row:any) {
+  filter(row: any) {
     return this.columns.every((d) => d.filter(row));
   }
 
@@ -2722,7 +2780,7 @@ export class Ranking extends utils.AEventDispatcher implements IColumnParent {
  */
 export function defineColumn<T>(name: string, functions: any = {}) {
   class CustomColumn extends ValueColumn<T> {
-    constructor(id:string, desc:IColumnDesc) {
+    constructor(id: string, desc: IColumnDesc) {
       super(id, desc);
       if (typeof (this.init) === 'function') {
         this.init.apply(this, [].slice.apply(arguments));
@@ -2780,10 +2838,10 @@ export function models() {
     custom: MyColumn,
     heatmapcustom: HeatmapcustomColumn,
     sparklinecustom: SparklineColumn,
-    boxplotcustom:BoxplotColumn,
-    verticalbar:VerticalbarColumn,
-    vertcontinuous:VerticalconColumn,
-    categoricalcustom:CategorycustomColumn
+    boxplotcustom: BoxplotColumn,
+    verticalbar: VerticalbarColumn,
+    vertcontinuous: VerticalconColumn,
+    categoricalcustom: CategorycustomColumn
 
   };
 }

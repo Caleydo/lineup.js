@@ -1302,15 +1302,64 @@ return /******/ (function(modules) { // webpackBootstrap
 	    HeatmapcustomColumn.prototype.compare = function (a, b) {
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
-	        if (this.desc['sort'] == 'mean') {
+	        //sort numbers correctly
+	        function numSort(a, b) {
+	            return a - b;
+	        }
+	        function getPercentile(data, percentile) {
+	            data.sort(numSort);
+	            var index = (percentile / 100) * data.length;
+	            var result;
+	            if (Math.floor(index) === index) {
+	                result = (data[(index - 1)] + data[index]) / 2;
+	            }
+	            else {
+	                result = data[Math.floor(index)];
+	            }
+	            return result;
+	        }
+	        var a1_sum = d3.sum(a_val);
+	        var a1_min = d3.min(a_val);
+	        var a1_max = d3.max(a_val);
+	        var a1_mean = a1_sum / a_val.length;
+	        var a1_q1 = getPercentile(a_val, 25);
+	        var a1_median = getPercentile(a_val, 50);
+	        var a1_q3 = getPercentile(a_val, 75);
+	        var b1_sum = d3.sum(b_val);
+	        var b1_min = d3.min(b_val);
+	        var b1_max = d3.max(b_val);
+	        var b1_mean = b1_sum / b_val.length;
+	        var b1_q1 = getPercentile(b_val, 25);
+	        var b1_median = getPercentile(b_val, 50);
+	        var b1_q3 = getPercentile(b_val, 75);
+	        if (this.desc['sort'] == 'min') {
+	            console.log('I am inside min');
+	            return (a1_min) - (b1_min);
+	        }
+	        else if (this.desc['sort'] == 'max') {
+	            console.log(this.desc);
+	            console.log('I am inside max');
+	            return (a1_max) - (b1_max);
+	        }
+	        else if (this.desc['sort'] == 'mean') {
 	            console.log(this.desc);
 	            console.log('I am inside mean');
-	            return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	            return (a1_mean) - (b1_mean);
 	        }
-	        if (this.desc['sort'] == 'min') {
+	        else if (this.desc['sort'] == 'median') {
 	            console.log(this.desc);
-	            console.log('I am inside min');
-	            return (d3.min(a_val)) - (d3.min(b_val));
+	            console.log('I am inside median');
+	            return (a1_median) - (b1_median);
+	        }
+	        else if (this.desc['sort'] == 'q1') {
+	            console.log(this.desc);
+	            console.log('I am inside Q1');
+	            return (a1_q1) - (b1_q1);
+	        }
+	        else if (this.desc['sort'] == 'q3') {
+	            console.log(this.desc);
+	            console.log('I am inside Q3');
+	            return (a1_q3) - (b1_q3);
 	        }
 	        else {
 	            console.log('I am inside sum');
@@ -6944,19 +6993,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.openEditLinkDialog = openEditLinkDialog;
 	function sortDialog(column, $header) {
 	    console.log(column);
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n \n  <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum\n</form>\n\n   ");
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n \n  \n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum<br>\n   <input type=\"radio\" name=\"rank\" id=\"max\">Maximum<br>\n   <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"rank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"rank\" id=\"q3\">Q3\n  \n  \n</form>\n\n   ");
 	    popup.select('.ok').on('click', function () {
 	        var rank;
-	        if (popup.select("#mean").property('checked')) {
-	            rank = 'mean';
-	            column.desc['sort'] = 'mean';
-	            console.log(column.desc['sort']);
-	        }
 	        if (popup.select("#min").property('checked')) {
 	            rank = 'min';
-	            column.desc['sort'] = 'min';
-	            console.log(column.desc['sort']);
 	        }
+	        else if (popup.select("#max").property('checked')) {
+	            rank = 'max';
+	        }
+	        else if (popup.select("#mean").property('checked')) {
+	            rank = 'mean';
+	        }
+	        else if (popup.select("#median").property('checked')) {
+	            rank = 'median';
+	        }
+	        else if (popup.select("#q1").property('checked')) {
+	            rank = 'q1';
+	        }
+	        else if (popup.select("#q3").property('checked')) {
+	            rank = 'q3';
+	        }
+	        else {
+	            rank = 'sum';
+	        }
+	        column.desc['sort'] = rank;
+	        console.log(column.desc['sort']);
 	    });
 	}
 	exports.sortDialog = sortDialog;
