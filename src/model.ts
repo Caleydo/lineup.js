@@ -957,10 +957,96 @@ export class StringColumn extends ValueColumn<string> {
 
 
 
-export class MyColumn extends ValueColumn<any> {
+export class MyColumn extends ValueColumn<number[]> {
+
+
 
   compare(a:any, b:any) {
-    return this.getValue(a).mean - this.getValue(b).mean;
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+    console.log(a_val.length,d3.sum(a_val)/4,a_val,b_val);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+  }
+}
+
+export class HeatmapcustomColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    if (this.desc['sort']=='mean')
+    {console.log(this.desc)
+      console.log('I am inside mean');
+      return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+    }
+    if (this.desc['sort']=='min'){
+      console.log(this.desc)
+      console.log('I am inside min');
+
+      return (d3.min(a_val))-(d3.min(b_val));
+    }else {
+  console.log('I am inside sum');
+      return (d3.sum(a_val))-(d3.sum(b_val));
+
+    }
+
+
+
+
+    }
+
+}
+
+
+
+export class SparklineColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+  }
+}
+
+export class BoxplotColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+  }
+}
+export class VerticalbarColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+  }
+}
+export class VerticalconColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
+  }
+}
+
+export class CategorycustomColumn extends ValueColumn<number[]> {
+
+  compare(a:any, b:any) {
+    const a_val = this.getValue(a);
+    const b_val = this.getValue(b);
+
+    return (d3.sum(a_val)/a_val.length)-(d3.sum(b_val)/b_val.length);
   }
 }
 
@@ -981,6 +1067,7 @@ export class LinkColumn extends StringColumn {
   }
 
   get headerCssClass() {
+    console.log(this.link);
     return this.link == null ? 'link' : 'link link_pattern';
   }
 
@@ -2691,12 +2778,12 @@ export function models() {
     script: ScriptColumn,
     nested: NestedColumn,
     custom: MyColumn,
-    heatmapcustom: MyColumn,
-    sparklinecustom: MyColumn,
-    boxplotcustom:MyColumn,
-    verticalbar:MyColumn,
-    vertcontinuous:MyColumn,
-     categoricalcustom:MyColumn
+    heatmapcustom: HeatmapcustomColumn,
+    sparklinecustom: SparklineColumn,
+    boxplotcustom:BoxplotColumn,
+    verticalbar:VerticalbarColumn,
+    vertcontinuous:VerticalconColumn,
+    categoricalcustom:CategorycustomColumn
 
   };
 }

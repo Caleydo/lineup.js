@@ -68,10 +68,12 @@ export function openRenameDialog(column:model.Column, $header:d3.Selection<model
     <textarea rows="5">${column.description}</textarea><br>`);
 
   popup.select('.ok').on('click', function () {
+
     var newValue = popup.select('input[type="text"]').property('value');
     var newColor = popup.select('input[type="color"]').property('value');
     var newDescription = popup.select('textarea').property('value');
     column.setMetaData( { label: newValue, color: newColor, description: newDescription});
+     console.log(column)
     popup.remove();
   });
 
@@ -105,6 +107,38 @@ export function openEditLinkDialog(column:model.LinkColumn, $header:d3.Selection
     popup.remove();
   });
 }
+
+export function sortDialog(column:model.HeatmapcustomColumn, $header:d3.Selection<model.HeatmapcustomColumn>) {
+
+  console.log(column)
+  var popup = makePopup($header, 'Sort By', `
+    <form>
+ 
+  <input type="radio" name="rank" id="mean">Mean<br>
+  <input type="radio" name="rank" id="min">Minimum
+</form>
+
+   `);
+
+
+  popup.select('.ok').on('click', function () {
+    var rank;
+if( popup.select("#mean").property('checked')) {
+  rank = 'mean';
+  column.desc['sort'] = 'mean';
+    console.log(column.desc['sort'])
+}
+
+if ( popup.select("#min").property('checked')) {
+  rank = 'min';
+  column.desc['sort'] = 'min';
+  console.log(column.desc['sort'])
+
+}
+  });
+
+}
+
 
 /**
  * opens a search dialog for the given column
@@ -411,6 +445,9 @@ function openBooleanFilter(column:model.BooleanColumn, $header:d3.Selection<mode
  * @param $header the visual header element of this column
  */
 export function openEditScriptDialog(column:model.ScriptColumn, $header:d3.Selection<model.Column>) {
+
+
+
   const bak = column.getScript();
   const $popup = makePopup($header, 'Edit Script',
     `Parameters: <code>values: number[], children: Column[]</code><br>
@@ -440,6 +477,9 @@ export function openEditScriptDialog(column:model.ScriptColumn, $header:d3.Selec
     $popup.remove();
   });
 }
+
+
+
 
 /**
  * opens the mapping editor for a given NumberColumn

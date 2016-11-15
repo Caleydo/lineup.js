@@ -219,39 +219,39 @@ export class DefaultCellRenderer implements ICellRenderer {
   }
 }
 
-class MyCustomCellRenderer extends DefaultCellRenderer {
-  render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
-
-    var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
-    $rows.enter().append('path').attr({
-      'class': 'shift',
-      'data-index': (d, i) => i,
-      transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'
-    });
-    var f = col.getWidth() / 100;
-
-    $rows.attr('d', function (d, i) {
-      var value = col.getValue(d);
-
-      var left = value.min * f, right = value.max * f, center = value.mean * f;
-      var top = context.option('rowPadding', 1);
-      var bottom = Math.max(context.rowHeight(i) - top, 0);
-      var middle = (bottom - top) / 2;
-      return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
-        'M' + left + ',' + top + 'L' + left + ',' + bottom +
-        'M' + center + ',' + top + 'L' + center + ',' + bottom +
-        'M' + right + ',' + top + 'L' + right + ',' + bottom;
-    });
-    context.animated($rows).attr({
-      transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'
-    });
-    $rows.exit().remove();
-  }
-
-  findRow($col: d3.Selection<any>, index: number) {
-    return $col.selectAll('path.shift[data-index="' + index + '"]');
-  }
-}
+// class MyCustomCellRenderer extends DefaultCellRenderer {
+//   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+//
+//     var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
+//     $rows.enter().append('path').attr({
+//       'class': 'shift',
+//       'data-index': (d, i) => i,
+//       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'
+//     });
+//     var f = col.getWidth() / 100;
+//
+//     $rows.attr('d', function (d, i) {
+//       var value = col.getValue(d);
+//
+//       var left = value * f, right = value.max * f, center = value.mean * f;
+//       var top = context.option('rowPadding', 1);
+//       var bottom = Math.max(context.rowHeight(i) - top, 0);
+//       var middle = (bottom - top) / 2;
+//       return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+//         'M' + left + ',' + top + 'L' + left + ',' + bottom +
+//         'M' + center + ',' + top + 'L' + center + ',' + bottom +
+//         'M' + right + ',' + top + 'L' + right + ',' + bottom;
+//     });
+//     context.animated($rows).attr({
+//       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'
+//     });
+//     $rows.exit().remove();
+//   }
+//
+//   findRow($col: d3.Selection<any>, index: number) {
+//     return $col.selectAll('path.shift[data-index="' + index + '"]');
+//   }
+// }
 
 class HeatmapCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
@@ -266,6 +266,8 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     function cell_dim(total, cells) {
       return (total / cells);
     }
+
+
     var total_width = 1;
     var cols = 1;
     var color: any = d3.scale.linear<number, string>();
@@ -346,7 +348,7 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     $rows.select('path')
       .attr('d', function (d, i) {
 //console.log(i,x(i));
-        var line = d3.svg.line()
+        var line = d3.svg.line<number>()
           .x((d, i) => x(i))
            .y(function (d: any, i){ return y(d)});
         return line(col.getValue(d));
@@ -478,7 +480,6 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
 
 
 
-
     var maxarr = [];
     var minarr = [];
     var q1arr = [];
@@ -584,6 +585,7 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'
     });
 
+
     var bits = [];
 
     var windowsize = 0;
@@ -593,7 +595,7 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
 
     var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
       var value = col.getValue(d);
-      var data = value.data;
+      var data = value;
       bits.push(data.length);
       windowsize = (col.getWidth() / d3.max(bits));
       return (data);
@@ -614,7 +616,7 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
     $rows_enter.append('path')
       .attr('d', function (d, i) {
         var value = col.getValue(d);
-        var data = value.data;
+        var data = value;
         catindexes.push(data.reduce(function (b, e, i) {
           if (e === 1) {
             b.push(i);
@@ -1301,7 +1303,7 @@ export function renderers() {
     annotate: new AnnotateCellRenderer(),
     selection: new SelectionCellRenderer(),
     nested: new StackCellRenderer(false),
-    custom: new MyCustomCellRenderer(),
+   // custom: new MyCustomCellRenderer(),
     heatmapcustom: new HeatmapCellRenderer(),
     sparklinecustom: new SparklineCellRenderer(),
     boxplotcustom: new BoxplotCellRenderer(),

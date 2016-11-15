@@ -451,7 +451,7 @@ export class HeaderRenderer {
     });
     //rename
     $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
-      dialogs.openRenameDialog(d, d3.select(this.parentNode.parentNode));
+            dialogs.openRenameDialog(d, d3.select(this.parentNode.parentNode));
       d3.event.stopPropagation();
     });
     //clone
@@ -459,13 +459,27 @@ export class HeaderRenderer {
       provider.takeSnapshot(d);
       d3.event.stopPropagation();
     });
+
+
+
+
+     $node.filter((d) => d instanceof model.HeatmapcustomColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Edit Combine Script').on('click', function (d) {
+
+
+      dialogs.sortDialog(<model.HeatmapcustomColumn>d, d3.select(this.parentNode.parentNode));
+      d3.event.stopPropagation();
+    });
+
     //edit link
     $node.filter((d) => d instanceof model.LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
+
       dialogs.openEditLinkDialog(<model.LinkColumn>d, d3.select(this.parentNode.parentNode), [].concat((<any>d.desc).templates || [], that.options.linkTemplates));
       d3.event.stopPropagation();
     });
     //edit script
     $node.filter((d) => d instanceof model.ScriptColumn).append('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
+
+
       dialogs.openEditScriptDialog(<model.ScriptColumn>d, d3.select(this.parentNode.parentNode));
       d3.event.stopPropagation();
     });

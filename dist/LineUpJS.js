@@ -1286,11 +1286,105 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    MyColumn.prototype.compare = function (a, b) {
-	        return this.getValue(a).mean - this.getValue(b).mean;
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        console.log(a_val.length, d3.sum(a_val) / 4, a_val, b_val);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
 	    };
 	    return MyColumn;
 	}(ValueColumn));
 	exports.MyColumn = MyColumn;
+	var HeatmapcustomColumn = (function (_super) {
+	    __extends(HeatmapcustomColumn, _super);
+	    function HeatmapcustomColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    HeatmapcustomColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        if (this.desc['sort'] == 'mean') {
+	            console.log(this.desc);
+	            console.log('I am inside mean');
+	            return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	        }
+	        if (this.desc['sort'] == 'min') {
+	            console.log(this.desc);
+	            console.log('I am inside min');
+	            return (d3.min(a_val)) - (d3.min(b_val));
+	        }
+	        else {
+	            console.log('I am inside sum');
+	            return (d3.sum(a_val)) - (d3.sum(b_val));
+	        }
+	    };
+	    return HeatmapcustomColumn;
+	}(ValueColumn));
+	exports.HeatmapcustomColumn = HeatmapcustomColumn;
+	var SparklineColumn = (function (_super) {
+	    __extends(SparklineColumn, _super);
+	    function SparklineColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    SparklineColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	    };
+	    return SparklineColumn;
+	}(ValueColumn));
+	exports.SparklineColumn = SparklineColumn;
+	var BoxplotColumn = (function (_super) {
+	    __extends(BoxplotColumn, _super);
+	    function BoxplotColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    BoxplotColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	    };
+	    return BoxplotColumn;
+	}(ValueColumn));
+	exports.BoxplotColumn = BoxplotColumn;
+	var VerticalbarColumn = (function (_super) {
+	    __extends(VerticalbarColumn, _super);
+	    function VerticalbarColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    VerticalbarColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	    };
+	    return VerticalbarColumn;
+	}(ValueColumn));
+	exports.VerticalbarColumn = VerticalbarColumn;
+	var VerticalconColumn = (function (_super) {
+	    __extends(VerticalconColumn, _super);
+	    function VerticalconColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    VerticalconColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	    };
+	    return VerticalconColumn;
+	}(ValueColumn));
+	exports.VerticalconColumn = VerticalconColumn;
+	var CategorycustomColumn = (function (_super) {
+	    __extends(CategorycustomColumn, _super);
+	    function CategorycustomColumn() {
+	        _super.apply(this, arguments);
+	    }
+	    CategorycustomColumn.prototype.compare = function (a, b) {
+	        var a_val = this.getValue(a);
+	        var b_val = this.getValue(b);
+	        return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+	    };
+	    return CategorycustomColumn;
+	}(ValueColumn));
+	exports.CategorycustomColumn = CategorycustomColumn;
 	/**
 	 * a string column in which the label is a text but the value a link
 	 */
@@ -1307,6 +1401,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Object.defineProperty(LinkColumn.prototype, "headerCssClass", {
 	        get: function () {
+	            console.log(this.link);
 	            return this.link == null ? 'link' : 'link link_pattern';
 	        },
 	        enumerable: true,
@@ -2915,12 +3010,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        script: ScriptColumn,
 	        nested: NestedColumn,
 	        custom: MyColumn,
-	        heatmapcustom: MyColumn,
-	        sparklinecustom: MyColumn,
-	        boxplotcustom: MyColumn,
-	        verticalbar: MyColumn,
-	        vertcontinuous: MyColumn,
-	        categoricalcustom: MyColumn
+	        heatmapcustom: HeatmapcustomColumn,
+	        sparklinecustom: SparklineColumn,
+	        boxplotcustom: BoxplotColumn,
+	        verticalbar: VerticalbarColumn,
+	        vertcontinuous: VerticalconColumn,
+	        categoricalcustom: CategorycustomColumn
 	    };
 	}
 	exports.models = models;
@@ -4426,40 +4521,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return DefaultCellRenderer;
 	}());
 	exports.DefaultCellRenderer = DefaultCellRenderer;
-	var MyCustomCellRenderer = (function (_super) {
-	    __extends(MyCustomCellRenderer, _super);
-	    function MyCustomCellRenderer() {
-	        _super.apply(this, arguments);
-	    }
-	    MyCustomCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
-	        $rows.enter().append('path').attr({
-	            'class': 'shift',
-	            'data-index': function (d, i) { return i; },
-	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
-	        });
-	        var f = col.getWidth() / 100;
-	        $rows.attr('d', function (d, i) {
-	            var value = col.getValue(d);
-	            var left = value.min * f, right = value.max * f, center = value.mean * f;
-	            var top = context.option('rowPadding', 1);
-	            var bottom = Math.max(context.rowHeight(i) - top, 0);
-	            var middle = (bottom - top) / 2;
-	            return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
-	                'M' + left + ',' + top + 'L' + left + ',' + bottom +
-	                'M' + center + ',' + top + 'L' + center + ',' + bottom +
-	                'M' + right + ',' + top + 'L' + right + ',' + bottom;
-	        });
-	        context.animated($rows).attr({
-	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
-	        });
-	        $rows.exit().remove();
-	    };
-	    MyCustomCellRenderer.prototype.findRow = function ($col, index) {
-	        return $col.selectAll('path.shift[data-index="' + index + '"]');
-	    };
-	    return MyCustomCellRenderer;
-	}(DefaultCellRenderer));
+	// class MyCustomCellRenderer extends DefaultCellRenderer {
+	//   render($col: d3.Selection<any>, col: model.MyColumn, rows: any[], context: IRenderContext) {
+	//
+	//     var $rows = $col.datum(col).selectAll('path.shift').data(rows, context.rowKey);
+	//     $rows.enter().append('path').attr({
+	//       'class': 'shift',
+	//       'data-index': (d, i) => i,
+	//       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'
+	//     });
+	//     var f = col.getWidth() / 100;
+	//
+	//     $rows.attr('d', function (d, i) {
+	//       var value = col.getValue(d);
+	//
+	//       var left = value * f, right = value.max * f, center = value.mean * f;
+	//       var top = context.option('rowPadding', 1);
+	//       var bottom = Math.max(context.rowHeight(i) - top, 0);
+	//       var middle = (bottom - top) / 2;
+	//       return 'M' + left + ',' + middle + 'L' + right + ',' + middle +
+	//         'M' + left + ',' + top + 'L' + left + ',' + bottom +
+	//         'M' + center + ',' + top + 'L' + center + ',' + bottom +
+	//         'M' + right + ',' + top + 'L' + right + ',' + bottom;
+	//     });
+	//     context.animated($rows).attr({
+	//       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'
+	//     });
+	//     $rows.exit().remove();
+	//   }
+	//
+	//   findRow($col: d3.Selection<any>, index: number) {
+	//     return $col.selectAll('path.shift[data-index="' + index + '"]');
+	//   }
+	// }
 	var HeatmapCellRenderer = (function (_super) {
 	    __extends(HeatmapCellRenderer, _super);
 	    function HeatmapCellRenderer() {
@@ -4745,7 +4839,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var catindexes = [];
 	        var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value.data;
+	            var data = value;
 	            bits.push(data.length);
 	            windowsize = (col.getWidth() / d3.max(bits));
 	            return (data);
@@ -4762,7 +4856,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $rows_enter.append('path')
 	            .attr('d', function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value.data;
+	            var data = value;
 	            catindexes.push(data.reduce(function (b, e, i) {
 	                if (e === 1) {
 	                    b.push(i);
@@ -5418,7 +5512,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        annotate: new AnnotateCellRenderer(),
 	        selection: new SelectionCellRenderer(),
 	        nested: new StackCellRenderer(false),
-	        custom: new MyCustomCellRenderer(),
+	        // custom: new MyCustomCellRenderer(),
 	        heatmapcustom: new HeatmapCellRenderer(),
 	        sparklinecustom: new SparklineCellRenderer(),
 	        boxplotcustom: new BoxplotCellRenderer(),
@@ -5860,6 +5954,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        //clone
 	        $regular.append('i').attr('class', 'fa fa-code-fork').attr('title', 'Generate Snapshot').on('click', function (d) {
 	            provider.takeSnapshot(d);
+	            d3.event.stopPropagation();
+	        });
+	        $node.filter(function (d) { return d instanceof model.HeatmapcustomColumn; }).append('i').attr('class', 'fa fa-sort').attr('title', 'Edit Combine Script').on('click', function (d) {
+	            dialogs.sortDialog(d, d3.select(this.parentNode.parentNode));
 	            d3.event.stopPropagation();
 	        });
 	        //edit link
@@ -6814,6 +6912,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var newColor = popup.select('input[type="color"]').property('value');
 	        var newDescription = popup.select('textarea').property('value');
 	        column.setMetaData({ label: newValue, color: newColor, description: newDescription });
+	        console.log(column);
 	        popup.remove();
 	    });
 	    popup.select('.cancel').on('click', function () {
@@ -6843,6 +6942,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	}
 	exports.openEditLinkDialog = openEditLinkDialog;
+	function sortDialog(column, $header) {
+	    console.log(column);
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n \n  <input type=\"radio\" name=\"rank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"rank\" id=\"min\">Minimum\n</form>\n\n   ");
+	    popup.select('.ok').on('click', function () {
+	        var rank;
+	        if (popup.select("#mean").property('checked')) {
+	            rank = 'mean';
+	            column.desc['sort'] = 'mean';
+	            console.log(column.desc['sort']);
+	        }
+	        if (popup.select("#min").property('checked')) {
+	            rank = 'min';
+	            column.desc['sort'] = 'min';
+	            console.log(column.desc['sort']);
+	        }
+	    });
+	}
+	exports.sortDialog = sortDialog;
 	/**
 	 * opens a search dialog for the given column
 	 * @param column the column to rename
