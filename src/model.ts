@@ -27,6 +27,20 @@ function numberCompare(a: number, b: number) {
   return a - b;
 }
 
+// Calculate Median, Q1 and Q1)
+function getPercentile(data, percentile) {
+
+  var index = (percentile / 100) * data.length;
+  var result;
+  if (Math.floor(index) === index) {
+    result = (data[(index - 1)] + data[index]) / 2;
+  } else {
+    result = data[Math.floor(index)];
+  }
+  return result;
+}
+
+
 interface IFlatColumn {
   col: Column;
   offset: number;
@@ -68,22 +82,22 @@ export interface IColumnDesc {
   /**
    * User Sorting
    */
-  sort?:string;
+  sort?: string;
 
   /**
    * Domain of the data
    */
-  sdomain?:Array<number>;
+  sdomain?: Array<number>;
 
   /**
    * Color Range
    */
-  colorrange?:Array<string>;
+  colorrange?: Array<string>;
   /**
    * Threshold to define
    */
 
-  threshold?:number;
+  threshold?: number;
 }
 
 export interface IStatistics {
@@ -566,7 +580,7 @@ export class ScaleMappingFunction implements IMappingFunction {
   }
 
   set range(range: number[]) {
-      this.s.range(range);
+    this.s.range(range);
   }
 
   apply(v: number): number {
@@ -796,6 +810,8 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
   }
 
   compare(a: any, b: any) {
+
+
     return numberCompare(this.getValue(a), this.getValue(b));
   }
 
@@ -875,6 +891,8 @@ export class NumberColumn extends ValueColumn<number> implements INumberColumn {
 /**
  * a string column with optional alignment
  */
+
+
 export class StringColumn extends ValueColumn<string> {
   //magic key for filtering missing ones
   static FILTER_MISSING = '__FILTER_MISSING';
@@ -974,87 +992,102 @@ export class StringColumn extends ValueColumn<string> {
 }
 
 
-export class MyColumn extends ValueColumn<number[]> {
+export class CustomSortCalculation {
+  a_val: Array<number>;
+  b_val: Array<number>;
 
-
-  compare(a: any, b: any) {
-    const a_val = this.getValue(a);
-    const b_val = this.getValue(b);
-    console.log(a_val.length, d3.sum(a_val) / 4, a_val, b_val);
-
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+  constructor(a_val: Array<number>, b_val: Array<number>) {
+    this.a_val = a_val;
+    this.b_val = b_val;
   }
+
+
+  sum() {
+    return (d3.sum(this.a_val) - d3.sum(this.b_val));
+  }
+
+  min() {
+    return (d3.min(this.a_val) - d3.min(this.b_val))
+
+  }
+
+
+  max() {
+    return (d3.max(this.a_val) - d3.max(this.b_val))
+  }
+
+  mean() {
+
+    return (d3.mean(this.a_val) - d3.mean(this.b_val))
+  }
+
+  median() {
+    this.a_val.sort(numberCompare);
+    this.b_val.sort(numberCompare);
+    return (getPercentile(this.a_val, 50)) - (getPercentile(this.b_val, 50));
+
+  }
+
+
+  q1() {
+
+    return (getPercentile(this.a_val, 25)) - (getPercentile(this.b_val, 25));
+
+  }
+
+  q3() {
+
+    return (getPercentile(this.a_val, 75)) - (getPercentile(this.b_val, 75));
+
+  }
+
+
 }
+
 
 export class HeatmapcustomColumn extends ValueColumn<number[]> {
 
-  compare(a: any, b: any) {
 
+  compare(a: any, b: any) {
 
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    //sort numbers
-    function numSort(a, b) {
-      return a - b;
-    }
 
-    function getPercentile(data, percentile) {
-      data.sort(numSort);
-      var index = (percentile / 100) * data.length;
-      var result;
-      if (Math.floor(index) === index) {
-        result = (data[(index - 1)] + data[index]) / 2;
-      } else {
-        result = data[Math.floor(index)];
-      }
-      return result;
-    }
-
-    const a1_sum = d3.sum(a_val);
-    const a1_min = d3.min(a_val);
-    const a1_max = d3.max(a_val);
-    const a1_mean = a1_sum / a_val.length;
-    const a1_q1 = getPercentile(a_val, 25);
-    const a1_median = getPercentile(a_val, 50);
-    const a1_q3 = getPercentile(a_val, 75);
-
-
-    const b1_sum = d3.sum(b_val);
-    const b1_min = d3.min(b_val);
-    const b1_max = d3.max(b_val);
-    const b1_mean = b1_sum / b_val.length;
-    const b1_q1 = getPercentile(b_val, 25);
-    const b1_median = getPercentile(b_val, 50);
-    const b1_q3 = getPercentile(b_val, 75);
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
 
     if (this.desc.sort === 'min') {
 
-      return (a1_min) - (b1_min);
+      console.log('I am inside min')
+      console.log(sort.min());
+      return (sort.min());
     } else if (this.desc.sort === 'max') {
 
-
-      return (a1_max) - (b1_max);
+      console.log('I am inside max')
+      console.log(sort.max());
+      return (sort.max());
     } else if (this.desc.sort === 'mean') {
 
+      console.log('I am inside mean')
+      console.log(sort.mean());
 
-      return (a1_mean) - (b1_mean);
+      return (sort.mean());
     } else if (this.desc.sort === 'median') {
 
-
-      return (a1_median) - (b1_median);
+      console.log('I am inside median')
+      return (sort.median());
     } else if (this.desc.sort === 'q1') {
 
 
-      return (a1_q1) - (b1_q1);
+      return (sort.q1());
     } else if (this.desc.sort === 'q3') {
 
 
-      return (a1_q3) - (b1_q3);
+      return (sort.q3());
     } else {
-
-      return (d3.sum(a_val)) - (d3.sum(b_val));
+      console.log('I am inside sum')
+      return (sort.sum());
 
     }
 
@@ -1071,28 +1104,19 @@ export class SparklineColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-
-    const a1_min = d3.min(a_val);
-    const a1_max = d3.max(a_val);
-
-
-
-
-    const b1_min = d3.min(b_val);
-    const b1_max = d3.max(b_val);
-
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
-
-      return (a1_min) - (b1_min);
+      console.log('I am inside min')
+      return (sort.min());
     } else if (this.desc.sort === 'max') {
 
-
-      return (a1_max) - (b1_max);
+      console.log('I am inside maxn')
+      return (sort.max());
     } else {
 
-      return (d3.sum(a_val)) - (d3.sum(b_val));
+      return (sort.max());
 
     }
 
@@ -1107,72 +1131,35 @@ export class BoxplotColumn extends ValueColumn<number[]> {
 
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-
-
-    //sort numbers
-    function numSort(a, b) {
-      return a - b;
-    }
-
-    function getPercentile(data, percentile) {
-      data.sort(numSort);
-      var index = (percentile / 100) * data.length;
-      var result;
-      if (Math.floor(index) === index) {
-        result = (data[(index - 1)] + data[index]) / 2;
-      } else {
-        result = data[Math.floor(index)];
-      }
-      return result;
-    }
-
-
-    const a1_sum = d3.sum(a_val);
-    const a1_min = d3.min(a_val);
-    const a1_max = d3.max(a_val);
-    const a1_mean = a1_sum / a_val.length;
-    const a1_q1 = getPercentile(a_val, 25);
-    const a1_median = getPercentile(a_val, 50);
-    const a1_q3 = getPercentile(a_val, 75);
-
-
-    const b1_sum = d3.sum(b_val);
-    const b1_min = d3.min(b_val);
-    const b1_max = d3.max(b_val);
-    const b1_mean = b1_sum / b_val.length;
-    const b1_q1 = getPercentile(b_val, 25);
-    const b1_median = getPercentile(b_val, 50);
-    const b1_q3 = getPercentile(b_val, 75);
-
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
 
-      return (a1_min) - (b1_min);
+      return (sort.min());
     } else if (this.desc.sort === 'max') {
 
 
-
-      return (a1_max) - (b1_max);
+      return (sort.max());
     } else if (this.desc.sort === 'mean') {
 
 
-      return (a1_mean) - (b1_mean);
+      return (sort.mean());
     } else if (this.desc.sort === 'median') {
 
 
-      return (a1_median) - (b1_median);
+      return (sort.median());
     } else if (this.desc.sort === 'q1') {
 
 
-      return (a1_q1) - (b1_q1);
+      return (sort.q1());
     } else if (this.desc.sort === 'q3') {
 
 
-      return (a1_q3) - (b1_q3);
+      return (sort.q3());
     } else {
 
-      return (d3.sum(a_val)) - (d3.sum(b_val));
+      return (sort.sum());
 
     }
 
@@ -1184,34 +1171,23 @@ export class VerticalbarColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    const a1_sum = d3.sum(a_val);
-    const a1_min = d3.min(a_val);
-    const a1_max = d3.max(a_val);
-    const a1_mean = a1_sum / a_val.length;
-
-
-    const b1_sum = d3.sum(b_val);
-    const b1_min = d3.min(b_val);
-    const b1_max = d3.max(b_val);
-    const b1_mean = b1_sum / b_val.length;
-
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
 
-      return (a1_min) - (b1_min);
+      return (sort.min());
     } else if (this.desc.sort === 'max') {
 
 
-
-      return (a1_max) - (b1_max);
+      return (sort.max());
     } else if (this.desc.sort === 'mean') {
 
 
-      return (a1_mean) - (b1_mean);
+      return (sort.mean());
     } else {
 
-      return (d3.sum(a_val)) - (d3.sum(b_val));
+      return (sort.sum());
 
     }
 
@@ -1222,35 +1198,23 @@ export class VerticalconColumn extends ValueColumn<number[]> {
   compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-
-    const a1_sum = d3.sum(a_val);
-    const a1_min = d3.min(a_val);
-    const a1_max = d3.max(a_val);
-    const a1_mean = a1_sum / a_val.length;
-
-
-    const b1_sum = d3.sum(b_val);
-    const b1_min = d3.min(b_val);
-    const b1_max = d3.max(b_val);
-    const b1_mean = b1_sum / b_val.length;
-
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
 
-      return (a1_min) - (b1_min);
+      return (sort.min());
     } else if (this.desc.sort === 'max') {
 
 
-
-      return (a1_max) - (b1_max);
+      return (sort.max());
     } else if (this.desc.sort === 'mean') {
 
 
-      return (a1_mean) - (b1_mean);
+      return (sort.mean());
     } else {
 
-      return (d3.sum(a_val)) - (d3.sum(b_val));
+      return (sort.sum());
 
     }
 
@@ -1262,8 +1226,8 @@ export class CategorycustomColumn extends ValueColumn<number[]> {
   compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-
-    return (d3.sum(a_val) / a_val.length) - (d3.sum(b_val) / b_val.length);
+    var sort: any = new CustomSortCalculation(a_val, b_val);
+    return (sort.sum);
   }
 }
 
@@ -2995,7 +2959,6 @@ export function models() {
     mean: MinColumn,
     script: ScriptColumn,
     nested: NestedColumn,
-    custom: MyColumn,
     heatmapcustom: HeatmapcustomColumn,
     sparklinecustom: SparklineColumn,
     boxplotcustom: BoxplotColumn,

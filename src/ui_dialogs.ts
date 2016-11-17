@@ -114,43 +114,25 @@ export function sortDialogHeatmap(column: model.HeatmapcustomColumn, $header: d3
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="rank" id="min">Minimum<br>
-  <input type="radio" name="rank" id="max">Maximum<br>
-  <input type="radio" name="rank" id="mean">Mean<br>
-  <input type="radio" name="rank" id="median">Median<br>
-  <input type="radio" name="rank" id="q1">Q1<br>
-  <input type="radio" name="rank" id="q3">Q3
-    </form>
+  <input type="radio" name="heatmaprank" id="min" checked="checked">Minimum<br>
+  <input type="radio" name="heatmaprank" id="max">Maximum<br>
+  <input type="radio" name="heatmaprank" id="mean">Mean<br>
+  <input type="radio" name="heatmaprank" id="median">Median<br>
+  <input type="radio" name="heatmaprank" id="q1">Q1<br>
+  <input type="radio" name="heatmaprank" id="q3">Q3<br>
+      </form>
    `);
 
 
-  popup.select('.ok').on('click', function () {
-    var rank;
-    if (popup.select('#min').property('checked')) {
-      rank = 'min';
-    } else if (popup.select('#max').property('checked')) {
-      rank = 'max';
+  d3.selectAll("input[name=heatmaprank]").on("change", function () {
 
-    } else if (popup.select('#mean').property('checked')) {
-      rank = 'mean';
-
-    } else if (popup.select('#median').property('checked')) {
-      rank = 'median';
-
-    } else if (popup.select('#q1').property('checked')) {
-      rank = 'q1';
-
-    } else if (popup.select('#q3').property('checked')) {
-      rank = 'q3';
-
-    } else {
-
-      rank = 'sum';
-    }
-
+    console.log(this['id']);
+    const rank = this['id'];
     column.desc.sort = rank;
 
+  });
 
+  popup.select('.ok').on('click', function () {
   });
 
   popup.select('.cancel').on('click', function () {
@@ -164,26 +146,22 @@ export function sortDialogSparkline(column: model.SparklineColumn, $header: d3.S
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="rank" id="min">Minimum<br>
-  <input type="radio" name="rank" id="max">Maximum<br>
+  <input type="radio" name="sparklinerank" id="min">Minimum<br>
+  <input type="radio" name="sparklinerank" id="max">Maximum<br>
       </form>
    `);
 
 
-  popup.select('.ok').on('click', function () {
-    var rank;
-    if (popup.select('#min').property('checked')) {
-      rank = 'min';
-    } else if (popup.select('#max').property('checked')) {
-      rank = 'max';
+  d3.selectAll("input[name=sparklinerank]").on("change", function () {
 
-    } else {
-
-      rank = 'sum';
-    }
-
+    console.log(this['id']);
+    const rank = this['id'];
     column.desc.sort = rank;
 
+  });
+
+
+  popup.select('.ok').on('click', function () {
 
   });
 
@@ -197,42 +175,26 @@ export function sortDialogBoxplot(column: model.BoxplotColumn, $header: d3.Selec
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="rank" id="min">Minimum<br>
-  <input type="radio" name="rank" id="max">Maximum<br>
-  <input type="radio" name="rank" id="mean">Mean<br>
-  <input type="radio" name="rank" id="median">Median<br>
-  <input type="radio" name="rank" id="q1">Q1<br>
-  <input type="radio" name="rank" id="q3">Q3
+  <input type="radio" name="boxplotrank" id="min">Minimum<br>
+  <input type="radio" name="boxplotrank" id="max">Maximum<br>
+  <input type="radio" name="boxplotrank" id="mean">Mean<br>
+  <input type="radio" name="boxplotrank" id="median">Median<br>
+  <input type="radio" name="boxplotrank" id="q1">Q1<br>
+  <input type="radio" name="boxplotrank" id="q3">Q3
     </form>
    `);
 
 
-  popup.select('.ok').on('click', function () {
-    var rank;
-    if (popup.select('#min').property('checked')) {
-      rank = 'min';
-    } else if (popup.select('#max').property('checked')) {
-      rank = 'max';
+  d3.selectAll("input[name=boxplotrank]").on('change', function () {
 
-    } else if (popup.select('#mean').property('checked')) {
-      rank = 'mean';
-
-    } else if (popup.select('#median').property('checked')) {
-      rank = 'median';
-
-    } else if (popup.select('#q1').property('checked')) {
-      rank = 'q1';
-
-    } else if (popup.select('#q3').property('checked')) {
-      rank = 'q3';
-
-    } else {
-
-      rank = 'sum';
-    }
-
+    const rank = this['id'];
+     console.log(this['id']);
     column.desc.sort = rank;
 
+  })
+
+
+  popup.select('.ok').on('click', function () {
 
   });
 
@@ -247,30 +209,24 @@ export function sortDialogVerticalBar(column: model.VerticalbarColumn, $header: 
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="rank" id="min">Minimum<br>
-  <input type="radio" name="rank" id="max">Maximum<br>
-    <input type="radio" name="rank" id="mean">Mean<br>
+  <input type="radio" name="verticalbarrank" id="min">Minimum<br>
+  <input type="radio" name="verticalbarrank" id="max">Maximum<br>
+    <input type="radio" name="verticalbarrank" id="mean">Mean<br>
       </form>
    `);
 
 
-  popup.select('.ok').on('click', function () {
-    var rank;
-    if (popup.select('#min').property('checked')) {
-      rank = 'min';
-    } else if (popup.select('#max').property('checked')) {
-      rank = 'max';
+  d3.selectAll("input[name=verticalbarrank]").on('change', function () {
 
-    } else if (popup.select('#mean').property('checked')) {
-      rank = 'mean';
-
-    } else {
-
-      rank = 'sum';
-    }
-
+    const rank = this['id'];
+     console.log(this['id']);
     column.desc.sort = rank;
 
+  })
+
+
+
+  popup.select('.ok').on('click', function () {
 
   });
 
@@ -284,30 +240,23 @@ export function sortDialogVerticalconBar(column: model.VerticalconColumn, $heade
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="rank" id="min">Minimum<br>
-  <input type="radio" name="rank" id="max">Maximum<br>
-    <input type="radio" name="rank" id="mean">Mean<br>
+  <input type="radio" name="Verticalconbarrank" id="min">Minimum<br>
+  <input type="radio" name="Verticalconbarrank" id="max">Maximum<br>
+    <input type="radio" name="Verticalconbarrank" id="mean">Mean<br>
       </form>
    `);
 
 
-  popup.select('.ok').on('click', function () {
-    var rank;
-    if (popup.select('#min').property('checked')) {
-      rank = 'min';
-    } else if (popup.select('#max').property('checked')) {
-      rank = 'max';
+  d3.selectAll("input[name=Verticalconbarrank]").on('change', function () {
 
-    } else if (popup.select('#mean').property('checked')) {
-      rank = 'mean';
-
-    } else {
-
-      rank = 'sum';
-    }
-
+    const rank = this['id'];
+     console.log(this['id']);
     column.desc.sort = rank;
 
+  })
+
+
+  popup.select('.ok').on('click', function () {
 
   });
 
@@ -316,8 +265,6 @@ export function sortDialogVerticalconBar(column: model.VerticalconColumn, $heade
   });
 
 }
-
-
 
 
 /**

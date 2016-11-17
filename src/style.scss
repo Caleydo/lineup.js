@@ -116,7 +116,13 @@ $mapping_color_hover: #0000cf;
     position: absolute;
     right: 10px;
   }
+
+
+
 }
+
+
+input[type="radio"]:checked+label{ font-weight: bold; }
 
 .lu-popup, .lu-popup2 {
   background-color: rgba(255, 255, 255, 0.9);
@@ -528,25 +534,23 @@ $lu_drag_over: #979797;
     }
     .shift {
       stroke: black;
-      fill:#e0e0e0;
+      fill: #e0e0e0;
 
     }
-     .shift1 {
+    .shift1 {
       stroke: red;
 
     }
-        .sparkline {
-    fill:none;
-    stroke: #000;
+    .sparkline {
+      fill: none;
+      stroke: #000;
 
     }
-      .my1 {
+    .my1 {
       //stroke: red;
-       stroke-width:1;
-
+      stroke-width: 1;
 
     }
-
 
   }
 

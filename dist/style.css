@@ -67,6 +67,9 @@
     position: absolute;
     right: 10px; }
 
+input[type="radio"]:checked + label {
+  font-weight: bold; }
+
 .lu-popup, .lu-popup2 {
   background-color: rgba(255, 255, 255, 0.9);
   position: absolute;
