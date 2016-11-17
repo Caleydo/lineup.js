@@ -993,11 +993,9 @@ export class StringColumn extends ValueColumn<string> {
 
 
 export class CustomSortCalculation {
-  a_val: Array<number>;
   b_val: Array<number>;
 
-  constructor(a_val: Array<number>, b_val: Array<number>) {
-    this.a_val = a_val;
+  constructor(private a_val: Array<number>, b_val: Array<number>) {
     this.b_val = b_val;
   }
 
@@ -1041,56 +1039,35 @@ export class CustomSortCalculation {
 
   }
 
+  countcategory() {
+
+    const a_cat = this.a_val.filter((x)=> x === 1).length;
+
+    const b_cat = this.b_val.filter((x)=> x === 1).length;
+
+    return (a_cat - b_cat);
+
+  }
 
 }
 
 
 export class HeatmapcustomColumn extends ValueColumn<number[]> {
+  private sortCriteria;
 
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'min';
+  }
 
   compare(a: any, b: any) {
-
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-
-
     var sort: any = new CustomSortCalculation(a_val, b_val);
-
-
-    if (this.desc.sort === 'min') {
-
-      console.log('I am inside min')
-      console.log(sort.min());
-      return (sort.min());
-    } else if (this.desc.sort === 'max') {
-
-      console.log('I am inside max')
-      console.log(sort.max());
-      return (sort.max());
-    } else if (this.desc.sort === 'mean') {
-
-      console.log('I am inside mean')
-      console.log(sort.mean());
-
-      return (sort.mean());
-    } else if (this.desc.sort === 'median') {
-
-      console.log('I am inside median')
-      return (sort.median());
-    } else if (this.desc.sort === 'q1') {
-
-
-      return (sort.q1());
-    } else if (this.desc.sort === 'q3') {
-
-
-      return (sort.q3());
-    } else {
-      console.log('I am inside sum')
-      return (sort.sum());
-
-    }
-
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
 
 }
@@ -1098,136 +1075,104 @@ export class HeatmapcustomColumn extends ValueColumn<number[]> {
 
 export class SparklineColumn extends ValueColumn<number[]> {
 
+  private sortCriteria;
+
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'min';
+  }
+
   compare(a: any, b: any) {
-
-
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
-    if (this.desc.sort === 'min') {
-
-      console.log('I am inside min')
-      return (sort.min());
-    } else if (this.desc.sort === 'max') {
-
-      console.log('I am inside maxn')
-      return (sort.max());
-    } else {
-
-      return (sort.max());
-
-    }
-
-
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
+
 }
 
 export class BoxplotColumn extends ValueColumn<number[]> {
 
+  private sortCriteria;
+
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'min';
+  }
+
   compare(a: any, b: any) {
-
-
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
-    if (this.desc.sort === 'min') {
-
-
-      return (sort.min());
-    } else if (this.desc.sort === 'max') {
-
-
-      return (sort.max());
-    } else if (this.desc.sort === 'mean') {
-
-
-      return (sort.mean());
-    } else if (this.desc.sort === 'median') {
-
-
-      return (sort.median());
-    } else if (this.desc.sort === 'q1') {
-
-
-      return (sort.q1());
-    } else if (this.desc.sort === 'q3') {
-
-
-      return (sort.q3());
-    } else {
-
-      return (sort.sum());
-
-    }
-
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
 }
 export class VerticalbarColumn extends ValueColumn<number[]> {
 
+  private sortCriteria;
+
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'min';
+  }
+
   compare(a: any, b: any) {
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
-   var sort: any = new CustomSortCalculation(a_val, b_val);
-
-    if (this.desc.sort === 'min') {
-
-
-      return (sort.min());
-    } else if (this.desc.sort === 'max') {
-
-
-      return (sort.max());
-    } else if (this.desc.sort === 'mean') {
-
-
-      return (sort.mean());
-    } else {
-
-      return (sort.sum());
-
-    }
-
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
 }
 export class VerticalconColumn extends ValueColumn<number[]> {
 
+  private sortCriteria;
+
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'min';
+  }
+
   compare(a: any, b: any) {
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-   var sort: any = new CustomSortCalculation(a_val, b_val);
+    var sort: any = new CustomSortCalculation(a_val, b_val);
 
-    if (this.desc.sort === 'min') {
-
-
-      return (sort.min());
-    } else if (this.desc.sort === 'max') {
-
-
-      return (sort.max());
-    } else if (this.desc.sort === 'mean') {
-
-
-      return (sort.mean());
-    } else {
-
-      return (sort.sum());
-
-    }
-
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
 }
 
 export class CategorycustomColumn extends ValueColumn<number[]> {
+  private sortCriteria;
+
+  constructor(id: string, desc: any) {
+    super(id, desc);
+    this.sortCriteria = desc.sort || 'countcategory';
+  }
 
   compare(a: any, b: any) {
+    this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-var sort: any = new CustomSortCalculation(a_val, b_val);
-    return (sort.sum);
+    var sort: any = new CustomSortCalculation(a_val, b_val);
+
+    const f = sort[this.sortCriteria].bind(sort);
+    console.log(f)
+    return f();
   }
 }
 

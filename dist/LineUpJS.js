@@ -1319,169 +1319,118 @@ return /******/ (function(modules) { // webpackBootstrap
 	    CustomSortCalculation.prototype.q3 = function () {
 	        return (getPercentile(this.a_val, 75)) - (getPercentile(this.b_val, 75));
 	    };
+	    CustomSortCalculation.prototype.countcategory = function () {
+	        var a_cat = this.a_val.filter(function (x) { return x === 1; }).length;
+	        var b_cat = this.b_val.filter(function (x) { return x === 1; }).length;
+	        return (a_cat - b_cat);
+	    };
 	    return CustomSortCalculation;
 	}());
 	exports.CustomSortCalculation = CustomSortCalculation;
 	var HeatmapcustomColumn = (function (_super) {
 	    __extends(HeatmapcustomColumn, _super);
-	    function HeatmapcustomColumn() {
-	        _super.apply(this, arguments);
+	    function HeatmapcustomColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    HeatmapcustomColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        if (this.desc.sort === 'min') {
-	            console.log('I am inside min');
-	            console.log(sort.min());
-	            return (sort.min());
-	        }
-	        else if (this.desc.sort === 'max') {
-	            console.log('I am inside max');
-	            console.log(sort.max());
-	            return (sort.max());
-	        }
-	        else if (this.desc.sort === 'mean') {
-	            console.log('I am inside mean');
-	            console.log(sort.mean());
-	            return (sort.mean());
-	        }
-	        else if (this.desc.sort === 'median') {
-	            console.log('I am inside median');
-	            return (sort.median());
-	        }
-	        else if (this.desc.sort === 'q1') {
-	            return (sort.q1());
-	        }
-	        else if (this.desc.sort === 'q3') {
-	            return (sort.q3());
-	        }
-	        else {
-	            console.log('I am inside sum');
-	            return (sort.sum());
-	        }
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return HeatmapcustomColumn;
 	}(ValueColumn));
 	exports.HeatmapcustomColumn = HeatmapcustomColumn;
 	var SparklineColumn = (function (_super) {
 	    __extends(SparklineColumn, _super);
-	    function SparklineColumn() {
-	        _super.apply(this, arguments);
+	    function SparklineColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    SparklineColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        if (this.desc.sort === 'min') {
-	            console.log('I am inside min');
-	            return (sort.min());
-	        }
-	        else if (this.desc.sort === 'max') {
-	            console.log('I am inside maxn');
-	            return (sort.max());
-	        }
-	        else {
-	            return (sort.max());
-	        }
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return SparklineColumn;
 	}(ValueColumn));
 	exports.SparklineColumn = SparklineColumn;
 	var BoxplotColumn = (function (_super) {
 	    __extends(BoxplotColumn, _super);
-	    function BoxplotColumn() {
-	        _super.apply(this, arguments);
+	    function BoxplotColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    BoxplotColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        if (this.desc.sort === 'min') {
-	            return (sort.min());
-	        }
-	        else if (this.desc.sort === 'max') {
-	            return (sort.max());
-	        }
-	        else if (this.desc.sort === 'mean') {
-	            return (sort.mean());
-	        }
-	        else if (this.desc.sort === 'median') {
-	            return (sort.median());
-	        }
-	        else if (this.desc.sort === 'q1') {
-	            return (sort.q1());
-	        }
-	        else if (this.desc.sort === 'q3') {
-	            return (sort.q3());
-	        }
-	        else {
-	            return (sort.sum());
-	        }
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return BoxplotColumn;
 	}(ValueColumn));
 	exports.BoxplotColumn = BoxplotColumn;
 	var VerticalbarColumn = (function (_super) {
 	    __extends(VerticalbarColumn, _super);
-	    function VerticalbarColumn() {
-	        _super.apply(this, arguments);
+	    function VerticalbarColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    VerticalbarColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        if (this.desc.sort === 'min') {
-	            return (sort.min());
-	        }
-	        else if (this.desc.sort === 'max') {
-	            return (sort.max());
-	        }
-	        else if (this.desc.sort === 'mean') {
-	            return (sort.mean());
-	        }
-	        else {
-	            return (sort.sum());
-	        }
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return VerticalbarColumn;
 	}(ValueColumn));
 	exports.VerticalbarColumn = VerticalbarColumn;
 	var VerticalconColumn = (function (_super) {
 	    __extends(VerticalconColumn, _super);
-	    function VerticalconColumn() {
-	        _super.apply(this, arguments);
+	    function VerticalconColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    VerticalconColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        if (this.desc.sort === 'min') {
-	            return (sort.min());
-	        }
-	        else if (this.desc.sort === 'max') {
-	            return (sort.max());
-	        }
-	        else if (this.desc.sort === 'mean') {
-	            return (sort.mean());
-	        }
-	        else {
-	            return (sort.sum());
-	        }
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return VerticalconColumn;
 	}(ValueColumn));
 	exports.VerticalconColumn = VerticalconColumn;
 	var CategorycustomColumn = (function (_super) {
 	    __extends(CategorycustomColumn, _super);
-	    function CategorycustomColumn() {
-	        _super.apply(this, arguments);
+	    function CategorycustomColumn(id, desc) {
+	        _super.call(this, id, desc);
+	        this.sortCriteria = desc.sort || 'countcategory';
 	    }
 	    CategorycustomColumn.prototype.compare = function (a, b) {
+	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
-	        return (sort.sum);
+	        var f = sort[this.sortCriteria].bind(sort);
+	        console.log(f);
+	        return f();
 	    };
 	    return CategorycustomColumn;
 	}(ValueColumn));

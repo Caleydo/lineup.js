@@ -122,22 +122,42 @@ window.onload = function () {
         colorrange: ['blue', 'white', 'red'],
         sort: 'min'
       },
-      {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom', sdomain: [min, max]},
-      {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom', sdomain: [min, max]},
-      {label: 'Vertical', type: 'verticalbar', column: 'verticalbar', threshold: 0},
+      {
+        label: 'Spark Line',
+        type: 'sparklinecustom',
+        column: 'sparklinecustom',
+        sdomain: [min, max],
+        sort: 'min'
+      },
+      {
+        label: 'Box Plot',
+        type: 'boxplotcustom',
+        column: 'boxplotcustom',
+        sdomain: [min, max],
+        sort: 'min'
+      },
+      {
+        label: 'Vertical',
+        type: 'verticalbar',
+        column: 'verticalbar',
+        threshold: 0,
+        sort: 'min'
+      },
       {
         label: 'vertcontinuous',
         type: 'vertcontinuous',
         column: 'vertcontinuous',
         sdomain: [min, max],
-        colorrange: ['blue', 'red']
+        colorrange: ['blue', 'red'],
+        sort: 'min'
       },
       {
         label: 'categoricalcustom',
         type: 'categoricalcustom',
         column: 'categoricalcustom',
         sdomain: [min, max],
-        colorrange: ['blue', 'red']
+        colorrange: ['blue', 'red'],
+        sort: 'countcategory'
       }]
 
 
