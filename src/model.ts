@@ -84,25 +84,7 @@ export interface IColumnDesc {
    */
   sort?: string;
 
-  /**
-   * Domain of the data
-   */
-  sdomain?: Array<number>;
 
-  /**
-   * Color Range
-   */
-  colorrange?: Array<string>;
-  /**
-   * Threshold to define
-   */
-
-  threshold?: number;
-
-  /*
-   Data length
-   */
-  datalength?: number;
 }
 
 export interface IStatistics {

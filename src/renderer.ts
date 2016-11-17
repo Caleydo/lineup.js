@@ -217,7 +217,6 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     var $rows = $col.datum(col).selectAll('g.heatmapcell').data(rows, context.rowKey);
     var $rows_enter = $rows.enter().append('g').attr({
       'class': 'heatmapcell',
-      'data-index': (d, i) => i,
       transform: (d, i) => 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'
     });
 
@@ -227,9 +226,9 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
 
 
     const total_width = col.getWidth();
-    const bins = col.desc.datalength;
-    const min = col.desc.sdomain[0], max = col.desc.sdomain[1];
-    const colorrange = col.desc.colorrange;
+    const bins = (<any>col.desc).datalength;
+    const min = (<any> col.desc).sdomain[0], max = (<any> col.desc).sdomain[1];
+    const colorrange = (<any> col.desc).colorrange;
     const celldimension = cell_dim(total_width, bins);
     var color: any = d3.scale.linear<number, string>();
     color = (min < 0) ? color.domain([min, 0, max]).range(colorrange)
@@ -269,10 +268,10 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     });
     $rows_enter.append('path').attr('class', 'sparkline');
 
-    const min = col.desc.sdomain[0];
-    const max = col.desc.sdomain[1];
-    const bins = col.desc.datalength;
-    var x: any = d3.scale.linear().domain([0, bins]).range([0, col.getWidth()]);
+    const min = (<any> col.desc).sdomain[0];
+    const max = (<any> col.desc).sdomain[1];
+    const bins = (<any> col.desc).datalength;
+    var x: any = d3.scale.linear().domain([0, bins - 1]).range([0, col.getWidth()]);
     var y: any = y = d3.scale.linear().domain([min, max]);
     var line = d3.svg.line<number>();
 
@@ -317,11 +316,11 @@ class VerticalbarCellRenderer extends DefaultCellRenderer {
     });
 
 
-    const bins = col.desc.datalength;
-    const threshold = col.desc.threshold;
+    const bins = (<any>col.desc).datalength;
+    const threshold = (<any> col.desc).threshold;
     const celldimension = (col.getWidth() / (bins));
-    const cat1color = col.desc.colorrange[0];
-    const cat2color = col.desc.colorrange[1];
+    const cat1color = (<any> col.desc).colorrange[0];
+    const cat2color = (<any> col.desc).colorrange[1];
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       return (col.getValue(d));
@@ -355,13 +354,13 @@ class VertcontinuousCellRenderer extends DefaultCellRenderer {
     });
 
 
-    const bins = col.desc.datalength;
-    const min = col.desc.sdomain[0];
-    const max = col.desc.sdomain[1];
-    const mincolor = col.desc.colorrange[0];
-    const maxcolor = col.desc.colorrange[1];
+    const bins = (<any> col.desc).datalength;
+    const min = (<any> col.desc).sdomain[0];
+    const max = (<any> col.desc).sdomain[1];
+    const mincolor = (<any> col.desc).colorrange[0];
+    const maxcolor = (<any> col.desc).colorrange[1];
     const celldimension = (col.getWidth() / bins);
-    const threshold = col.desc.threshold;
+    const threshold = (<any> col.desc).threshold;
     var barheight;
     var scale = d3.scale.linear();
     var color: any = d3.scale.linear<number,string>();
@@ -427,8 +426,8 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
     var q1arr = [];
     var q3arr = [];
     var medarr = [];
-    const min = col.desc.sdomain[0];
-    const max = col.desc.sdomain[1];
+    const min = (<any> col.desc).sdomain[0];
+    const max = (<any> col.desc).sdomain[1];
     var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
 
 
@@ -507,7 +506,7 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
     });
 
 
-    const bins = col.desc.datalength;
+    const bins = (<any> col.desc).datalength;
     const windowsize = col.getWidth() / bins;
     var catindexes = [];
 

@@ -1375,7 +1375,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return BoxplotColumn;
@@ -1410,7 +1409,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return VerticalconColumn;
@@ -4580,7 +4578,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var $rows = $col.datum(col).selectAll('g.heatmapcell').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'heatmapcell',
-	            'data-index': function (d, i) { return i; },
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        function cell_dim(total, cells) {
@@ -4628,7 +4625,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var min = col.desc.sdomain[0];
 	        var max = col.desc.sdomain[1];
 	        var bins = col.desc.datalength;
-	        var x = d3.scale.linear().domain([0, bins]).range([0, col.getWidth()]);
+	        var x = d3.scale.linear().domain([0, bins - 1]).range([0, col.getWidth()]);
 	        var y = y = d3.scale.linear().domain([min, max]);
 	        var line = d3.svg.line();
 	        $rows.attr({
