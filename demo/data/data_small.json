@@ -5,17 +5,14 @@
   "columns": [
     {
       "column": "schoolname",
-      "label": "Custom School Name",
       "type": "string"
     },
     {
       "column": "academic",
-      "label": "Academicbikram",
-      "type": "heatmapcustom",
+      "type": "number",
       "domain": [0, 100],
       "numberFormat": ".1f"
     },
-
     {
       "column": "employer",
       "type": "number",
@@ -42,7 +39,7 @@
     },
     {
       "column": "internationalstudents",
-      "label": "international bikram",
+      "label": "international students",
       "type": "number",
       "domain": [0, 100],
       "numberFormat": ".1f"

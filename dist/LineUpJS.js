@@ -4650,17 +4650,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            total_width = col.getWidth();
 	            return (value);
 	        });
+	        var celldimension = cell_dim(total_width, cols);
 	        color = (min < 0) ? color.domain([min, 0, max]).range(colorrange)
 	            : color.domain([min, max]).range([colorrange[1], colorrange[2]]);
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
-	            'width': cell_dim(total_width, cols),
+	            'width': celldimension,
 	            'height': function (d, i) { return (context.rowHeight(i)); },
-	            'x': function (d) {
-	                var prev = this.previousSibling; // One previous step information.
-	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
-	            },
+	            'x': function (d, i) { return (i === null || 0) ? 0 : (i * celldimension); },
 	            'y': 1,
 	            'fill': color
 	        });
@@ -4707,12 +4705,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            .attr('d', function (d, i) {
 	            line
 	                .x(function (d, i) { return x(i); })
-	                .y(function (d, i) { return y(d); });
+	                .y(function (d, i) {
+	                return y(d);
+	            });
 	            return line(col.getValue(d));
 	        });
-	        // $rows_enter.append('path').attr('class', 'sparkline')
-	        //   .attr('d', (d, i) => 'M' + 0 + ',' + context.rowHeight(i) / 2 + 'L' + col.getWidth() + ',' + context.rowHeight(i) / 2)
-	        //   .attr('stroke', 'red');
 	        context.animated($rows).attr({
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
@@ -4741,15 +4738,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            bits.push(value.length);
 	            return (value);
 	        });
+	        var celldimension = (col.getWidth() / d3.max(bits));
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
-	            'width': (col.getWidth() / d3.max(bits)),
+	            'width': celldimension,
 	            'height': function (d, i) { return (context.rowHeight(i)) / 2; },
-	            'x': function (d) {
-	                var prev = this.previousSibling; // One previous step information.
-	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
-	            },
+	            'x': function (d, i) { return (i === null || 0) ? 0 : (i * celldimension); },
 	            'y': function (d, i) { return (d < threshold) ? (context.rowHeight(i) / 2) : 0; },
 	            'fill': function (d) { return (d < threshold) ? 'blue' : 'red'; }
 	        });
@@ -4787,18 +4782,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	            barheight = context.rowHeight(i);
 	            return (data);
 	        });
+	        var celldimension = (col.getWidth() / d3.max(bits));
 	        scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
 	        var color = d3.scale.linear();
 	        color.domain([min, 0, max]).range([mincolor, 'white', maxcolor]);
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
-	            'width': (col.getWidth() / d3.max(bits)),
+	            'width': celldimension,
 	            'height': function (d) { return (d < threshold) ? (barheight / 2 - scale(d)) : scale(d); },
-	            'x': function (d) {
-	                var prev = this.previousSibling; // One previous step information.
-	                return (prev === null) ? 0 : parseFloat(d3.select(prev).attr('x')) + parseFloat(d3.select(prev).attr('width'));
-	            },
+	            'x': function (d, i) { return (i === null || 0) ? 0 : (i * celldimension); },
 	            'y': function (d, i) {
 	                if (min < 0) {
 	                    return (d < threshold) ? (context.rowHeight(i) / 2) : context.rowHeight(i) / 2 - scale(d); // For positive and negative value
@@ -4828,7 +4821,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var q3arr = [];
 	        var medarr = [];
 	        function getPercentile(data, percentile) {
-	            data.sort(numSort);
 	            var index = (percentile / 100) * data.length;
 	            var result;
 	            if (Math.floor(index) === index) {
@@ -4849,19 +4841,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var m2 = Math.max.apply(Math, data);
 	            minarr.push(m1);
 	            maxarr.push(m2);
+	            data.sort(numSort);
 	            q1arr.push(getPercentile(data, 25));
 	            medarr.push(getPercentile(data, 50));
 	            q3arr.push(getPercentile(data, 75));
 	        });
-	        var scale = d3.scale.linear().domain([d3.min(minarr), d3.max(maxarr)]).range([0, col.getWidth()]); // Constraint the window width
+	        var min = col.desc.sdomain[0];
+	        var max = col.desc.sdomain[1];
+	        var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
 	        var $rows = $col.datum(col).selectAll('g.boxplot').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'boxplot',
-	            'data-index': function (d, i) { return i; },
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
 	        $rows_enter.append('rect').attr('class', 'shift');
 	        $rows.select('rect.shift').attr({
+	            'data-index': function (d, i) { return i; },
 	            'width': function (d, i) { return scale(q3arr[i]) - scale(q1arr[i]); },
 	            'height': function (d, i) {
 	                var top = context.option('rowPadding', 30);
@@ -4871,9 +4866,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'x': function (d, i) { return scale(q1arr[i]); }
 	        });
 	        $rows_enter.append('path').attr('class', 'shift');
-	        var f = col.getWidth() / 100;
 	        $rows.select('path.shift').attr('d', function (d, i) {
-	            var left = scale(minarr[i]) * f, right = scale(maxarr[i]) * f, center = scale(medarr[i]) * f;
+	            var left = scale(minarr[i]), right = scale(maxarr[i]), center = scale(medarr[i]);
 	            var top = context.option('rowPadding', 1);
 	            var bottom = Math.max(context.rowHeight(i) - top, 0);
 	            var middle = (bottom - top) / 2;
@@ -4907,13 +4901,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var catindexes = [];
 	        var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value;
-	            bits.push(data.length);
+	            bits.push(value.length);
 	            windowsize = (col.getWidth() / d3.max(bits));
-	            return (data);
+	            return (value);
 	        });
 	        $circle.enter().append('circle')
-	            .attr('data-index', function (d, i) { return i; })
 	            .attr('data-index', function (d, i) { return i; })
 	            .attr('cx', function (d, i) { return (i * windowsize) + (windowsize / 2); })
 	            .attr('cy', function (d, i) { return (context.rowHeight(i) / 2); })
@@ -4922,10 +4914,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	            .attr('opacity', function (d) { return (d === 1) ? 1 : 0.1; })
 	            .attr('fill', 'black');
 	        $rows_enter.append('path')
+	            .filter(function (d) {
+	            var value = col.getValue(d);
+	            var countcategory = value.filter(function (x) { return x == 1; }).length;
+	            return countcategory > 1;
+	        })
 	            .attr('d', function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value;
-	            catindexes.push(data.reduce(function (b, e, i) {
+	            catindexes.push(value.reduce(function (b, e, i) {
 	                if (e === 1) {
 	                    b.push(i);
 	                }
@@ -4979,7 +4975,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var renderBars = function ($enter, clazz, $update) {
 	            $enter.append('rect').attr({
 	                'class': clazz,
-	                x: function (d, i) { return context.cellX(i); },
+	                x: function (d, i) {
+	                    return context.cellX(i);
+	                },
 	                y: function (d, i) { return context.cellPrevY(i) + padding; },
 	                width: function (d) {
 	                    var n = col.getWidth() * col.getValue(d);

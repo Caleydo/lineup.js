@@ -1171,7 +1171,7 @@ export class VerticalbarColumn extends ValueColumn<number[]> {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
 
-    var sort: any = new CustomSortCalculation(a_val, b_val);
+   var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
@@ -1198,7 +1198,7 @@ export class VerticalconColumn extends ValueColumn<number[]> {
   compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-    var sort: any = new CustomSortCalculation(a_val, b_val);
+   var sort: any = new CustomSortCalculation(a_val, b_val);
 
     if (this.desc.sort === 'min') {
 
@@ -1226,7 +1226,7 @@ export class CategorycustomColumn extends ValueColumn<number[]> {
   compare(a: any, b: any) {
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
-    var sort: any = new CustomSortCalculation(a_val, b_val);
+var sort: any = new CustomSortCalculation(a_val, b_val);
     return (sort.sum);
   }
 }

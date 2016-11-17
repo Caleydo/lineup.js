@@ -69,14 +69,16 @@ window.onload = function () {
     }, 0)
 
 
-    var min,max;
-  newdata.forEach(function (d) {
+    var min, max;
+    newdata.forEach(function (d) {
 
-    var tmp = (d.health_score.map(function(d) { return parseFloat((d)) ;}))
+      var tmp = (d.health_score.map(function (d) {
+        return parseFloat((d));
+      }))
 
-   min =d3.min([min,d3.min(tmp)]);
-     max =d3.max([max,d3.max(tmp)]);
-  })
+      min = d3.min([min, d3.min(tmp)]);
+      max = d3.max([max, d3.max(tmp)]);
+    })
 
     var arr1 = [];
     newdata.reduce(function (a, b, i) {
@@ -91,11 +93,13 @@ window.onload = function () {
         sparklinecustom: arraydata,
         boxplotcustom: arraydata,
         verticalbar: arraydata,
-        vertcontinuous: arraydata
+        vertcontinuous: arraydata,
+        categoricalcustom: catdata(4)
 
       })
 
     }, 0)
+
 
 //
 // var sum=0;
@@ -107,14 +111,34 @@ window.onload = function () {
 //
 // })
 
-console.log(arr1)
- var desc1 = [
-        {label: 'Country', type: 'string', column: 'country'},
-        {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom',sdomain:[min,max],colorrange:['blue','white','red'],sort:'min'} ,
-        {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom',sdomain:[min,max]},
-        {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
-        {label: 'Vertical', type: 'verticalbar', column: 'verticalbar',threshold:0},
-        {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous',sdomain:[min,max],colorrange:['blue','red']}]
+    console.log(arr1)
+    var desc1 = [
+      {label: 'Country', type: 'string', column: 'country'},
+      {
+        label: 'HeatMap',
+        type: 'heatmapcustom',
+        column: 'heatmapcustom',
+        sdomain: [min, max],
+        colorrange: ['blue', 'white', 'red'],
+        sort: 'min'
+      },
+      {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom', sdomain: [min, max]},
+      {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom', sdomain: [min, max]},
+      {label: 'Vertical', type: 'verticalbar', column: 'verticalbar', threshold: 0},
+      {
+        label: 'vertcontinuous',
+        type: 'vertcontinuous',
+        column: 'vertcontinuous',
+        sdomain: [min, max],
+        colorrange: ['blue', 'red']
+      },
+      {
+        label: 'categoricalcustom',
+        type: 'categoricalcustom',
+        column: 'categoricalcustom',
+        sdomain: [min, max],
+        colorrange: ['blue', 'red']
+      }]
 
 
     var p = new LineUpJS.provider.LocalDataProvider(arr1, desc1);
@@ -236,11 +260,11 @@ console.log(arr1)
 // // console.log(arr[0].heatmapcustom['rand'])
 //
   var desc = [
-       {label: 'C', type: 'number', column: 'c', 'domain': [0, 120], color: 'green'},
+    {label: 'C', type: 'number', column: 'c', 'domain': [0, 120], color: 'green'},
     {label: 'A', type: 'number', column: 'a', 'domain': [0, 120], color: 'green'},
     {label: 'Cat', type: 'categorical', column: 'cat', categories: ['c1', 'c2', 'c3']},
     {label: 'Custom1', type: 'custom', column: 'custom'},
-    {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom','domain': [0, 120],min:5,test:100},
+    {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom', 'domain': [0, 120], min: 5, test: 100},
     {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
     {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
     {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},
@@ -249,7 +273,7 @@ console.log(arr1)
   ];
 
 //
-  console.log( desc)
+  console.log(desc)
 
 //   var p = new LineUpJS.provider.LocalDataProvider(arr, desc);
 //
