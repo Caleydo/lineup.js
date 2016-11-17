@@ -117,12 +117,11 @@ $mapping_color_hover: #0000cf;
     right: 10px;
   }
 
-
-
 }
 
-
-input[type="radio"]:checked+label{ font-weight: bold; }
+input[type="radio"]:checked + label {
+  font-weight: bold;
+}
 
 .lu-popup, .lu-popup2 {
   background-color: rgba(255, 255, 255, 0.9);
@@ -529,27 +528,27 @@ $lu_drag_over: #979797;
       font-size: 9pt;
     }
 
-    .cat rect {
-      fill: transparent;
-    }
-    .shift {
+    .boxplotrect {
       stroke: black;
       fill: #e0e0e0;
 
     }
-    .shift1 {
-      stroke: red;
-
+    .boxplotline {
+      stroke: black;
+      fill: #e0e0e0;
     }
     .sparkline {
       fill: none;
       stroke: #000;
 
     }
-    .my1 {
-      //stroke: red;
-      stroke-width: 1;
-
+    .categoricalcircle {
+      stroke: black;
+      fill: black;
+    }
+    .categoricalpath {
+      stroke: black;
+      fill: black;
     }
 
   }

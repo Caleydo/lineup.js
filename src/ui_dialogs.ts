@@ -114,25 +114,25 @@ export function sortDialogHeatmap(column: model.HeatmapcustomColumn, $header: d3
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="heatmaprank" id="min" checked="checked">Minimum<br>
-  <input type="radio" name="heatmaprank" id="max">Maximum<br>
-  <input type="radio" name="heatmaprank" id="mean">Mean<br>
-  <input type="radio" name="heatmaprank" id="median">Median<br>
-  <input type="radio" name="heatmaprank" id="q1">Q1<br>
-  <input type="radio" name="heatmaprank" id="q3">Q3<br>
+  <input type="radio" name="heatmaprank" value="min" checked="checked">Minimum<br>
+  <input type="radio" name="heatmaprank" value="max">Maximum<br>
+  <input type="radio" name="heatmaprank" value="mean">Mean<br>
+  <input type="radio" name="heatmaprank" value="median">Median<br>
+  <input type="radio" name="heatmaprank" value="q1">Q1<br>
+  <input type="radio" name="heatmaprank" value="q3">Q3<br>
       </form>
    `);
+  var rank;
 
-
-  d3.selectAll("input[name=heatmaprank]").on("change", function () {
-
-    console.log(this['id']);
-    const rank = this['id'];
+  d3.selectAll('input[name=heatmaprank]').on('change', function () {
+    rank = (d3.select('input[name=heatmaprank]:checked').property('value'));
     column.desc.sort = rank;
+
 
   });
 
   popup.select('.ok').on('click', function () {
+    column.desc.sort = rank;
   });
 
   popup.select('.cancel').on('click', function () {
@@ -146,28 +146,28 @@ export function sortDialogSparkline(column: model.SparklineColumn, $header: d3.S
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="sparklinerank" id="min">Minimum<br>
-  <input type="radio" name="sparklinerank" id="max">Maximum<br>
+  <input type="radio" name="sparklinerank" value="min">Minimum<br>
+  <input type="radio" name="sparklinerank" value="max">Maximum<br>
       </form>
    `);
 
+  var rank;
 
-  d3.selectAll("input[name=sparklinerank]").on("change", function () {
-
-    console.log(this['id']);
-    const rank = this['id'];
+  d3.selectAll('input[name=sparklinerank]').on('change', function () {
+    rank = (d3.select('input[name=sparklinerank]:checked').property('value'));
     column.desc.sort = rank;
+
 
   });
 
-
   popup.select('.ok').on('click', function () {
-
+    column.desc.sort = rank;
   });
 
   popup.select('.cancel').on('click', function () {
     popup.remove();
   });
+
 
 }
 
@@ -175,27 +175,27 @@ export function sortDialogBoxplot(column: model.BoxplotColumn, $header: d3.Selec
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="boxplotrank" id="min">Minimum<br>
-  <input type="radio" name="boxplotrank" id="max">Maximum<br>
-  <input type="radio" name="boxplotrank" id="mean">Mean<br>
-  <input type="radio" name="boxplotrank" id="median">Median<br>
-  <input type="radio" name="boxplotrank" id="q1">Q1<br>
-  <input type="radio" name="boxplotrank" id="q3">Q3
+  <input type="radio" name="boxplotrank" value="min">Minimum<br>
+  <input type="radio" name="boxplotrank" value="max">Maximum<br>
+  <input type="radio" name="boxplotrank" value="mean">Mean<br>
+  <input type="radio" name="boxplotrank" value="median">Median<br>
+  <input type="radio" name="boxplotrank" value="q1">Q1<br>
+  <input type="radio" name="boxplotrank" value="q3">Q3
     </form>
    `);
 
 
-  d3.selectAll("input[name=boxplotrank]").on('change', function () {
+  var rank;
 
-    const rank = this['id'];
-     console.log(this['id']);
+  d3.selectAll('input[name=boxplotrank]').on('change', function () {
+    rank = (d3.select('input[name=boxplotrank]:checked').property('value'));
     column.desc.sort = rank;
 
-  })
 
+  });
 
   popup.select('.ok').on('click', function () {
-
+    column.desc.sort = rank;
   });
 
   popup.select('.cancel').on('click', function () {
@@ -209,25 +209,24 @@ export function sortDialogVerticalBar(column: model.VerticalbarColumn, $header: 
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="verticalbarrank" id="min">Minimum<br>
-  <input type="radio" name="verticalbarrank" id="max">Maximum<br>
-    <input type="radio" name="verticalbarrank" id="mean">Mean<br>
+  <input type="radio" name="verticalbarrank" value="min">Minimum<br>
+  <input type="radio" name="verticalbarrank" value="max">Maximum<br>
+    <input type="radio" name="verticalbarrank" value="mean">Mean<br>
       </form>
    `);
 
 
-  d3.selectAll("input[name=verticalbarrank]").on('change', function () {
+  var rank;
 
-    const rank = this['id'];
-     console.log(this['id']);
+  d3.selectAll('input[name=verticalbarrank]').on('change', function () {
+    rank = (d3.select('input[name=verticalbarrank]:checked').property('value'));
     column.desc.sort = rank;
 
-  })
 
-
+  });
 
   popup.select('.ok').on('click', function () {
-
+    column.desc.sort = rank;
   });
 
   popup.select('.cancel').on('click', function () {
@@ -240,30 +239,28 @@ export function sortDialogVerticalconBar(column: model.VerticalconColumn, $heade
 
   var popup = makePopup($header, 'Sort By', `
     <form>
-  <input type="radio" name="Verticalconbarrank" id="min">Minimum<br>
-  <input type="radio" name="Verticalconbarrank" id="max">Maximum<br>
-    <input type="radio" name="Verticalconbarrank" id="mean">Mean<br>
+  <input type="radio" name="Verticalconbarrank" value="min">Minimum<br>
+  <input type="radio" name="Verticalconbarrank" value="max">Maximum<br>
+    <input type="radio" name="Verticalconbarrank" value="mean">Mean<br>
       </form>
    `);
 
+  var rank;
 
-  d3.selectAll("input[name=Verticalconbarrank]").on('change', function () {
-
-    const rank = this['id'];
-     console.log(this['id']);
+  d3.selectAll('input[name=Verticalconbarrank]').on('change', function () {
+    rank = (d3.select('input[name=Verticalconbarrank]:checked').property('value'));
     column.desc.sort = rank;
 
-  })
 
+  });
 
   popup.select('.ok').on('click', function () {
-
+    column.desc.sort = rank;
   });
 
   popup.select('.cancel').on('click', function () {
     popup.remove();
   });
-
 }
 
 

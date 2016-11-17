@@ -308,17 +308,20 @@ input[type="radio"]:checked + label {
       padding: 0;
       margin: 0;
       font-size: 9pt; }
-    .lu svg.lu-body .cat rect, .lu-pool svg.lu-body .cat rect {
-      fill: transparent; }
-    .lu svg.lu-body .shift, .lu-pool svg.lu-body .shift {
+    .lu svg.lu-body .boxplotrect, .lu-pool svg.lu-body .boxplotrect {
       stroke: black;
       fill: #e0e0e0; }
-    .lu svg.lu-body .shift1, .lu-pool svg.lu-body .shift1 {
-      stroke: red; }
+    .lu svg.lu-body .boxplotline, .lu-pool svg.lu-body .boxplotline {
+      stroke: black;
+      fill: #e0e0e0; }
     .lu svg.lu-body .sparkline, .lu-pool svg.lu-body .sparkline {
       fill: none;
       stroke: #000; }
-    .lu svg.lu-body .my1, .lu-pool svg.lu-body .my1 {
-      stroke-width: 1; }
+    .lu svg.lu-body .categoricalcircle, .lu-pool svg.lu-body .categoricalcircle {
+      stroke: black;
+      fill: black; }
+    .lu svg.lu-body .categoricalpath, .lu-pool svg.lu-body .categoricalpath {
+      stroke: black;
+      fill: black; }
 
 /*# sourceMappingURL=style.css.map*/

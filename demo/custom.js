@@ -4,32 +4,6 @@
 
 window.onload = function () {
 
-  var negative = 'true';
-
-  function getrandom(datapoints, min, max) {
-    var temparr = [];
-    for (var i = 0; i < datapoints; i++) {
-
-      if (negative == 'true') {
-        temparr.push(Math.floor(Math.random() * (max * 2 + 1)) - (max));
-      }
-      else {
-        temparr.push(Math.floor(Math.random() * (max - min) + min));
-
-      }
-    }
-
-    return (temparr);
-  }
-
-  var datapoints = 50, min = 0, max = 100;
-
-  var rand0 = getrandom(datapoints, min, max);
-  var rand1 = getrandom(datapoints, min, max);
-  var rand2 = getrandom(datapoints, min, max);
-  var rand3 = getrandom(datapoints, min, max);
-  var rand4 = getrandom(datapoints, min, max);
-
 
   function catdata(datapoints) {
     var temparr = [];
@@ -51,7 +25,8 @@ window.onload = function () {
     var newdata = [];
 
 
-    data.reduce(function (a, b) {
+    data.forEach(function (b) {
+
       return newdata.push({
         'country': b.country,
         'iso': b.iso,
@@ -66,10 +41,9 @@ window.onload = function () {
         'sk_score': [b.sk_score2012, b.sk_score2013, b.sk_score2014, b.sk_score2015]
       });
 
-    }, 0)
+    })
 
-
-    var min, max;
+    var min, max, datalength;
     newdata.forEach(function (d) {
 
       var tmp = (d.health_score.map(function (d) {
@@ -78,7 +52,10 @@ window.onload = function () {
 
       min = d3.min([min, d3.min(tmp)]);
       max = d3.max([max, d3.max(tmp)]);
+      datalength = d3.max([datalength, tmp.length])
+
     })
+
 
     var arr1 = [];
     newdata.reduce(function (a, b, i) {
@@ -101,17 +78,6 @@ window.onload = function () {
     }, 0)
 
 
-//
-// var sum=0;
-// newdata.forEach(function ( d,i) {
-//
-//
-//   sum =d3.min([sum,d3.sum(d.health_score)/4])
-//   console.log(sum);
-//
-// })
-
-    console.log(arr1)
     var desc1 = [
       {label: 'Country', type: 'string', column: 'country'},
       {
@@ -120,28 +86,33 @@ window.onload = function () {
         column: 'heatmapcustom',
         sdomain: [min, max],
         colorrange: ['blue', 'white', 'red'],
-        sort: 'min'
+        sort: 'min',
+        datalength: datalength
       },
       {
         label: 'Spark Line',
         type: 'sparklinecustom',
         column: 'sparklinecustom',
         sdomain: [min, max],
-        sort: 'min'
+        sort: 'min',
+        datalength: datalength
       },
       {
         label: 'Box Plot',
         type: 'boxplotcustom',
         column: 'boxplotcustom',
         sdomain: [min, max],
-        sort: 'min'
+        sort: 'min',
+        datalength: datalength
       },
       {
         label: 'Vertical',
         type: 'verticalbar',
         column: 'verticalbar',
         threshold: 0,
-        sort: 'min'
+        sort: 'min',
+        colorrange: ['blue', 'red'],
+        datalength: datalength
       },
       {
         label: 'vertcontinuous',
@@ -149,7 +120,9 @@ window.onload = function () {
         column: 'vertcontinuous',
         sdomain: [min, max],
         colorrange: ['blue', 'red'],
-        sort: 'min'
+        sort: 'min',
+        threshold: 0,
+        datalength: datalength
       },
       {
         label: 'categoricalcustom',
@@ -157,7 +130,8 @@ window.onload = function () {
         column: 'categoricalcustom',
         sdomain: [min, max],
         colorrange: ['blue', 'red'],
-        sort: 'countcategory'
+        sort: 'countcategory',
+        datalength: datalength
       }]
 
 
@@ -180,18 +154,41 @@ window.onload = function () {
   })
 
 
-  var cat0 = catdata(10);
-  var cat1 = catdata(10);
-  var cat2 = catdata(10);
-  var cat3 = catdata(10);
-  var cat4 = catdata(10);
-  var tmp = [];
-  var b = [];
-  cat0.reduce(function (a, e, i) {
-    if (e === 1)
-      b.push(i);
-    return b;
-  }, []);
+  // For Random Data Only
+
+  // var negative = 'true';
+  //
+  // function getrandom(datapoints, min, max) {
+  //   var temparr = [];
+  //   for (var i = 0; i < datapoints; i++) {
+  //
+  //     if (negative == 'true') {
+  //       temparr.push(Math.floor(Math.random() * (max * 2 + 1)) - (max));
+  //     }
+  //     else {
+  //       temparr.push(Math.floor(Math.random() * (max - min) + min));
+  //
+  //     }
+  //   }
+  //
+  //   return (temparr);
+  // }
+  //
+  // var datapoints = 50, min = 0, max = 100;
+  //
+  //
+  // var cat0 = catdata(10);
+  // var cat1 = catdata(10);
+  // var cat2 = catdata(10);
+  // var cat3 = catdata(10);
+  // var cat4 = catdata(10);
+  // var tmp = [];
+  // var b = [];
+  // cat0.reduce(function (a, e, i) {
+  //   if (e === 1)
+  //     b.push(i);
+  //   return b;
+  // }, []);
 
   // var am= array.map(function(d) {
   //
@@ -278,22 +275,22 @@ window.onload = function () {
 //   ];
 //
 // // console.log(arr[0].heatmapcustom['rand'])
+// //
+//   var desc = [
+//     {label: 'C', type: 'number', column: 'c', 'domain': [0, 120], color: 'green'},
+//     {label: 'A', type: 'number', column: 'a', 'domain': [0, 120], color: 'green'},
+//     {label: 'Cat', type: 'categorical', column: 'cat', categories: ['c1', 'c2', 'c3']},
+//     {label: 'Custom1', type: 'custom', column: 'custom'},
+//     {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom', 'domain': [0, 120], min: 5, test: 100},
+//     {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
+//     {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
+//     {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},
+//     {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous'},
+//     {label: 'categorical', type: 'categoricalcustom', column: 'categoricalcustom'}
+//   ];
 //
-  var desc = [
-    {label: 'C', type: 'number', column: 'c', 'domain': [0, 120], color: 'green'},
-    {label: 'A', type: 'number', column: 'a', 'domain': [0, 120], color: 'green'},
-    {label: 'Cat', type: 'categorical', column: 'cat', categories: ['c1', 'c2', 'c3']},
-    {label: 'Custom1', type: 'custom', column: 'custom'},
-    {label: 'HeatMap', type: 'heatmapcustom', column: 'heatmapcustom', 'domain': [0, 120], min: 5, test: 100},
-    {label: 'Spark Line', type: 'sparklinecustom', column: 'sparklinecustom'},
-    {label: 'Box Plot', type: 'boxplotcustom', column: 'boxplotcustom'},
-    {label: 'Vertical', type: 'verticalbar', column: 'verticalbar'},
-    {label: 'vertcontinuous', type: 'vertcontinuous', column: 'vertcontinuous'},
-    {label: 'categorical', type: 'categoricalcustom', column: 'categoricalcustom'}
-  ];
-
-//
-  console.log(desc)
+// //
+//   console.log(desc)
 
 //   var p = new LineUpJS.provider.LocalDataProvider(arr, desc);
 //

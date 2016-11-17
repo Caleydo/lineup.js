@@ -98,6 +98,11 @@ export interface IColumnDesc {
    */
 
   threshold?: number;
+
+  /*
+   Data length
+   */
+  datalength?: number;
 }
 
 export interface IStatistics {
@@ -993,10 +998,10 @@ export class StringColumn extends ValueColumn<string> {
 
 
 export class CustomSortCalculation {
-  b_val: Array<number>;
 
-  constructor(private a_val: Array<number>, b_val: Array<number>) {
+  constructor(private a_val: number[], private b_val: number []) {
     this.b_val = b_val;
+    this.a_val = a_val;
   }
 
 
@@ -1005,18 +1010,18 @@ export class CustomSortCalculation {
   }
 
   min() {
-    return (d3.min(this.a_val) - d3.min(this.b_val))
+    return (d3.min(this.a_val) - d3.min(this.b_val));
 
   }
 
 
   max() {
-    return (d3.max(this.a_val) - d3.max(this.b_val))
+    return (d3.max(this.a_val) - d3.max(this.b_val));
   }
 
   mean() {
 
-    return (d3.mean(this.a_val) - d3.mean(this.b_val))
+    return (d3.mean(this.a_val) - d3.mean(this.b_val));
   }
 
   median() {
@@ -1058,15 +1063,17 @@ export class HeatmapcustomColumn extends ValueColumn<number[]> {
   constructor(id: string, desc: any) {
     super(id, desc);
     this.sortCriteria = desc.sort || 'min';
+
   }
 
   compare(a: any, b: any) {
+
     this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);
     var sort: any = new CustomSortCalculation(a_val, b_val);
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
+
     return f();
   }
 
@@ -1089,7 +1096,6 @@ export class SparklineColumn extends ValueColumn<number[]> {
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
     return f();
   }
 
@@ -1111,7 +1117,7 @@ export class BoxplotColumn extends ValueColumn<number[]> {
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
+
     return f();
   }
 }
@@ -1131,7 +1137,7 @@ export class VerticalbarColumn extends ValueColumn<number[]> {
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
+
     return f();
   }
 }
@@ -1151,7 +1157,7 @@ export class VerticalconColumn extends ValueColumn<number[]> {
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
+
     return f();
   }
 }
@@ -1171,7 +1177,7 @@ export class CategorycustomColumn extends ValueColumn<number[]> {
     var sort: any = new CustomSortCalculation(a_val, b_val);
 
     const f = sort[this.sortCriteria].bind(sort);
-    console.log(f)
+
     return f();
   }
 }

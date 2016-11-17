@@ -1295,6 +1295,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function CustomSortCalculation(a_val, b_val) {
 	        this.a_val = a_val;
 	        this.b_val = b_val;
+	        this.b_val = b_val;
+	        this.a_val = a_val;
 	    }
 	    CustomSortCalculation.prototype.sum = function () {
 	        return (d3.sum(this.a_val) - d3.sum(this.b_val));
@@ -1339,7 +1341,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return HeatmapcustomColumn;
@@ -1357,7 +1358,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return SparklineColumn;
@@ -1393,7 +1393,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return VerticalbarColumn;
@@ -1429,7 +1428,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var b_val = this.getValue(b);
 	        var sort = new CustomSortCalculation(a_val, b_val);
 	        var f = sort[this.sortCriteria].bind(sort);
-	        console.log(f);
 	        return f();
 	    };
 	    return CategorycustomColumn;
@@ -4588,20 +4586,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function cell_dim(total, cells) {
 	            return (total / cells);
 	        }
-	        var total_width = 1;
-	        var cols = 1;
-	        var color = d3.scale.linear();
+	        var total_width = col.getWidth();
+	        var bins = col.desc.datalength;
 	        var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
 	        var colorrange = col.desc.colorrange;
-	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	            var value = col.getValue(d);
-	            cols = value.length;
-	            total_width = col.getWidth();
-	            return (value);
-	        });
-	        var celldimension = cell_dim(total_width, cols);
+	        var celldimension = cell_dim(total_width, bins);
+	        var color = d3.scale.linear();
 	        color = (min < 0) ? color.domain([min, 0, max]).range(colorrange)
 	            : color.domain([min, max]).range([colorrange[1], colorrange[2]]);
+	        var $rects = $rows_enter.selectAll('rect').data(function (d) { return col.getValue(d); });
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
@@ -4615,9 +4608,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
 	        $rows.exit().remove();
-	    };
-	    HeatmapCellRenderer.prototype.findRow = function ($col, index) {
-	        return $col.selectAll('rect.shift[data-index="' + index + '"]');
 	    };
 	    return HeatmapCellRenderer;
 	}(DefaultCellRenderer));
@@ -4635,15 +4625,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        });
 	        $rows_enter.append('path').attr('class', 'sparkline');
-	        var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
-	        var bits, winheight;
-	        rows.forEach(function (d, i) {
-	            var data = col.getValue(d);
-	            bits = (data.length);
-	            winheight = context.rowHeight(i);
-	        });
-	        var x = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
-	        var y = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
+	        var min = col.desc.sdomain[0];
+	        var max = col.desc.sdomain[1];
+	        var bins = col.desc.datalength;
+	        var x = d3.scale.linear().domain([0, bins]).range([0, col.getWidth()]);
+	        var y = y = d3.scale.linear().domain([min, max]);
 	        var line = d3.svg.line();
 	        $rows.attr({
 	            'data-index': function (d, i) {
@@ -4655,6 +4641,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            line
 	                .x(function (d, i) { return x(i); })
 	                .y(function (d, i) {
+	                y.range([context.rowHeight(i), 0]);
 	                return y(d);
 	            });
 	            return line(col.getValue(d));
@@ -4680,14 +4667,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $rows.attr({
 	            'data-index': function (d, i) { return i; }
 	        });
-	        var bits = [];
+	        var bins = col.desc.datalength;
 	        var threshold = col.desc.threshold;
+	        var celldimension = (col.getWidth() / (bins));
+	        var cat1color = col.desc.colorrange[0];
+	        var cat2color = col.desc.colorrange[1];
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-	            var value = col.getValue(d);
-	            bits.push(value.length);
-	            return (value);
+	            return (col.getValue(d));
 	        });
-	        var celldimension = (col.getWidth() / d3.max(bits));
 	        $rects.enter().append('rect');
 	        $rects.attr({
 	            'data-index': function (d, i) { return i; },
@@ -4695,7 +4682,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'height': function (d, i) { return (context.rowHeight(i)) / 2; },
 	            'x': function (d, i) { return (i === null || 0) ? 0 : (i * celldimension); },
 	            'y': function (d, i) { return (d < threshold) ? (context.rowHeight(i) / 2) : 0; },
-	            'fill': function (d) { return (d < threshold) ? 'blue' : 'red'; }
+	            'fill': function (d) { return (d < threshold) ? cat1color : cat2color; }
 	        });
 	        context.animated($rows).attr({
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
@@ -4716,24 +4703,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'data-index': function (d, i) { return i; },
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
-	        var bits = [];
+	        var bins = col.desc.datalength;
 	        var min = col.desc.sdomain[0];
 	        var max = col.desc.sdomain[1];
 	        var mincolor = col.desc.colorrange[0];
 	        var maxcolor = col.desc.colorrange[1];
+	        var celldimension = (col.getWidth() / bins);
+	        var threshold = col.desc.threshold;
 	        var barheight;
-	        var threshold = 0;
 	        var scale = d3.scale.linear();
+	        var color = d3.scale.linear();
 	        var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
 	            var value = col.getValue(d);
-	            var data = value;
-	            bits.push(data.length);
 	            barheight = context.rowHeight(i);
-	            return (data);
+	            return (value);
 	        });
-	        var celldimension = (col.getWidth() / d3.max(bits));
 	        scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
-	        var color = d3.scale.linear();
 	        color.domain([min, 0, max]).range([mincolor, 'white', maxcolor]);
 	        $rects.enter().append('rect');
 	        $rects.attr({
@@ -4764,11 +4749,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.apply(this, arguments);
 	    }
 	    BoxplotCellRenderer.prototype.render = function ($col, col, rows, context) {
-	        var maxarr = [];
-	        var minarr = [];
-	        var q1arr = [];
-	        var q3arr = [];
-	        var medarr = [];
 	        function getPercentile(data, percentile) {
 	            var index = (percentile / 100) * data.length;
 	            var result;
@@ -4784,6 +4764,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function numSort(a, b) {
 	            return a - b;
 	        }
+	        var maxarr = [];
+	        var minarr = [];
+	        var q1arr = [];
+	        var q3arr = [];
+	        var medarr = [];
+	        var min = col.desc.sdomain[0];
+	        var max = col.desc.sdomain[1];
+	        var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
 	        rows.forEach(function (d, i) {
 	            var data = col.getValue(d);
 	            var m1 = Math.min.apply(Math, data);
@@ -4795,16 +4783,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            medarr.push(getPercentile(data, 50));
 	            q3arr.push(getPercentile(data, 75));
 	        });
-	        var min = col.desc.sdomain[0];
-	        var max = col.desc.sdomain[1];
-	        var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
 	        var $rows = $col.datum(col).selectAll('g.boxplot').data(rows, context.rowKey);
 	        var $rows_enter = $rows.enter().append('g').attr({
 	            'class': 'boxplot',
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
-	        $rows_enter.append('rect').attr('class', 'shift');
-	        $rows.select('rect.shift').attr({
+	        $rows_enter.append('rect').attr('class', 'boxplotrect');
+	        $rows.select('rect.boxplotrect').attr({
 	            'data-index': function (d, i) { return i; },
 	            'width': function (d, i) { return scale(q3arr[i]) - scale(q1arr[i]); },
 	            'height': function (d, i) {
@@ -4814,8 +4799,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'y': 0,
 	            'x': function (d, i) { return scale(q1arr[i]); }
 	        });
-	        $rows_enter.append('path').attr('class', 'shift');
-	        $rows.select('path.shift').attr('d', function (d, i) {
+	        $rows_enter.append('path').attr('class', 'boxplotline');
+	        $rows.select('path.boxplotline').attr('d', function (d, i) {
 	            var left = scale(minarr[i]), right = scale(maxarr[i]), center = scale(medarr[i]);
 	            var top = context.option('rowPadding', 1);
 	            var bottom = Math.max(context.rowHeight(i) - top, 0);
@@ -4845,27 +4830,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	            'data-index': function (d, i) { return i; },
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellPrevY(i) + ')'; }
 	        });
-	        var bits = [];
-	        var windowsize = 0;
+	        var bins = col.desc.datalength;
+	        var windowsize = col.getWidth() / bins;
 	        var catindexes = [];
 	        var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
-	            var value = col.getValue(d);
-	            bits.push(value.length);
-	            windowsize = (col.getWidth() / d3.max(bits));
-	            return (value);
+	            return (col.getValue(d));
 	        });
 	        $circle.enter().append('circle')
 	            .attr('data-index', function (d, i) { return i; })
 	            .attr('cx', function (d, i) { return (i * windowsize) + (windowsize / 2); })
 	            .attr('cy', function (d, i) { return (context.rowHeight(i) / 2); })
 	            .attr('r', (windowsize / 4))
-	            .attr('stroke', 'black')
-	            .attr('opacity', function (d) { return (d === 1) ? 1 : 0.1; })
-	            .attr('fill', 'black');
+	            .attr('class', 'categoricalcircle')
+	            .attr('opacity', function (d) { return (d === 1) ? 1 : 0.1; });
 	        $rows_enter.append('path')
 	            .filter(function (d) {
 	            var value = col.getValue(d);
-	            var countcategory = value.filter(function (x) { return x == 1; }).length;
+	            var countcategory = value.filter(function (x) { return x === 1; }).length;
 	            return countcategory > 1;
 	        })
 	            .attr('d', function (d, i) {
@@ -4878,8 +4859,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }, []));
 	            return 'M' + ((d3.min(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2) + 'L' + ((d3.max(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2);
 	        })
-	            .attr('fill', 'black')
-	            .attr('stroke', 'black');
+	            .attr('class', 'categoricalpath');
 	        context.animated($rows).attr({
 	            transform: function (d, i) { return 'translate(' + context.cellX(i) + ',' + context.cellY(i) + ')'; }
 	        });
@@ -6972,13 +6952,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.openEditLinkDialog = openEditLinkDialog;
 	function sortDialogHeatmap(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"min\" checked=\"checked\">Minimum<br>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"heatmaprank\" id=\"q3\">Q3<br>\n      </form>\n   ");
-	    d3.selectAll("input[name=heatmaprank]").on("change", function () {
-	        console.log(this['id']);
-	        var rank = this['id'];
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"min\" checked=\"checked\">Minimum<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"median\">Median<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"q3\">Q3<br>\n      </form>\n   ");
+	    var rank;
+	    d3.selectAll('input[name=heatmaprank]').on('change', function () {
+	        rank = (d3.select('input[name=heatmaprank]:checked').property('value'));
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
+	        column.desc.sort = rank;
 	    });
 	    popup.select('.cancel').on('click', function () {
 	        popup.remove();
@@ -6986,13 +6967,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogHeatmap = sortDialogHeatmap;
 	function sortDialogSparkline(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"sparklinerank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"sparklinerank\" id=\"max\">Maximum<br>\n      </form>\n   ");
-	    d3.selectAll("input[name=sparklinerank]").on("change", function () {
-	        console.log(this['id']);
-	        var rank = this['id'];
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"sparklinerank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"sparklinerank\" value=\"max\">Maximum<br>\n      </form>\n   ");
+	    var rank;
+	    d3.selectAll('input[name=sparklinerank]').on('change', function () {
+	        rank = (d3.select('input[name=sparklinerank]:checked').property('value'));
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
+	        column.desc.sort = rank;
 	    });
 	    popup.select('.cancel').on('click', function () {
 	        popup.remove();
@@ -7000,13 +6982,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogSparkline = sortDialogSparkline;
 	function sortDialogBoxplot(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"median\">Median<br>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"boxplotrank\" id=\"q3\">Q3\n    </form>\n   ");
-	    d3.selectAll("input[name=boxplotrank]").on('change', function () {
-	        var rank = this['id'];
-	        console.log(this['id']);
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"median\">Median<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"q3\">Q3\n    </form>\n   ");
+	    var rank;
+	    d3.selectAll('input[name=boxplotrank]').on('change', function () {
+	        rank = (d3.select('input[name=boxplotrank]:checked').property('value'));
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
+	        column.desc.sort = rank;
 	    });
 	    popup.select('.cancel').on('click', function () {
 	        popup.remove();
@@ -7014,13 +6997,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogBoxplot = sortDialogBoxplot;
 	function sortDialogVerticalBar(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"verticalbarrank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"verticalbarrank\" id=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"verticalbarrank\" id=\"mean\">Mean<br>\n      </form>\n   ");
-	    d3.selectAll("input[name=verticalbarrank]").on('change', function () {
-	        var rank = this['id'];
-	        console.log(this['id']);
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"verticalbarrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"verticalbarrank\" value=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"verticalbarrank\" value=\"mean\">Mean<br>\n      </form>\n   ");
+	    var rank;
+	    d3.selectAll('input[name=verticalbarrank]').on('change', function () {
+	        rank = (d3.select('input[name=verticalbarrank]:checked').property('value'));
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
+	        column.desc.sort = rank;
 	    });
 	    popup.select('.cancel').on('click', function () {
 	        popup.remove();
@@ -7028,13 +7012,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogVerticalBar = sortDialogVerticalBar;
 	function sortDialogVerticalconBar(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"Verticalconbarrank\" id=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"Verticalconbarrank\" id=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"Verticalconbarrank\" id=\"mean\">Mean<br>\n      </form>\n   ");
-	    d3.selectAll("input[name=Verticalconbarrank]").on('change', function () {
-	        var rank = this['id'];
-	        console.log(this['id']);
+	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"Verticalconbarrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"Verticalconbarrank\" value=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"Verticalconbarrank\" value=\"mean\">Mean<br>\n      </form>\n   ");
+	    var rank;
+	    d3.selectAll('input[name=Verticalconbarrank]').on('change', function () {
+	        rank = (d3.select('input[name=Verticalconbarrank]:checked').property('value'));
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
+	        column.desc.sort = rank;
 	    });
 	    popup.select('.cancel').on('click', function () {
 	        popup.remove();

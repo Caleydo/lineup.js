@@ -226,29 +226,21 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     }
 
 
-    var total_width = 1;
-    var cols = 1;
+    const total_width = col.getWidth();
+    const bins = col.desc.datalength;
+    const min = col.desc.sdomain[0], max = col.desc.sdomain[1];
+    const colorrange = col.desc.colorrange;
+    const celldimension = cell_dim(total_width, bins);
     var color: any = d3.scale.linear<number, string>();
-    var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
-    var colorrange = col.desc.colorrange;
-
-    var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-      var value = col.getValue(d);
-
-      cols = value.length;
-      total_width = col.getWidth();
-      return (value);
-    });
-
-    const celldimension = cell_dim(total_width, cols);
     color = (min < 0) ? color.domain([min, 0, max]).range(colorrange)
       : color.domain([min, max]).range([colorrange[1], colorrange[2]]);
+
+    var $rects = $rows_enter.selectAll('rect').data((d)=> col.getValue(d));
 
     $rects.enter().append('rect');
     $rects.attr({
 
       'data-index': (d, i) => i,
-
       'width': celldimension,
       'height': (d, i) => (context.rowHeight(i)),
       'x': (d, i) => (i === null || 0) ? 0 : (i * celldimension),
@@ -262,9 +254,7 @@ class HeatmapCellRenderer extends DefaultCellRenderer {
     $rows.exit().remove();
   }
 
-  findRow($col: d3.Selection<any>, index: number) {
-    return $col.selectAll('rect.shift[data-index="' + index + '"]');
-  }
+
 }
 
 class SparklineCellRenderer extends DefaultCellRenderer {
@@ -279,19 +269,11 @@ class SparklineCellRenderer extends DefaultCellRenderer {
     });
     $rows_enter.append('path').attr('class', 'sparkline');
 
-    var min = col.desc.sdomain[0], max = col.desc.sdomain[1];
-    var bits, winheight;
-
-    rows.forEach(function (d, i) {
-      var data = col.getValue(d);
-
-      bits = (data.length);
-
-      winheight = context.rowHeight(i);
-    });
-
-    var x: any = d3.scale.linear().domain([0, bits]).range([0, col.getWidth()]);
-    var y: any = y = d3.scale.linear().domain([min, max]).range([winheight, 0]);
+    const min = col.desc.sdomain[0];
+    const max = col.desc.sdomain[1];
+    const bins = col.desc.datalength;
+    var x: any = d3.scale.linear().domain([0, bins]).range([0, col.getWidth()]);
+    var y: any = y = d3.scale.linear().domain([min, max]);
     var line = d3.svg.line<number>();
 
 
@@ -305,8 +287,9 @@ class SparklineCellRenderer extends DefaultCellRenderer {
         line
           .x((d, i) => x(i))
           .y(function (d: any, i) {
+            y.range([context.rowHeight(i), 0]);
             return y(d);
-          })
+          });
         return line(col.getValue(d));
       });
 
@@ -334,19 +317,16 @@ class VerticalbarCellRenderer extends DefaultCellRenderer {
     });
 
 
-    var bits = [];
-    var threshold = col.desc.threshold;
+    const bins = col.desc.datalength;
+    const threshold = col.desc.threshold;
+    const celldimension = (col.getWidth() / (bins));
+    const cat1color = col.desc.colorrange[0];
+    const cat2color = col.desc.colorrange[1];
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
-      var value = col.getValue(d);
-
-      bits.push(value.length);
-
-      return (value);
+      return (col.getValue(d));
     });
 
-
-    const celldimension = (col.getWidth() / d3.max(bits));
 
     $rects.enter().append('rect');
     $rects.attr({
@@ -355,7 +335,7 @@ class VerticalbarCellRenderer extends DefaultCellRenderer {
       'height': (d, i) => (context.rowHeight(i)) / 2,
       'x': (d, i) => (i === null || 0) ? 0 : (i * celldimension),
       'y': (d, i) => (d < threshold) ? (context.rowHeight(i) / 2) : 0,
-      'fill': (d) => (d < threshold) ? 'blue' : 'red'
+      'fill': (d) => (d < threshold) ? cat1color : cat2color
     });
 
     context.animated($rows).attr({
@@ -375,26 +355,25 @@ class VertcontinuousCellRenderer extends DefaultCellRenderer {
     });
 
 
-    var bits = [];
-    var min = col.desc.sdomain[0];
-    var max = col.desc.sdomain[1];
-    var mincolor = col.desc.colorrange[0];
-    var maxcolor = col.desc.colorrange[1];
+    const bins = col.desc.datalength;
+    const min = col.desc.sdomain[0];
+    const max = col.desc.sdomain[1];
+    const mincolor = col.desc.colorrange[0];
+    const maxcolor = col.desc.colorrange[1];
+    const celldimension = (col.getWidth() / bins);
+    const threshold = col.desc.threshold;
     var barheight;
-    var threshold = 0;
     var scale = d3.scale.linear();
+    var color: any = d3.scale.linear<number,string>();
 
     var $rects = $rows_enter.selectAll('rect').data(function (d, i) {
       var value = col.getValue(d);
-      var data = value;
-      bits.push(data.length);
-
       barheight = context.rowHeight(i);
-      return (data);
+      return (value);
     });
-    const celldimension = (col.getWidth() / d3.max(bits));
+
     scale = (min < 0) ? (scale.domain([min, max]).range([0, barheight / 2])) : (scale.domain([min, max]).range([0, barheight]));
-    var color: any = d3.scale.linear<number,string>();
+
     color.domain([min, 0, max]).range([mincolor, 'white', maxcolor]);
 
     $rects.enter().append('rect');
@@ -426,13 +405,6 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
   render($col: d3.Selection<any>, col: model.BoxplotColumn, rows: any[], context: IRenderContext) {
 
 
-    var maxarr = [];
-    var minarr = [];
-    var q1arr = [];
-    var q3arr = [];
-    var medarr = [];
-
-
     function getPercentile(data, percentile) {
 
       var index = (percentile / 100) * data.length;
@@ -450,6 +422,15 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       return a - b;
     }
 
+    var maxarr = [];
+    var minarr = [];
+    var q1arr = [];
+    var q3arr = [];
+    var medarr = [];
+    const min = col.desc.sdomain[0];
+    const max = col.desc.sdomain[1];
+    var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
+
 
     rows.forEach(function (d, i) {
 
@@ -465,10 +446,7 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       q3arr.push(getPercentile(data, 75));
 
     });
-    const min = col.desc.sdomain[0];
-    const max = col.desc.sdomain[1];
 
-    var scale = d3.scale.linear().domain([min, max]).range([0, col.getWidth()]); // Constraint the window width
 
     var $rows = $col.datum(col).selectAll('g.boxplot').data(rows, context.rowKey);
 
@@ -478,8 +456,8 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
     });
 
 
-    $rows_enter.append('rect').attr('class', 'shift');
-    $rows.select('rect.shift').attr(
+    $rows_enter.append('rect').attr('class', 'boxplotrect');
+    $rows.select('rect.boxplotrect').attr(
       {
         'data-index': (d, i) => i,
         'width': (d, i) => scale(q3arr[i]) - scale(q1arr[i]),
@@ -492,9 +470,9 @@ class BoxplotCellRenderer extends DefaultCellRenderer {
       });
 
 
-    $rows_enter.append('path').attr('class', 'shift');
+    $rows_enter.append('path').attr('class', 'boxplotline');
 
-    $rows.select('path.shift').attr('d', function (d, i) {
+    $rows.select('path.boxplotline').attr('d', function (d, i) {
 
       var left = scale(minarr[i]), right = scale(maxarr[i]), center = scale(medarr[i]);
       var top = context.option('rowPadding', 1);
@@ -529,40 +507,34 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
     });
 
 
-    var bits = [];
-
-    var windowsize = 0;
-
+    const bins = col.desc.datalength;
+    const windowsize = col.getWidth() / bins;
     var catindexes = [];
 
 
     var $circle = $rows_enter.selectAll('circle').data(function (d, i) {
-      var value = col.getValue(d);
-       bits.push(value.length);
-      windowsize = (col.getWidth() / d3.max(bits));
-      return (value);
-    });
+      return (col.getValue(d));
 
+    });
 
     $circle.enter().append('circle')
       .attr('data-index', (d, i) => i)
       .attr('cx', (d: any, i) => (i * windowsize) + (windowsize / 2))
       .attr('cy', (d: any, i) => (context.rowHeight(i) / 2))
       .attr('r', (windowsize / 4))
-      .attr('stroke', 'black')
-      .attr('opacity', (d) =>(d === 1) ? 1 : 0.1)
-      .attr('fill', 'black');
+      .attr('class', 'categoricalcircle')
+      .attr('opacity', (d) =>(d === 1) ? 1 : 0.1);
 
 
     $rows_enter.append('path')
-      .filter(function (d ) {
+      .filter(function (d) {
         var value = col.getValue(d);
-        const countcategory = value.filter(function(x){return x==1}).length;
-        return countcategory >1;
+        var countcategory = value.filter((x) => x === 1).length;
+        return countcategory > 1;
 
       })
-         .attr('d', function (d, i) {
-       const value = col.getValue(d)
+      .attr('d', function (d, i) {
+        var value = col.getValue(d);
         catindexes.push(value.reduce(function (b, e, i) {
           if (e === 1) {
             b.push(i);
@@ -570,11 +542,10 @@ class CategoricalCellRenderer extends DefaultCellRenderer {
           return b;
         }, []));
 
-       return 'M' + ((d3.min(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2) + 'L' + ((d3.max(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2);
+        return 'M' + ((d3.min(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2) + 'L' + ((d3.max(catindexes[i]) * windowsize) + (windowsize / 2)) + ',' + (context.rowHeight(i) / 2);
 
-       })
-      .attr('fill', 'black')
-      .attr('stroke', 'black');
+      })
+      .attr('class', 'categoricalpath');
 
 
     context.animated($rows).attr({
