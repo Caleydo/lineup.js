@@ -112,27 +112,24 @@ export function openEditLinkDialog(column: model.LinkColumn, $header: d3.Selecti
 
 export function sortDialogHeatmap(column: model.HeatmapcustomColumn, $header: d3.Selection<model.HeatmapcustomColumn>) {
 
-  var popup = makePopup($header, 'Sort By', `
-    <form>
-  <input type="radio" name="heatmaprank" value="min" checked="checked">Minimum<br>
-  <input type="radio" name="heatmaprank" value="max">Maximum<br>
-  <input type="radio" name="heatmaprank" value="mean">Mean<br>
-  <input type="radio" name="heatmaprank" value="median">Median<br>
-  <input type="radio" name="heatmaprank" value="q1">Q1<br>
-  <input type="radio" name="heatmaprank" value="q3">Q3<br>
-      </form>
-   `);
-  var rank;
+  var rank = column.desc.sort;
+  var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
+  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+    return `<input type="radio" name="heatmaprank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
+
+  }).join('\n'));
+  var that;
   d3.selectAll('input[name=heatmaprank]').on('change', function () {
-    rank = (d3.select('input[name=heatmaprank]:checked').property('value'));
+    that = this;
+    rank = that.value;
     column.desc.sort = rank;
-
 
   });
 
   popup.select('.ok').on('click', function () {
     column.desc.sort = rank;
+
   });
 
   popup.select('.cancel').on('click', function () {
@@ -144,24 +141,24 @@ export function sortDialogHeatmap(column: model.HeatmapcustomColumn, $header: d3
 
 export function sortDialogSparkline(column: model.SparklineColumn, $header: d3.Selection<model.SparklineColumn>) {
 
-  var popup = makePopup($header, 'Sort By', `
-    <form>
-  <input type="radio" name="sparklinerank" value="min">Minimum<br>
-  <input type="radio" name="sparklinerank" value="max">Maximum<br>
-      </form>
-   `);
+  var rank = column.desc.sort;
+  var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var rank;
+  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+    return `<input type="radio" name="sparklinerank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
+  }).join('\n'));
+  var that;
   d3.selectAll('input[name=sparklinerank]').on('change', function () {
-    rank = (d3.select('input[name=sparklinerank]:checked').property('value'));
+    that = this;
+    rank = that.value;
     column.desc.sort = rank;
-
 
   });
 
   popup.select('.ok').on('click', function () {
     column.desc.sort = rank;
+
   });
 
   popup.select('.cancel').on('click', function () {
@@ -173,29 +170,24 @@ export function sortDialogSparkline(column: model.SparklineColumn, $header: d3.S
 
 export function sortDialogBoxplot(column: model.BoxplotColumn, $header: d3.Selection<model.BoxplotColumn>) {
 
-  var popup = makePopup($header, 'Sort By', `
-    <form>
-  <input type="radio" name="boxplotrank" value="min">Minimum<br>
-  <input type="radio" name="boxplotrank" value="max">Maximum<br>
-  <input type="radio" name="boxplotrank" value="mean">Mean<br>
-  <input type="radio" name="boxplotrank" value="median">Median<br>
-  <input type="radio" name="boxplotrank" value="q1">Q1<br>
-  <input type="radio" name="boxplotrank" value="q3">Q3
-    </form>
-   `);
+  var rank = column.desc.sort;
+  var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
+  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+    return `<input type="radio" name="boxplotrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
-  var rank;
-
+  }).join('\n'));
+  var that;
   d3.selectAll('input[name=boxplotrank]').on('change', function () {
-    rank = (d3.select('input[name=boxplotrank]:checked').property('value'));
+    that = this;
+    rank = that.value;
     column.desc.sort = rank;
-
 
   });
 
   popup.select('.ok').on('click', function () {
     column.desc.sort = rank;
+
   });
 
   popup.select('.cancel').on('click', function () {
@@ -207,29 +199,28 @@ export function sortDialogBoxplot(column: model.BoxplotColumn, $header: d3.Selec
 
 export function sortDialogVerticalBar(column: model.VerticalbarColumn, $header: d3.Selection<model.VerticalbarColumn>) {
 
-  var popup = makePopup($header, 'Sort By', `
-    <form>
-  <input type="radio" name="verticalbarrank" value="min">Minimum<br>
-  <input type="radio" name="verticalbarrank" value="max">Maximum<br>
-    <input type="radio" name="verticalbarrank" value="mean">Mean<br>
-      </form>
-   `);
+  var rank = column.desc.sort;
+  var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
+  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+    return `<input type="radio" name="verticalbarrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
-  var rank;
-
+  }).join('\n'));
+  var that;
   d3.selectAll('input[name=verticalbarrank]').on('change', function () {
-    rank = (d3.select('input[name=verticalbarrank]:checked').property('value'));
+    that = this;
+    rank = that.value;
     column.desc.sort = rank;
-
 
   });
 
   popup.select('.ok').on('click', function () {
     column.desc.sort = rank;
+
   });
 
   popup.select('.cancel').on('click', function () {
+
     popup.remove();
   });
 
@@ -237,30 +228,33 @@ export function sortDialogVerticalBar(column: model.VerticalbarColumn, $header: 
 
 export function sortDialogVerticalconBar(column: model.VerticalconColumn, $header: d3.Selection<model.VerticalconColumn>) {
 
-  var popup = makePopup($header, 'Sort By', `
-    <form>
-  <input type="radio" name="Verticalconbarrank" value="min">Minimum<br>
-  <input type="radio" name="Verticalconbarrank" value="max">Maximum<br>
-    <input type="radio" name="Verticalconbarrank" value="mean">Mean<br>
-      </form>
-   `);
 
-  var rank;
+  var rank = column.desc.sort;
+  var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
+  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+    return `<input type="radio" name="Verticalconbarrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
+
+  }).join('\n'));
+  var that;
   d3.selectAll('input[name=Verticalconbarrank]').on('change', function () {
-    rank = (d3.select('input[name=Verticalconbarrank]:checked').property('value'));
+    that = this;
+    rank = that.value;
     column.desc.sort = rank;
-
 
   });
 
   popup.select('.ok').on('click', function () {
     column.desc.sort = rank;
+
   });
 
   popup.select('.cancel').on('click', function () {
+
     popup.remove();
   });
+
+
 }
 
 
@@ -285,7 +279,9 @@ export function openSearchDialog(column: model.Column, $header: d3.Selection<mod
   });
 
   function updateImpl() {
+
     var search = popup.select('input[type="text"]').property('value');
+
     var isRegex = popup.select('input[type="text"]').property('checked');
     if (search.length > 0) {
       if (isRegex) {
@@ -464,6 +460,7 @@ function openStringFilter(column: model.StringColumn, $header: d3.Selection<mode
     bak = '';
   }
 
+
   var $popup = makePopup($header, 'Filter',
     `<input type="text" placeholder="containing..." autofocus="true" size="15" value="${(bak instanceof RegExp) ? bak.source : bak}" autofocus="autofocus">
     <br><label><input type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}>RegExp</label><br><label><input class="lu_filter_missing" type="checkbox" ${bakMissing ? 'checked="checked"' : ''}>Filter Missing</label>
@@ -477,6 +474,7 @@ function openStringFilter(column: model.StringColumn, $header: d3.Selection<mode
   function updateImpl(force) {
     //get value
     var search: any = $popup.select('input[type="text"]').property('value');
+
     var filterMissing = $popup.select('input[type="checkbox"].lu_filter_missing').property('checked');
     if (filterMissing && search === '') {
       search = model.StringColumn.FILTER_MISSING;
@@ -515,6 +513,62 @@ function openStringFilter(column: model.StringColumn, $header: d3.Selection<mode
     $popup.remove();
   });
 }
+
+
+// function openSortFilter(column: model.HeatmapcustomColumn, $header: d3.Selection<model.Column>) {
+//
+//   var $popup = makePopup($header, 'Filter',
+//     `<input type="text" placeholder="containing..." autofocus="true" size="15" value="${(bak instanceof RegExp) ? bak.source : bak}" autofocus="autofocus">
+//     <br><label><input type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}>RegExp</label><br><label><input class="lu_filter_missing" type="checkbox" ${bakMissing ? 'checked="checked"' : ''}>Filter Missing</label>
+//     <br>`);
+//
+//   function updateData(filter) {
+//     markFiltered($header, (filter && filter !== ''));
+//     column.setFilter(filter);
+//   }
+//
+//   function updateImpl(force) {
+//     //get value
+//     var search: any = $popup.select('input[type="text"]').property('value');
+//     console.log(search)
+//     var filterMissing = $popup.select('input[type="checkbox"].lu_filter_missing').property('checked');
+//     if (filterMissing && search === '') {
+//       search = model.StringColumn.FILTER_MISSING;
+//     }
+//     if (search === '') { //reset
+//       updateData(search);
+//       return;
+//     }
+//     if (search.length >= 3 || force) {
+//       var isRegex = $popup.select('input[type="checkbox"]:first-of-type').property('checked');
+//       if (isRegex && search !== model.StringColumn.FILTER_MISSING) {
+//         search = new RegExp(search);
+//       }
+//       updateData(search);
+//     }
+//
+//   }
+//
+//   $popup.selectAll('input[type="checkbox"]').on('change', updateImpl);
+//   $popup.select('input[type="text"]').on('input', updateImpl);
+//
+//   $popup.select('.cancel').on('click', function () {
+//     $popup.select('input[type="text"]').property('value', bak || '');
+//     $popup.select('input[type="checkbox"]:first-of-type').property('checked', bak instanceof RegExp ? 'checked' : null);
+//     $popup.select('input[type="checkbox"].lu_filter_missing').property('checked', bakMissing ? 'checked' : null);
+//     updateData(bak);
+//     $popup.remove();
+//   });
+//   $popup.select('.reset').on('click', function () {
+//     $popup.select('input[type="text"]').property('value', '');
+//     $popup.selectAll('input[type="checkbox"]').property('checked', null);
+//     updateData(null);
+//   });
+//   $popup.select('.ok').on('click', function () {
+//     updateImpl(true);
+//     $popup.remove();
+//   });
+// }
 
 
 /**
@@ -771,6 +825,7 @@ export function filterDialogs() {
     categorical: openCategoricalFilter,
     number: openMappingEditor,
     ordinal: openCategoricalMappingEditor,
-    boolean: openBooleanFilter
+    boolean: openBooleanFilter,
+
   };
 }

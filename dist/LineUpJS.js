@@ -1265,6 +1265,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return true;
 	    };
 	    StringColumn.prototype.getFilter = function () {
+	        console.log(this.currentFilter);
 	        return this.currentFilter;
 	    };
 	    StringColumn.prototype.setFilter = function (filter) {
@@ -1336,6 +1337,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.sortCriteria = desc.sort || 'min';
 	    }
 	    HeatmapcustomColumn.prototype.compare = function (a, b) {
+	        console.log(this.desc.sort);
 	        this.sortCriteria = this.desc.sort;
 	        var a_val = this.getValue(a);
 	        var b_val = this.getValue(b);
@@ -6949,10 +6951,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.openEditLinkDialog = openEditLinkDialog;
 	function sortDialogHeatmap(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"min\" checked=\"checked\">Minimum<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"median\">Median<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"heatmaprank\" value=\"q3\">Q3<br>\n      </form>\n   ");
-	    var rank;
+	    var rank = column.desc.sort;
+	    var valuestring = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
+	    var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+	        return "<input type=\"radio\" name=\"heatmaprank\" value=" + d + "  " + ((rank === d) ? 'checked' : '') + ">" + d + "<br>";
+	    }).join('\n'));
+	    var that;
 	    d3.selectAll('input[name=heatmaprank]').on('change', function () {
-	        rank = (d3.select('input[name=heatmaprank]:checked').property('value'));
+	        that = this;
+	        rank = that.value;
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
@@ -6964,10 +6971,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogHeatmap = sortDialogHeatmap;
 	function sortDialogSparkline(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"sparklinerank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"sparklinerank\" value=\"max\">Maximum<br>\n      </form>\n   ");
-	    var rank;
+	    var rank = column.desc.sort;
+	    var valuestring = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
+	    var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+	        return "<input type=\"radio\" name=\"sparklinerank\" value=" + d + "  " + ((rank === d) ? 'checked' : '') + ">" + d + "<br>";
+	    }).join('\n'));
+	    var that;
 	    d3.selectAll('input[name=sparklinerank]').on('change', function () {
-	        rank = (d3.select('input[name=sparklinerank]:checked').property('value'));
+	        that = this;
+	        rank = that.value;
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
@@ -6979,10 +6991,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogSparkline = sortDialogSparkline;
 	function sortDialogBoxplot(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"max\">Maximum<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"mean\">Mean<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"median\">Median<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"q1\">Q1<br>\n  <input type=\"radio\" name=\"boxplotrank\" value=\"q3\">Q3\n    </form>\n   ");
-	    var rank;
+	    var rank = column.desc.sort;
+	    var valuestring = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
+	    var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+	        return "<input type=\"radio\" name=\"boxplotrank\" value=" + d + "  " + ((rank === d) ? 'checked' : '') + ">" + d + "<br>";
+	    }).join('\n'));
+	    var that;
 	    d3.selectAll('input[name=boxplotrank]').on('change', function () {
-	        rank = (d3.select('input[name=boxplotrank]:checked').property('value'));
+	        that = this;
+	        rank = that.value;
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
@@ -6994,10 +7011,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogBoxplot = sortDialogBoxplot;
 	function sortDialogVerticalBar(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"verticalbarrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"verticalbarrank\" value=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"verticalbarrank\" value=\"mean\">Mean<br>\n      </form>\n   ");
-	    var rank;
+	    var rank = column.desc.sort;
+	    var valuestring = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
+	    var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+	        return "<input type=\"radio\" name=\"verticalbarrank\" value=" + d + "  " + ((rank === d) ? 'checked' : '') + ">" + d + "<br>";
+	    }).join('\n'));
+	    var that;
 	    d3.selectAll('input[name=verticalbarrank]').on('change', function () {
-	        rank = (d3.select('input[name=verticalbarrank]:checked').property('value'));
+	        that = this;
+	        rank = that.value;
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
@@ -7009,10 +7031,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	exports.sortDialogVerticalBar = sortDialogVerticalBar;
 	function sortDialogVerticalconBar(column, $header) {
-	    var popup = makePopup($header, 'Sort By', "\n    <form>\n  <input type=\"radio\" name=\"Verticalconbarrank\" value=\"min\">Minimum<br>\n  <input type=\"radio\" name=\"Verticalconbarrank\" value=\"max\">Maximum<br>\n    <input type=\"radio\" name=\"Verticalconbarrank\" value=\"mean\">Mean<br>\n      </form>\n   ");
-	    var rank;
+	    var rank = column.desc.sort;
+	    var valuestring = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
+	    var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+	        return "<input type=\"radio\" name=\"Verticalconbarrank\" value=" + d + "  " + ((rank === d) ? 'checked' : '') + ">" + d + "<br>";
+	    }).join('\n'));
+	    var that;
 	    d3.selectAll('input[name=Verticalconbarrank]').on('change', function () {
-	        rank = (d3.select('input[name=Verticalconbarrank]:checked').property('value'));
+	        that = this;
+	        rank = that.value;
 	        column.desc.sort = rank;
 	    });
 	    popup.select('.ok').on('click', function () {
@@ -7239,6 +7266,60 @@ return /******/ (function(modules) { // webpackBootstrap
 	        $popup.remove();
 	    });
 	}
+	// function openSortFilter(column: model.HeatmapcustomColumn, $header: d3.Selection<model.Column>) {
+	//
+	//   var $popup = makePopup($header, 'Filter',
+	//     `<input type="text" placeholder="containing..." autofocus="true" size="15" value="${(bak instanceof RegExp) ? bak.source : bak}" autofocus="autofocus">
+	//     <br><label><input type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}>RegExp</label><br><label><input class="lu_filter_missing" type="checkbox" ${bakMissing ? 'checked="checked"' : ''}>Filter Missing</label>
+	//     <br>`);
+	//
+	//   function updateData(filter) {
+	//     markFiltered($header, (filter && filter !== ''));
+	//     column.setFilter(filter);
+	//   }
+	//
+	//   function updateImpl(force) {
+	//     //get value
+	//     var search: any = $popup.select('input[type="text"]').property('value');
+	//     console.log(search)
+	//     var filterMissing = $popup.select('input[type="checkbox"].lu_filter_missing').property('checked');
+	//     if (filterMissing && search === '') {
+	//       search = model.StringColumn.FILTER_MISSING;
+	//     }
+	//     if (search === '') { //reset
+	//       updateData(search);
+	//       return;
+	//     }
+	//     if (search.length >= 3 || force) {
+	//       var isRegex = $popup.select('input[type="checkbox"]:first-of-type').property('checked');
+	//       if (isRegex && search !== model.StringColumn.FILTER_MISSING) {
+	//         search = new RegExp(search);
+	//       }
+	//       updateData(search);
+	//     }
+	//
+	//   }
+	//
+	//   $popup.selectAll('input[type="checkbox"]').on('change', updateImpl);
+	//   $popup.select('input[type="text"]').on('input', updateImpl);
+	//
+	//   $popup.select('.cancel').on('click', function () {
+	//     $popup.select('input[type="text"]').property('value', bak || '');
+	//     $popup.select('input[type="checkbox"]:first-of-type').property('checked', bak instanceof RegExp ? 'checked' : null);
+	//     $popup.select('input[type="checkbox"].lu_filter_missing').property('checked', bakMissing ? 'checked' : null);
+	//     updateData(bak);
+	//     $popup.remove();
+	//   });
+	//   $popup.select('.reset').on('click', function () {
+	//     $popup.select('input[type="text"]').property('value', '');
+	//     $popup.selectAll('input[type="checkbox"]').property('checked', null);
+	//     updateData(null);
+	//   });
+	//   $popup.select('.ok').on('click', function () {
+	//     updateImpl(true);
+	//     $popup.remove();
+	//   });
+	// }
 	/**
 	 * opens a dialog for filtering a boolean column
 	 * @param column the column to filter
@@ -7446,7 +7527,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        categorical: openCategoricalFilter,
 	        number: openMappingEditor,
 	        ordinal: openCategoricalMappingEditor,
-	        boolean: openBooleanFilter
+	        boolean: openBooleanFilter,
 	    };
 	}
 	exports.filterDialogs = filterDialogs;

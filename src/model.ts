@@ -954,6 +954,7 @@ export class StringColumn extends ValueColumn<string> {
   }
 
   getFilter() {
+    console.log(this.currentFilter)
     return this.currentFilter;
   }
 
@@ -1050,6 +1051,7 @@ export class HeatmapcustomColumn extends ValueColumn<number[]> {
 
   compare(a: any, b: any) {
 
+    console.log(this.desc.sort);
     this.sortCriteria = this.desc.sort;
     const a_val = this.getValue(a);
     const b_val = this.getValue(b);

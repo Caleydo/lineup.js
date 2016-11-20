@@ -485,15 +485,10 @@ export class HeaderRenderer {
 
 
     $node.filter((d) => d instanceof model.VerticalconColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+
       dialogs.sortDialogVerticalconBar(<model.VerticalconColumn>d, d3.select(this.parentNode.parentNode));
       d3.event.stopPropagation();
     });
-
-
-
-
-
-
 
 
     //edit link
@@ -511,6 +506,7 @@ export class HeaderRenderer {
     });
     //filter
     $node.filter((d) => filterDialogs.hasOwnProperty(d.desc.type)).append('i').attr('class', 'fa fa-filter').attr('title', 'Filter').on('click', function (d) {
+
       filterDialogs[d.desc.type](d, d3.select(this.parentNode.parentNode), provider);
       d3.event.stopPropagation();
     });
