@@ -17,6 +17,12 @@ export function dialogForm(title, body, buttonsWithLabel = false) {
     '<button type = "button" class="reset fa fa-undo" title="reset"></button></form>';
 }
 
+export function sortdialogForm(title, body, buttonsWithLabel = false) {
+  return '<span style="font-weight: bold" class="lu-popup-title">' + title + '</span>' +
+    '<form onsubmit="return false">' + body;
+}
+
+
 /**
  * creates a simple popup dialog under the given attachment
  * @param attachment
@@ -57,6 +63,40 @@ export function makePopup(attachement: d3.Selection<any>, title: string, body: s
   return $popup;
 
 }
+export function makesortPopup(attachement: d3.Selection<any>, title: string, body: string) {
+  var pos = utils.offset(<Element>attachement.node());
+  var $popup = d3.select('body').append('div')
+    .attr({
+      'class': 'lu-popup2'
+    }).style({
+      left: pos.left + 'px',
+      top: pos.top + 'px'
+    }).html(sortdialogForm(title, body));
+
+  function movePopup() {
+    //.style("left", (this.parentElement.offsetLeft + (<any>d3.event).dx) + 'px')
+    //.style("top", (this.parentElement.offsetTop + d3.event.dy) + 'px');
+    //const mouse = d3.mouse(this.parentElement);
+    $popup.style({
+      left: (this.parentElement.offsetLeft + (<any>d3.event).dx) + 'px',
+      top: (this.parentElement.offsetTop + (<any>d3.event).dy) + 'px'
+    });
+  }
+
+  $popup.select('span.lu-popup-title').call(d3.behavior.drag().on('drag', movePopup));
+  $popup.on('keydown', () => {
+    if (d3.event.which === 27) {
+      $popup.remove();
+    }
+  });
+  var auto = <HTMLInputElement>$popup.select('input[autofocus]').node();
+  if (auto) {
+    auto.focus();
+  }
+  return $popup;
+
+}
+
 
 /**
  * opens a rename dialog for the given column
@@ -115,26 +155,34 @@ export function sortDialogHeatmap(column: model.HeatmapcustomColumn, $header: d3
   var rank = column.desc.sort;
   var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+  var popup = makesortPopup($header, 'Sort By', valuestring.map(function (d, i) {
     return `<input type="radio" name="heatmaprank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
   }).join('\n'));
+
+  function thiselement() {
+
+    return this === d3.event.target;
+  }
+
   var that;
-  d3.selectAll('input[name=heatmaprank]').on('change', function () {
+
+  var sortcontent = d3.selectAll('input[name=heatmaprank]');
+  sortcontent.on('change', function () {
     that = this;
     rank = that.value;
     column.desc.sort = rank;
+    column.toggleMySorting();
 
   });
 
-  popup.select('.ok').on('click', function () {
-    column.desc.sort = rank;
-
+  d3.select('body').on('click', function () {
+    var outside = sortcontent.filter(thiselement).empty();
+    if (outside) {
+      popup.remove();
+    }
   });
 
-  popup.select('.cancel').on('click', function () {
-    popup.remove();
-  });
 
 }
 
@@ -144,25 +192,32 @@ export function sortDialogSparkline(column: model.SparklineColumn, $header: d3.S
   var rank = column.desc.sort;
   var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+  var popup = makesortPopup($header, 'Sort By', valuestring.map(function (d, i) {
     return `<input type="radio" name="sparklinerank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
   }).join('\n'));
+
+  function thiselement() {
+
+    return this === d3.event.target;
+  }
+
   var that;
-  d3.selectAll('input[name=sparklinerank]').on('change', function () {
+
+  var sortcontent = d3.selectAll('input[name=sparklinerank]');
+  sortcontent.on('change', function () {
     that = this;
     rank = that.value;
     column.desc.sort = rank;
+    column.toggleMySorting();
 
   });
 
-  popup.select('.ok').on('click', function () {
-    column.desc.sort = rank;
-
-  });
-
-  popup.select('.cancel').on('click', function () {
-    popup.remove();
+  d3.select('body').on('click', function () {
+    var outside = sortcontent.filter(thiselement).empty();
+    if (outside) {
+      popup.remove();
+    }
   });
 
 
@@ -173,26 +228,34 @@ export function sortDialogBoxplot(column: model.BoxplotColumn, $header: d3.Selec
   var rank = column.desc.sort;
   var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+  var popup = makesortPopup($header, 'Sort By', valuestring.map(function (d, i) {
     return `<input type="radio" name="boxplotrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
   }).join('\n'));
+
+  function thiselement() {
+
+    return this === d3.event.target;
+  }
+
   var that;
-  d3.selectAll('input[name=boxplotrank]').on('change', function () {
+
+  var sortcontent = d3.selectAll('input[name=boxplotrank]');
+  sortcontent.on('change', function () {
     that = this;
     rank = that.value;
     column.desc.sort = rank;
+    column.toggleMySorting();
 
   });
 
-  popup.select('.ok').on('click', function () {
-    column.desc.sort = rank;
-
+  d3.select('body').on('click', function () {
+    var outside = sortcontent.filter(thiselement).empty();
+    if (outside) {
+      popup.remove();
+    }
   });
 
-  popup.select('.cancel').on('click', function () {
-    popup.remove();
-  });
 
 }
 
@@ -202,27 +265,34 @@ export function sortDialogVerticalBar(column: model.VerticalbarColumn, $header: 
   var rank = column.desc.sort;
   var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+  var popup = makesortPopup($header, 'Sort By', valuestring.map(function (d, i) {
     return `<input type="radio" name="verticalbarrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
   }).join('\n'));
+
+  function thiselement() {
+
+    return this === d3.event.target;
+  }
+
   var that;
-  d3.selectAll('input[name=verticalbarrank]').on('change', function () {
+
+  var sortcontent = d3.selectAll('input[name=verticalbarrank]');
+  sortcontent.on('change', function () {
     that = this;
     rank = that.value;
     column.desc.sort = rank;
+    column.toggleMySorting();
 
   });
 
-  popup.select('.ok').on('click', function () {
-    column.desc.sort = rank;
-
+  d3.select('body').on('click', function () {
+    var outside = sortcontent.filter(thiselement).empty();
+    if (outside) {
+      popup.remove();
+    }
   });
 
-  popup.select('.cancel').on('click', function () {
-
-    popup.remove();
-  });
 
 }
 
@@ -232,26 +302,32 @@ export function sortDialogVerticalconBar(column: model.VerticalconColumn, $heade
   var rank = column.desc.sort;
   var valuestring: any = ['min', 'max', 'mean', 'median', 'q1', 'q3'];
 
-  var popup = makePopup($header, 'Sort By', valuestring.map(function (d, i) {
+  var popup = makesortPopup($header, 'Sort By', valuestring.map(function (d, i) {
     return `<input type="radio" name="Verticalconbarrank" value=${d}  ${(rank === d) ? 'checked' : ''}>${d}<br>`;
 
   }).join('\n'));
+
+  function thiselement() {
+
+    return this === d3.event.target;
+  }
+
   var that;
-  d3.selectAll('input[name=Verticalconbarrank]').on('change', function () {
+
+  var sortcontent = d3.selectAll('input[name=Verticalconbarrank]');
+  sortcontent.on('change', function () {
     that = this;
     rank = that.value;
     column.desc.sort = rank;
+    column.toggleMySorting();
 
   });
 
-  popup.select('.ok').on('click', function () {
-    column.desc.sort = rank;
-
-  });
-
-  popup.select('.cancel').on('click', function () {
-
-    popup.remove();
+  d3.select('body').on('click', function () {
+    var outside = sortcontent.filter(thiselement).empty();
+    if (outside) {
+      popup.remove();
+    }
   });
 
 

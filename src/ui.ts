@@ -460,8 +460,11 @@ export class HeaderRenderer {
       d3.event.stopPropagation();
     });
 
+
     $node.filter((d) => d instanceof model.HeatmapcustomColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+
       dialogs.sortDialogHeatmap(<model.HeatmapcustomColumn>d, d3.select(this.parentNode.parentNode));
+
       d3.event.stopPropagation();
     });
 
