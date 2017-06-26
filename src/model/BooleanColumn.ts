@@ -43,6 +43,10 @@ export default class BooleanColumn extends ValueColumn<boolean> implements ICate
     return ['True', 'False'];
   }
 
+  colorOf(cat: string) {
+    return cat === this.trueMarker ? 'black' : 'white';
+  }
+
   getValue(row: any, index: number) {
     const v: any = super.getValue(row, index);
     if (typeof(v) === 'undefined' || v == null) {

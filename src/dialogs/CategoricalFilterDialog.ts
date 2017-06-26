@@ -28,14 +28,15 @@ export default class CategoricalFilterDialog extends AFilterDialog<CategoricalCo
       return {cat: d, label: labels[i], isChecked: bak.length === 0 || bak.indexOf(d) >= 0, color: colors[i]};
     }).sort(this.sortByName('label'));
 
-    const $rows = popup.select('tbody').selectAll('tr').data(trData);
-    const $rowsEnter = $rows.enter().append('tr');
+    const $rowsUpdate = popup.select('tbody').selectAll('tr').data(trData);
+    const $rowsEnter = $rowsUpdate.enter().append('tr');
     $rowsEnter.append('td').attr('class', 'checkmark');
     $rowsEnter.append('td').attr('class', 'datalabel').text((d) => d.label);
     $rowsEnter.on('click', (d) => {
       d.isChecked = !d.isChecked;
       redraw();
     });
+    const $rows = $rowsUpdate.merge($rowsEnter);
 
     function redraw() {
       $rows.select('.checkmark').html((d) => '<i class="fa fa-' + ((d.isChecked) ? 'check-' : '') + 'square-o"></i>');

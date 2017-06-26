@@ -13,6 +13,8 @@ export interface ICategoricalColumn {
   readonly categoryLabels: string[];
 
   getCategories(row: any, index: number): string[];
+
+  colorOf(cat: string): string;
 }
 
 export interface ICategory {

@@ -73,7 +73,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
     const toWait: Promise<any>[] = [];
     const renderRanking = ($this: Selection<DOMElement, IRankingData, any, void>, ranking: IRankingData) => {
-      const $rowsUpdate = $this.select(g + '.rows').selectAll(g + '.row').data((d) => d.order, String);
+      const $rowsUpdate = $this.selectAll(g + '.row').data((d) => d.order, String);
       const $rowsEnter = $rowsUpdate.enter().append(g).attr('class', 'row');
       const $rows = $rowsUpdate.merge($rowsEnter);
       $rowsEnter.call(domMapping.transform, (d, i) => [0, context.cellPrevY(i)]);

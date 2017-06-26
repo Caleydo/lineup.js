@@ -60,18 +60,18 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
     //generate clip paths for the text columns to avoid text overflow
     //see http://stackoverflow.com/questions/L742812/cannot-select-svg-foreignobject-element-in-d3
     //there is a bug in webkit which present camelCase selectors
-    const textClipPath = $base.selectAll<SVGClipPathElement, Column>(function () {
+    const textClipPathUpdate = $base.selectAll<SVGClipPathElement, Column>(function () {
       return <any>this.getElementsByTagName('clipPath');
     }).data(r, (d) => d.id);
-    const textClipPath_enter = textClipPath.enter().append<SVGClipPathElement>('clipPath');
-    textClipPath_enter
+    const textClipPathEnter = textClipPathUpdate.enter().append<SVGClipPathElement>('clipPath');
+    textClipPathEnter
       .attr('id', (d) => `cp${context.idPrefix}clipCol${d.id}`)
       .append('rect').attr('y', 0);
-    textClipPath.exit().remove();
-    textClipPath.merge(textClipPath_enter).select('rect')
+    textClipPathUpdate.merge(textClipPathEnter).select('rect')
       .attr('x', 0) //(d,i) => offsets[i],
       .attr('width', (d) => Math.max(d.getWidth() - 5, 0))
       .attr('height', height);
+    textClipPathUpdate.exit().remove();
   }
 
   updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number) {
@@ -84,19 +84,17 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
     this.updateClipPathsImpl(shifts.map((s) => s.col), context, height);
 
     { //update frozen clip-path
-      let $elem = this.$node.select(`clipPath#c${context.idPrefix}Freeze`);
+      let $elem = this.$node.select(`clipPath#c${context.idPrefix}Freeze rect`);
       if ($elem.empty()) {
         $elem = this.$node.append('clipPath').attr('id', `c${context.idPrefix}Freeze`).append('rect')
           .attr('y', 0)
-          .attr('width', 20000)
-          .attr('height', height);
+          .attr('width', 20000);
       }
 
       const maxFrozen = data.length === 0 || data[0].frozen.length === 0 ? 0 : Math.max(...data[0].frozen.map((f) => f.shift + f.column.getWidth()));
-      $elem.select('rect')
+      $elem
         .attr('x', maxFrozen)
-        .attr('height', height)
-        .attr('transform', `translate(${this.currentFreezeLeft},0)`);
+        .attr('height', height);
     }
   }
 }

@@ -10,7 +10,7 @@ import StringColumn from '../model/StringColumn';
 import Ranking from '../model/Ranking';
 import {IMultiLevelColumn, isMultiLevelColumn} from '../model/CompositeColumn';
 import NumberColumn, {isNumberColumn, INumberColumn} from '../model/NumberColumn';
-import CategoricalColumn, {isCategoricalColumn} from '../model/CategoricalColumn';
+import CategoricalColumn, {ICategoricalColumn, isCategoricalColumn} from '../model/CategoricalColumn';
 import RankColumn from '../model/RankColumn';
 import StackColumn, {createDesc as createStackDesc} from '../model/StackColumn';
 import LinkColumn from '../model/LinkColumn';
@@ -548,7 +548,7 @@ export default class HeaderRenderer {
 
     if (this.options.histograms) {
 
-      $headers.filter((d) => isCategoricalColumn(d)).each(function (col: CategoricalColumn) {
+      $headers.filter((d) => isCategoricalColumn(d)).each(function (col: ICategoricalColumn&Column) {
         const $this = select(this).select('div.histogram');
         const hist = that.histCache.get(col.id);
         if (hist) {
