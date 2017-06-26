@@ -192,7 +192,7 @@ export default class MappingEditor {
       data = unique(data);
 
       datalines = datalines.data(data);
-      let datalinesEnter = datalines.enter()
+      const datalinesEnter = datalines.enter()
         .append('line')
         .attr('x1',(d) => normal2pixel(that.scale.apply(d)))
         .attr('y1',0)

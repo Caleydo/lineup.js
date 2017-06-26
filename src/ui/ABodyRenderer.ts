@@ -16,7 +16,7 @@ export interface ISlicer {
   (start: number, length: number, row2y: (i: number) => number): {from: number; to: number};
 }
 
-export type ElementSelection = Selection<HTMLElement | SVGElement, any, any, void>
+export type ElementSelection = Selection<HTMLElement | SVGElement, any, any, void>;
 
 export interface IBodyRenderer extends AEventDispatcher {
   histCache: Map<string, Promise<IStatistics>>;

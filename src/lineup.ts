@@ -369,7 +369,7 @@ export default class LineUp extends AEventDispatcher {
  * @returns {IColumnDesc[]}
  */
 export function deriveColors(columns: IColumnDesc[]) {
-  var colors = d3scale.schemeCategory10.slice();
+  const colors = d3scale.schemeCategory10.slice();
   columns.forEach((col: any) => {
     switch (col.type) {
       case 'number':
