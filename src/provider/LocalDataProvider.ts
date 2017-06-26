@@ -19,7 +19,7 @@ import ACommonDataProvider from './ACommonDataProvider';
  * @param range the total value range
  * @returns {{min: number, max: number, count: number, hist: histogram.Bin<number>[]}}
  */
-function computeStats(arr: any[], indices: number[], acc: (row: any, index:number) => number, range?: [number, number]): IStatistics {
+function computeStats(arr: any[], indices: number[], acc: (row: any, index: number) => number, range?: [number, number]): IStatistics {
   if (arr.length === 0) {
     return {
       min: NaN,
@@ -30,13 +30,13 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index:numbe
       hist: []
     };
   }
-  const indexAccessor = (a, i) =>acc(a, indices[i]);
+  const indexAccessor = (a, i) => acc(a, indices[i]);
   const hist = histogram().value(indexAccessor);
   if (range) {
     hist.domain(range);
   }
   const ex = d3extent(arr, indexAccessor);
-  const hist_data = hist(arr);
+  const histData = hist(arr);
   return {
     min: ex[0],
     max: ex[1],
@@ -55,7 +55,7 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index:numbe
  * @param categories the list of known categories
  * @returns {{hist: {cat: string, y: number}[]}}
  */
-function computeHist(arr: number[], indices: number[], acc: (row: any, index:number) => string[], categories: string[]): ICategoricalStatistics {
+function computeHist(arr: number[], indices: number[], acc: (row: any, index: number) => string[], categories: string[]): ICategoricalStatistics {
   const m = new Map<string,number>();
   categories.forEach((cat) => m.set(cat, 0));
 
@@ -87,6 +87,11 @@ export interface ILocalDataProviderOptions {
    * default: false
    */
   jumpToSearchResult?: boolean;
+
+  /**
+   * the maximum number of nested sorting criteria
+   */
+  maxNestedSortingCriteria?: number;
 }
 /**
  * a data provider based on an local array
@@ -96,12 +101,14 @@ export default class LocalDataProvider extends ACommonDataProvider {
     /**
      * whether the filter should be applied to all rankings regardless where they are
      */
-    filterGlobally: false
+    filterGlobally: false,
+
+    maxNestedSortingCriteria: 1
   };
 
-  private reorderAll;
+  private readonly reorderAll;
 
-  constructor(public data: any[], columns: IColumnDesc[] = [], options: ILocalDataProviderOptions & IDataProviderOptions = {}) {
+  constructor(private _data: any[], columns: IColumnDesc[] = [], options: ILocalDataProviderOptions & IDataProviderOptions = {}) {
     super(columns, options);
     merge(this.options, options);
 
@@ -118,12 +125,20 @@ export default class LocalDataProvider extends ACommonDataProvider {
     };
   }
 
+  protected getMaxNestedSortingCriteria() {
+    return this.options.maxNestedSortingCriteria;
+  }
+
+  get data() {
+    return this._data;
+  }
+
   /**
    * replaces the dataset rows with a new one
    * @param data
    */
   setData(data: any[]) {
-    this.data = data;
+    this._data = data;
     this.reorderAll();
   }
 
@@ -136,18 +151,18 @@ export default class LocalDataProvider extends ACommonDataProvider {
    * @param data
    */
   appendData(data: any[]) {
-    this.data.push.apply(this.data, data);
+    this._data.push(...data);
     this.reorderAll();
   }
 
   cloneRanking(existing?: Ranking) {
-    const new_ = super.cloneRanking(existing);
+    const clone = super.cloneRanking(existing);
 
     if (this.options.filterGlobally) {
-      new_.on(Column.EVENT_FILTER_CHANGED + '.reorderAll', this.reorderAll);
+      clone.on(Column.EVENT_FILTER_CHANGED + '.reorderAll', this.reorderAll);
     }
 
-    return new_;
+    return clone;
   }
 
   cleanUpRanking(ranking: Ranking) {
@@ -158,15 +173,15 @@ export default class LocalDataProvider extends ACommonDataProvider {
   }
 
   sortImpl(ranking: Ranking): Promise<number[]> {
-    if (this.data.length === 0) {
+    if (this._data.length === 0) {
       return Promise.resolve([]);
     }
     //wrap in a helper and store the initial index
-    let helper = this.data.map((r, i) => ({row: r, i: i}));
+    let helper = this._data.map((r, i) => ({row: r, i}));
 
     //do the optional filtering step
     if (this.options.filterGlobally) {
-      let filtered = this.getRankings().filter((d) => d.isFiltered());
+      const filtered = this.getRankings().filter((d) => d.isFiltered());
       if (filtered.length > 0) {
         helper = helper.filter((d) => filtered.every((f) => f.filter(d.row, d.i)));
       }
@@ -184,8 +199,8 @@ export default class LocalDataProvider extends ACommonDataProvider {
 
   viewRaw(indices: number[]) {
     //filter invalid indices
-    const l = this.data.length;
-    return indices.map((index) => this.data[index]);
+    const l = this._data.length;
+    return indices.map((index) => this._data[index]);
   }
 
   view(indices: number[]) {
@@ -193,9 +208,9 @@ export default class LocalDataProvider extends ACommonDataProvider {
   }
 
   fetch(orders: number[][]): Promise<IDataRow>[][] {
-    const l = this.data.length;
+    const l = this._data.length;
     return orders.map((order) => order.map((index) => Promise.resolve({
-      v: this.data[index],
+      v: this._data[index],
       dataIndex: index
     })));
   }
@@ -207,7 +222,12 @@ export default class LocalDataProvider extends ACommonDataProvider {
    */
   stats(indices: number[]): IStatsBuilder {
     let d: any[] = null;
-    const getD = () => d === null ? (d = this.viewRaw(indices)) : d;
+    const getD = () => {
+      if (d === null) {
+        d = this.viewRaw(indices);
+      }
+      return d;
+    };
 
     return {
       stats: (col: INumberColumn) => Promise.resolve(computeStats(getD(), indices, col.getNumber.bind(col), [0, 1])),
@@ -218,12 +238,12 @@ export default class LocalDataProvider extends ACommonDataProvider {
 
   mappingSample(col: NumberColumn): Promise<number[]> {
     const MAX_SAMPLE = 500; //at most 500 sample lines
-    const l = this.data.length;
+    const l = this._data.length;
     if (l <= MAX_SAMPLE) {
-      return Promise.resolve(this.data.map(col.getRawValue.bind(col)));
+      return Promise.resolve(<number[]>this._data.map(col.getRawValue.bind(col)));
     }
     //randomly select 500 elements
-    let indices: number[] = [];
+    const indices: number[] = [];
     for (let i = 0; i < MAX_SAMPLE; ++i) {
       let j = Math.floor(Math.random() * (l - 1));
       while (indices.indexOf(j) >= 0) {

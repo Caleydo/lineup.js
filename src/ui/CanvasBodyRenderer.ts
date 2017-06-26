@@ -3,12 +3,13 @@
  */
 
 import {event as d3event, mouse as d3mouse} from 'd3-selection';
-import {merge, createTextHints} from '../utils';
+import {merge, createTextHints, hideOverlays} from '../utils';
 import Column, {IStatistics} from '../model/Column';
 import SelectionColumn from '../model/SelectionColumn';
-import {createCanvas, hideOverlays, ICanvasRenderContext} from '../renderer';
+import {createCanvas} from '../renderer/index';
 import DataProvider, {IDataRow}  from '../provider/ADataProvider';
 import ABodyRenderer, {ISlicer, IRankingData, IBodyRenderContext, ERenderReason} from './ABodyRenderer';
+import {ICanvasRenderContext} from '../renderer/RendererContexts';
 
 export interface IStyleOptions {
   text?: string;
@@ -26,7 +27,7 @@ export interface ICanvasBodyRendererOptions {
 }
 
 export default class BodyCanvasRenderer extends ABodyRenderer {
-  static CUSTOM_OPTIONS = {
+  static readonly CUSTOM_OPTIONS = {
     style: {
       text: 'black',
       font: '10pt "Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -52,7 +53,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
   }
 
   private columnUnderMouse(x: number) {
-    for (let shift of this.lastShifts) {
+    for (const shift of this.lastShifts) {
       if (shift.shift <= x && x < (shift.shift + shift.column.getWidth())) {
         return shift.column;
       }
@@ -135,7 +136,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     this.currentHover = dataIndex;
     super.mouseOver(dataIndex, dataIndex >= 0);
     if (!hover || dataIndex < 0) {
-      hideOverlays();
+      hideOverlays(<HTMLElement>this.$node.node());
     }
     this.update();
   }
@@ -198,14 +199,14 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
         return;
       }
       return h.then((stats: IStatistics) => {
-        const x_pos = d.shift + d.column.getWidth() * stats.mean;
-        if (isNaN(x_pos)) {
+        const xPos = d.shift + d.column.getWidth() * stats.mean;
+        if (isNaN(xPos)) {
           return;
         }
         ctx.strokeStyle = this.style('meanLine');
         ctx.beginPath();
-        ctx.moveTo(x_pos, 0);
-        ctx.lineTo(x_pos, height);
+        ctx.moveTo(xPos, 0);
+        ctx.lineTo(xPos, height);
         ctx.stroke();
       });
     }));
@@ -237,19 +238,19 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
       ctx.translate(data[i + 1].shift - this.options.slopeWidth, 0);
 
       const cache = new Map<number, number>();
-      slope.right.forEach((data_index, pos) => {
-        cache.set(data_index, pos);
+      slope.right.forEach((dataIndex, pos) => {
+        cache.set(dataIndex, pos);
       });
-      const lines = slope.left.map((data_index, pos) => ({
-        data_index: data_index,
+      const lines = slope.left.map((dataIndex, pos) => ({
+        dataIndex,
         lpos: pos,
-        rpos: cache.get(data_index)
+        rpos: cache.get(dataIndex)
       })).filter((d) => d.rpos != null);
 
 
       lines.forEach((line) => {
-        const isSelected = this.data.isSelected(line.data_index);
-        const isHovered = this.isHovered(line.data_index);
+        const isSelected = this.data.isSelected(line.dataIndex);
+        const isHovered = this.isHovered(line.dataIndex);
         if (isSelected) {
           ctx.strokeStyle = this.style('selection');
         } else if (isHovered) {
@@ -270,15 +271,16 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     ctx.restore();
   }
 
-  protected createContextImpl(index_shift: number): ICanvasRenderContext&IBodyRenderContext {
-    const base: any = this.createContext(index_shift, createCanvas);
+  protected createContextImpl(indexShift: number): ICanvasRenderContext&IBodyRenderContext {
+    const base: any = this.createContext(indexShift, createCanvas);
     base.hovered = this.isHovered.bind(this);
     base.selected = (dataIndex: number) => this.data.isSelected(dataIndex);
+    base.bodyDOMElement = <HTMLElement>this.$node.node();
     return base;
   }
 
   private computeShifts(data: IRankingData[]) {
-    let r = [];
+    const r = [];
     data.forEach((d) => {
       const base = d.shift;
       r.push(...d.frozen.map((c) => ({column: c.column, shift: c.shift + base + this.currentFreezeLeft})));
@@ -312,7 +314,8 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     ctx.fillStyle = this.style('text');
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    context.textHints = createTextHints(ctx, this.style('font'));
+    //hacky to set to since I'm creating the context, okish
+    (<any>context).textHints = createTextHints(ctx, this.style('font'));
 
     ctx.translate(0, -firstLine);
 

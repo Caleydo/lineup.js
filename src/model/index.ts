@@ -3,8 +3,7 @@
  */
 
 import {merge} from '../utils';
-import {IColumnDesc} from './Column';
-import ValueColumn from './ValueColumn';
+import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import NumberColumn from './NumberColumn';
 import StringColumn from './StringColumn';
 import StackColumn from './StackColumn';
@@ -21,6 +20,10 @@ import CategoricalNumberColumn from './CategoricalNumberColumn';
 import NestedColumn from './NestedColumn';
 import DummyColumn from './DummyColumn';
 import LinkColumn from './LinkColumn';
+import SetColumn from './SetColumn';
+import MultiValueColumn from './MultiValueColumn';
+import BoxPlotColumn from './BoxPlotColumn';
+
 
 export {default as Column, IColumnDesc} from './Column';
 export {default as CompositeColumn} from './CompositeColumn';
@@ -44,12 +47,13 @@ export {createDesc as createStackDesc} from './StackColumn';
  */
 export function defineColumn<T>(name: string, functions: any = {}) {
   class CustomColumn extends ValueColumn<T> {
-    constructor(id: string, desc: IColumnDesc) {
+    constructor(id: string, desc: IValueColumnDesc<T>) {
       super(id, desc);
       if (typeof (this.init) === 'function') {
         this.init.apply(this, [].slice.apply(arguments));
       }
     }
+
     init() {
       // dummy
     }
@@ -60,13 +64,14 @@ export function defineColumn<T>(name: string, functions: any = {}) {
   return CustomColumn;
 }
 
+
 /**
  * utility for creating an action description with optional label
  * @param label
  * @returns {{type: string, label: string}}
  */
 export function createActionDesc(label = 'actions') {
-  return {type: 'actions', label: label};
+  return {type: 'actions', label};
 }
 
 /**
@@ -85,11 +90,13 @@ export function models() {
     actions: DummyColumn,
     annotate: AnnotateColumn,
     selection: SelectionColumn,
-
     max: MaxColumn,
     min: MinColumn,
     mean: MeanColumn,
     script: ScriptColumn,
-    nested: NestedColumn
+    nested: NestedColumn,
+    multiValue: MultiValueColumn,
+    set: SetColumn,
+    boxplot: BoxPlotColumn
   };
 }

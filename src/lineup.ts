@@ -5,11 +5,12 @@
 
 import Column, {IColumnDesc} from './model/Column';
 import DataProvider  from './provider/ADataProvider';
-import {renderers as defaultRenderers, ICellRendererFactory}  from './renderer';
+import {renderers as defaultRenderers}  from './renderer/index';
 import {
   IRankingHook,
   dummyRankingButtonHook,
   PoolRenderer,
+  IPoolRendererOptions,
   IBodyRenderer,
   HeaderRenderer,
   createBodyRenderer
@@ -19,6 +20,7 @@ import {IBodyRendererOptions, default as ABodyRenderer} from './ui/ABodyRenderer
 import {AEventDispatcher, ContentScroller, merge}  from './utils';
 import * as d3scale from 'd3-scale';
 import {selection, select, Selection} from 'd3-selection';
+import ICellRendererFactory from './renderer/ICellRendererFactory';
 
 export interface IBodyOptions {
   renderer?: string;
@@ -79,7 +81,7 @@ export interface ILineUpConfig {
   pool?: boolean;
 
   /**
-   * the renderers to use for rendering the columns
+   * the renderer to use for rendering the columns
    */
   renderers?: {[key: string]: ICellRendererFactory};
 }
@@ -92,34 +94,34 @@ export default class LineUp extends AEventDispatcher {
    * triggered when the mouse is over a specific row
    * @argument data_index:number the selected data index or <0 if no row
    */
-  static EVENT_HOVER_CHANGED = ABodyRenderer.EVENT_HOVER_CHANGED;
+  static readonly EVENT_HOVER_CHANGED = ABodyRenderer.EVENT_HOVER_CHANGED;
 
   /**
    * triggered when the user click on a row
    * @argument data_index:number the selected data index or <0 if no row
    */
-  static EVENT_SELECTION_CHANGED = DataProvider.EVENT_SELECTION_CHANGED;
+  static readonly EVENT_SELECTION_CHANGED = DataProvider.EVENT_SELECTION_CHANGED;
 
   /**
    * triggered when the user selects one or more rows
    * @argument dataIndices:number[] the selected data indices
    */
-  static EVENT_MULTISELECTION_CHANGED = 'multiSelectionChanged';
+  static readonly EVENT_MULTISELECTION_CHANGED = 'multiSelectionChanged';
 
   /**
    * triggered when LineUpJS.update() was called
    */
-  static EVENT_UPDATE_START = 'updateStart';
+  static readonly EVENT_UPDATE_START = 'updateStart';
 
   /**
    * triggered when LineUpJS.update() was called and the rendering the body has finished
    */
-  static EVENT_UPDATE_FINISHED = 'updateFinished';
+  static readonly EVENT_UPDATE_FINISHED = 'updateFinished';
 
   /**
    * default config of LineUp with all available options
    */
-  config: ILineUpConfig = {
+  readonly config: ILineUpConfig = {
     idPrefix: Math.random().toString(36).slice(-8).substr(0, 3), //generate a random string with length3
     header: {
       headerHeight: 20,
@@ -224,13 +226,13 @@ export default class LineUp extends AEventDispatcher {
    * @param node the node element to attach
    * @param config
    */
-  addPool(node: Element, config?: any): PoolRenderer;
+  addPool(node: Element, config?: IPoolRendererOptions): PoolRenderer;
   addPool(pool: PoolRenderer): PoolRenderer;
-  addPool(pool_node: Element|PoolRenderer, config = this.config) {
-    if (pool_node instanceof PoolRenderer) {
-      this.pools.push(<PoolRenderer>pool_node);
+  addPool(poolOrNode: Element|PoolRenderer, config = this.config) {
+    if (poolOrNode instanceof PoolRenderer) {
+      this.pools.push(<PoolRenderer>poolOrNode);
     } else {
-      this.pools.push(new PoolRenderer(this.data, <Element>pool_node, config));
+      this.pools.push(new PoolRenderer(this.data, <Element>poolOrNode, config));
     }
     return this.pools[this.pools.length - 1];
   }
@@ -267,7 +269,7 @@ export default class LineUp extends AEventDispatcher {
    * @param ascending
    * @returns {boolean}
    */
-  sortBy(column: (col: Column) => boolean | string, ascending = false) {
+  sortBy(column: string | ((col: Column) => boolean), ascending = false) {
     const col = this.data.find(column);
     if (col) {
       col.sortByMe(ascending);
@@ -307,11 +309,11 @@ export default class LineUp extends AEventDispatcher {
     }
     const order = ranking.getOrder();
     //relative order
-    const indices = dataIndices.map((d) => order.indexOf(d)).sort((a,b) => a-b);
+    const indices = dataIndices.map((d) => order.indexOf(d)).sort((a, b) => a - b);
     if (this.contentScroller) {
       this.contentScroller.scrollIntoView(0, order.length, indices[0], (i) => i * this.config.body.rowHeight);
     } else {
-      let container = (<HTMLElement>this.$container.node());
+      const container = (<HTMLElement>this.$container.node());
       container.scrollTop = indices[0] * this.config.body.rowHeight;
     }
     //fake hover in 100ms - TODO right timing

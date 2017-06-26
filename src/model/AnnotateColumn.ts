@@ -3,17 +3,17 @@
  */
 
 import Column from './Column';
-import StringColumn from './StringColumn';
+import StringColumn, {IStringColumnDesc}from './StringColumn';
 
 /**
  * a string column in which the values can be edited locally
  */
 export default class AnnotateColumn extends StringColumn {
-  static EVENT_VALUE_CHANGED = 'valueChanged';
+  static readonly EVENT_VALUE_CHANGED = 'valueChanged';
 
-  private annotations = new Map<number, string>();
+  private readonly annotations = new Map<number, string>();
 
-  constructor(id: string, desc: any) {
+  constructor(id: string, desc: IStringColumnDesc) {
     super(id, desc);
   }
 
@@ -29,7 +29,7 @@ export default class AnnotateColumn extends StringColumn {
   }
 
   dump(toDescRef: (desc: any) => any): any {
-    let r = super.dump(toDescRef);
+    const r = super.dump(toDescRef);
     r.annotations = {};
     this.annotations.forEach((v, k) => {
       r.annotations[k] = v;

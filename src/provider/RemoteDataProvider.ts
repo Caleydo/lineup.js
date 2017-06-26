@@ -49,11 +49,11 @@ export interface IRemoteDataProviderOptions {
  * a remote implementation of the data provider
  */
 export default class RemoteDataProvider extends ACommonDataProvider {
-  private options: IRemoteDataProviderOptions = {
+  private readonly options: IRemoteDataProviderOptions = {
     maxCacheSize: 1000
   };
 
-  private cache = new Map<number, Promise<IDataRow>>();
+  private readonly cache = new Map<number, Promise<IDataRow>>();
 
 
   constructor(private server: IServerData, columns: IColumnDesc[] = [], options: IRemoteDataProviderOptions & IDataProviderOptions = {}) {
@@ -89,8 +89,8 @@ export default class RemoteDataProvider extends ACommonDataProvider {
 
   private computeMissing(orders: number[][]): number[] {
     const union = new Set<number>();
-    const union_add = union.add.bind(union);
-    orders.forEach((order) => order.forEach(union_add));
+    const unionAdd = union.add.bind(union);
+    orders.forEach((order) => order.forEach(unionAdd));
 
     // removed cached
     this.cache.forEach((v, k) => union.delete(k));
@@ -99,7 +99,7 @@ export default class RemoteDataProvider extends ACommonDataProvider {
       // clean up cache
     }
     // const maxLength = Math.max(...orders.map((o) => o.length));
-    let r = [];
+    const r = [];
     union.forEach(r.push.bind(r));
     return r;
   }

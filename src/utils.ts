@@ -4,6 +4,8 @@
 
 import {select, event as d3event} from 'd3-selection';
 import {dispatch, Dispatch} from 'd3-dispatch';
+import Column from './model/Column';
+import {IDOMCellRenderer} from './renderer/IDOMCellRenderers';
 
 /**
  * create a delayed call, can be called multiple times but only the last one at most delayed by timeToDelay will be executed
@@ -68,7 +70,7 @@ export class AEventDispatcher {
       const context = {
         source: this, //who is sending this event
         type: t, //the event type
-        args: args //the arguments to the listener
+        args //the arguments to the listener
       };
       this.listeners.apply(<string>t, context, args);
     };
@@ -105,17 +107,15 @@ const TYPE_OBJECT = '[object Object]';
 export function merge(...args: any[]) {
   let result = null;
 
-  for (let i = 0; i < args.length; i++) {
-    const toMerge = args[i],
-      keys = Object.keys(toMerge);
+  for (const toMerge of args) {
+    const keys = Object.keys(toMerge);
 
     if (result === null) {
       result = toMerge;
       continue;
     }
 
-    for (let j = 0; j < keys.length; j++) {
-      const keyName = keys[j];
+    for (const keyName of keys) {
       const value = toMerge[keyName];
 
       //merge just POJOs
@@ -165,8 +165,8 @@ export interface IContentScrollerOptions {
  * a class for efficiently selecting a range of data items that are currently visible according to the scrolled position
  */
 export class ContentScroller extends AEventDispatcher {
-  static EVENT_SCROLL = 'scroll';
-  static EVENT_REDRAW = 'redraw';
+  static readonly EVENT_SCROLL = 'scroll';
+  static readonly EVENT_REDRAW = 'redraw';
 
   private options: IContentScrollerOptions = {
     /**
@@ -386,9 +386,9 @@ export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy:
  * @param styles
  * @return {T}
  */
-export function attr<T extends (HTMLElement | SVGElement & SVGStylable)>(node: T, attrs = {}, styles = {}): T {
+export function attr<T extends (HTMLElement | SVGElement)>(node: T, attrs = {}, styles = {}): T {
   Object.keys(attrs).forEach((attr) => node.setAttribute(attr, String(attrs[attr])));
-  Object.keys(styles).forEach((attr) => node.style.setProperty(attr, styles[attr]));
+  Object.keys(styles).forEach((attr) => (<any>node).style.setProperty(attr, styles[attr]));
   return node;
 }
 
@@ -398,7 +398,7 @@ export function attr<T extends (HTMLElement | SVGElement & SVGStylable)>(node: T
  * @param selector
  * @param callback
  */
-export function forEach<T extends Element>(node: T, selector: string, callback: (d: Element, i: number)=>void) {
+export function forEach<T extends Element>(node: T, selector: string, callback: (d: Element, i: number) => void) {
   Array.prototype.slice.call(node.querySelectorAll(selector)).forEach(callback);
 }
 
@@ -406,18 +406,26 @@ export interface ITextRenderHints {
   readonly maxLetterWidth: number;
   readonly avgLetterWidth: number;
   readonly ellipsisWidth: number;
+  readonly spinnerWidth: number;
 }
 const ellipsis = '…';
 
+function measureFontAweSomeSpinner(ctx: CanvasRenderingContext2D) {
+  ctx.font = '10pt FontAwesome';
+  return ctx.measureText('\uf110').width;
+}
+
 export function createTextHints(ctx: CanvasRenderingContext2D, font: string): ITextRenderHints {
   const bak = ctx.font;
+  const spinnerWidth = measureFontAweSomeSpinner(ctx);
   ctx.font = font;
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
   const testText = alphabet + (alphabet.toUpperCase()) + '0123456789';
   const r = {
     maxLetterWidth: ctx.measureText('M').width,
     avgLetterWidth: ctx.measureText(testText).width / testText.length,
-    ellipsisWidth: ctx.measureText(ellipsis).width
+    ellipsisWidth: ctx.measureText(ellipsis).width,
+    spinnerWidth
   };
   ctx.font = bak;
   return r;
@@ -445,7 +453,7 @@ export function clipText(ctx: CanvasRenderingContext2D, text: string, x: number,
   // guess first based on average letter width
   let guess = Math.min(max, Math.floor(maxWidth / hints.avgLetterWidth));
   while (min < max) {
-    let overflow = availWidth - ctx.measureText(text.substring(0, guess + 1)).width;
+    const overflow = availWidth - ctx.measureText(text.substring(0, guess + 1)).width;
     if (overflow < 0) { //less characters needed
       max = guess - 1;
     } else if (overflow > 0) { // more characters possible
@@ -456,4 +464,77 @@ export function clipText(ctx: CanvasRenderingContext2D, text: string, x: number,
     guess = Math.floor((max + min) / 2); //compute next guess
   }
   return render(text.substring(0, min + 1) + ellipsis);
+}
+
+export function showOverlay(parentElement: HTMLElement, id: string, dx: number, dy: number) {
+  let overlay = <HTMLDivElement>parentElement.querySelector(`div.lu-overlay#O${id}`);
+  if (!overlay) {
+    overlay = parentElement.ownerDocument.createElement('div');
+    overlay.classList.add('lu-overlay');
+    overlay.id = 'O' + id;
+    parentElement.appendChild(overlay);
+  }
+  overlay.style.display = 'block';
+  overlay.style.left = dx + 'px';
+  overlay.style.top = dy + 'px';
+  return overlay;
+}
+
+export function hideOverlays(parentElement: HTMLElement) {
+  forEach(parentElement, 'div.lu-overlay', (d: HTMLDivElement) => d.style.display = null);
+}
+
+
+/**
+ * machtes the columns and the dom nodes representing them
+ * @param node
+ * @param columns
+ * @param helperType
+ */
+export function matchColumns(node: SVGGElement | HTMLElement, columns: {column: Column, renderer: IDOMCellRenderer<any>}[], helperType = 'svg') {
+  if (node.childElementCount === 0) {
+    // initial call fast method
+    node.innerHTML = columns.map((c) => c.renderer.template).join('');
+    columns.forEach((col, i) => {
+      const cnode = <Element>node.childNodes[i];
+      // set attribute for finding again
+      cnode.setAttribute('data-column-id', col.column.id);
+      // store current renderer
+      cnode.setAttribute('data-renderer', col.column.getRendererType());
+    });
+    return;
+  }
+
+  function matches(c: {column: Column}, i: number) {
+    //do both match?
+    const n = <Element>(node.childElementCount <= i ? null : node.childNodes[i]);
+    return n != null && n.getAttribute('data-column-id') === c.column.id && n.getAttribute('data-renderer') === c.column.getRendererType();
+  }
+
+  if (columns.every(matches)) {
+    return; //nothing to do
+  }
+
+  const idsAndRenderer = new Set(columns.map((c) => c.column.id + '@' + c.column.getRendererType()));
+  //remove all that are not existing anymore
+  Array.prototype.slice.call(node.childNodes).forEach((n) => {
+    const id = n.getAttribute('data-column-id');
+    const renderer = n.getAttribute('data-renderer');
+    const idAndRenderer = id + '@' + renderer;
+    if (!idsAndRenderer.has(idAndRenderer)) {
+      node.removeChild(n);
+    }
+  });
+  const helper = helperType === 'svg' ? document.createElementNS('http://www.w3.org/2000/svg', 'g') : document.createElement('div');
+  columns.forEach((col) => {
+    let cnode = node.querySelector(`[data-column-id="${col.column.id}"]`);
+    if (!cnode) {
+      //create one
+      helper.innerHTML = col.renderer.template;
+      cnode = <Element>helper.childNodes[0];
+      cnode.setAttribute('data-column-id', col.column.id);
+      cnode.setAttribute('data-renderer', col.column.getRendererType());
+    }
+    node.appendChild(cnode);
+  });
 }

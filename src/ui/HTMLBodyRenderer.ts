@@ -4,26 +4,27 @@
 
 import {Selection} from 'd3-selection';
 import DataProvider from '../provider/ADataProvider';
-import {createHTML, IDOMRenderContext} from '../renderer';
+import {createHTML} from '../renderer/index';
 import {ISlicer, IRankingData, IBodyRenderContext} from './ABodyRenderer';
 import ADOMBodyRenderer, {DOMElement} from './ADOMBodyRenderer';
+import {IDOMRenderContext} from '../renderer/RendererContexts';
 
 const domHTMLMappings = {
   root: 'div',
   g: 'div',
 
-  setSize: (n: DOMElement, width: number, height: number) => {
+  setSize(n: HTMLElement, width: number, height: number) {
     n.style.width = width + 'px';
     n.style.height = height + 'px';
   },
 
   bg: 'div',
-  updateBG: (sel: Selection<DOMElement, any, any, void>, callback: (d: any, i: number) => [number, number]) => {
-    sel.style('height', (d, i) => callback(d, i)[1] + 'px')
-      .style('width', (d, i) => callback(d, i)[0] + 'px');
+  updateBG: (sel: Selection<DOMElement, any, any, void>, callback: (d: any, i: number, j: number) => [number, number]) => {
+    sel.style('height', (d, i, j?) => callback(d, i, j)[1] + 'px')
+      .style('width', (d, i, j?) => callback(d, i, j)[0] + 'px');
   },
   meanLine: 'div',
-  updateMeanLine: ($mean: Selection<DOMElement, any, any, void>, x: number, height: number) => {
+  updateMeanLine($mean: Selection<DOMElement, any, any, void>, x: number, height: number) {
     $mean.style('left', x + 'px').style('height', height + 'px');
   },
   slopes: 'svg',

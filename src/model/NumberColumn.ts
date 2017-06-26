@@ -5,7 +5,7 @@
 import {scaleLinear, scaleSqrt, scalePow, scaleLog} from 'd3-scale';
 import {format} from 'd3-format';
 import Column, {IColumnDesc} from './Column';
-import ValueColumn from './ValueColumn';
+import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 
 
 /**
@@ -28,17 +28,18 @@ function isMissingValue(v: any) {
  * @return {number}
  */
 export function numberCompare(a: number, b: number) {
-  if (isNaN(a)) { //NaN are bigger
-    return isNaN(b) ? 0 : +1;
+  if (isNaN(a)) { //NaN are smaller
+    return isNaN(b) ? 0 : -1;
   }
   if (isNaN(b)) {
-    return -1;
+    return +1;
   }
   return a - b;
 }
 
 
 export interface INumberColumn {
+  isLoaded(): boolean;
   getNumber(row: any, index: number): number;
 }
 
@@ -115,6 +116,7 @@ export class ScaleMappingFunction implements IMappingFunction {
   private s: IScale;
 
   constructor(domain: number[] = [0, 1], private type = 'linear', range: number[] = [0, 1]) {
+
     this.s = toScale(type).domain(fixDomain(domain, this.type)).range(range);
   }
 
@@ -174,38 +176,30 @@ export class ScaleMappingFunction implements IMappingFunction {
 export class ScriptMappingFunction implements IMappingFunction {
   private f: Function;
 
-  constructor(private domain_: number[] = [0, 1], private code_: string = 'return this.linear(value,this.value_min,this.value_max);') {
-    this.f = new Function('value', code_);
-  }
-
-  get domain() {
-    return this.domain_;
-  }
-
-  set domain(domain: number[]) {
-    this.domain_ = domain;
+  constructor(public domain: number[] = [0, 1], private _code: string = 'return this.linear(value,this.value_min,this.value_max);') {
+    this.f = new Function('value', _code);
   }
 
   get code() {
-    return this.code_;
+    return this._code;
   }
 
   set code(code: string) {
-    if (this.code_ === code) {
+    if (this._code === code) {
       return;
     }
-    this.code_ = code;
+    this._code = code;
     this.f = new Function('value', code);
   }
 
   apply(v: number): number {
-    const min = this.domain_[0],
-      max = this.domain_[this.domain_.length - 1];
+    const min = this.domain[0],
+      max = this.domain[this.domain.length - 1];
     const r = this.f.call({
       value_min: min,
       value_max: max,
       value_range: max - min,
-      value_domain: this.domain_.slice(),
+      value_domain: this.domain.slice(),
       linear: (v, mi, ma) => (v - mi) / (ma - mi)
     }, v);
 
@@ -241,24 +235,50 @@ export class ScriptMappingFunction implements IMappingFunction {
 
 export function createMappingFunction(dump: any): IMappingFunction {
   if (dump.type === 'script') {
-    let s = new ScriptMappingFunction();
+    const s = new ScriptMappingFunction();
     s.restore(dump);
     return s;
   } else {
-    let l = new ScaleMappingFunction();
+    const l = new ScaleMappingFunction();
     l.restore(dump);
     return l;
   }
+}
+
+export interface INumberColumnDesc extends IValueColumnDesc<number> {
+  /**
+   * dump of mapping function
+   */
+  map?: any;
+  /**
+   * either map or domain should be available
+   */
+  domain?: [number, number];
+  /**
+   * @default [0,1]
+   */
+  range?: [number, number];
+  /**
+   * d3 formatting option
+   * @default .3n
+   */
+  numberFormat?: string;
+
+  /**
+   * missing value to use
+   * @default 0
+   */
+  missingValue?: number;
 }
 
 /**
  * a number column mapped from an original input scale to an output range
  */
 export default class NumberColumn extends ValueColumn<number> implements INumberColumn {
-  static EVENT_MAPPING_CHANGED = 'mappingChanged';
-  static COMPRESSED_RENDERER = 'heatmap';
+  static readonly EVENT_MAPPING_CHANGED = 'mappingChanged';
+  static readonly COMPRESSED_RENDERER = 'heatmap';
 
-  static noFilter = () => ({min: -Infinity, max: Infinity, filterMissing: false});
+  static readonly noFilter = () => ({min: -Infinity, max: Infinity, filterMissing: false});
 
   missingValue = 0;
 
@@ -275,7 +295,7 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
 
   private numberFormat: (n: number) => string = format('.3n');
 
-  constructor(id: string, desc: any) {
+  constructor(id: string, desc: INumberColumnDesc) {
     super(id, desc);
 
     if (desc.map) {
@@ -288,10 +308,20 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
     if (desc.numberFormat) {
       this.numberFormat = format(desc.numberFormat);
     }
+
+    if (desc.missingValue !== undefined) {
+      this.missingValue = desc.missingValue;
+    }
+
+    const rendererList = [{type: 'number', label: 'Bar'},
+      {type: 'circle', label: 'Circle'},
+      {type: 'string', label: 'String'}];
+
+    this.setRendererList(rendererList);
   }
 
   dump(toDescRef: (desc: any) => any) {
-    let r = super.dump(toDescRef);
+    const r = super.dump(toDescRef);
     r.map = this.mapping.dump();
     r.filter = this.currentFilter;
     r.missingValue = this.missingValue;
@@ -308,7 +338,7 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
     if (dump.currentFilter) {
       this.currentFilter = dump.currentFilter;
     }
-    if (dump.missingValue) {
+    if (dump.missingValue !== undefined) {
       this.missingValue = dump.missingValue;
     }
     if (dump.numberFormat) {
@@ -322,7 +352,7 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
 
   getLabel(row: any, index: number) {
     if ((<any>this.desc).numberFormat) {
-      let raw = this.getRawValue(row, index);
+      const raw = this.getRawValue(row, index);
       //if a dedicated format and a number use the formatter in any case
       if (isNaN(raw)) {
         return 'NaN';
@@ -447,10 +477,12 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
     return !((isFinite(this.currentFilter.min) && vn < this.currentFilter.min) || (isFinite(this.currentFilter.max) && vn > this.currentFilter.max));
   }
 
-  rendererType(): string {
+  getRendererType(): string {
     if (this.getCompressed()) {
       return NumberColumn.COMPRESSED_RENDERER;
     }
-    return super.rendererType();
+    return super.getRendererType();
   }
+
+
 }

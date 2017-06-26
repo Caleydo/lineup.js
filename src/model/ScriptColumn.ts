@@ -3,7 +3,9 @@
  */
 
 import Column from './Column';
-import CompositeNumberColumn from './CompositeNumberColumn';
+import CompositeNumberColumn, {ICompositeNumberDesc} from './CompositeNumberColumn';
+
+const DEFAULT_SCRIPT = 'return Math.max.apply(Math,values)';
 
 /**
  * factory for creating a description creating a mean column
@@ -11,17 +13,25 @@ import CompositeNumberColumn from './CompositeNumberColumn';
  * @returns {{type: string, label: string}}
  */
 export function createDesc(label: string = 'script') {
-  return {type: 'script', label: label, script: ScriptColumn.DEFAULT_SCRIPT};
+  return {type: 'script', label, script: DEFAULT_SCRIPT};
+}
+
+export interface IScriptColumnDesc extends ICompositeNumberDesc {
+  /**
+   * the function to use, it has two parameters: children (current children) and values (their row values)
+   * @default 'return Math.max.apply(Math,values)'
+   */
+  script?: string;
 }
 
 export default class ScriptColumn extends CompositeNumberColumn {
-  static EVENT_SCRIPT_CHANGED = 'scriptChanged';
-  static DEFAULT_SCRIPT = 'return Math.max.apply(Math,values)';
+  static readonly EVENT_SCRIPT_CHANGED = 'scriptChanged';
+  static readonly DEFAULT_SCRIPT = DEFAULT_SCRIPT;
 
   private script = ScriptColumn.DEFAULT_SCRIPT;
   private f: Function = null;
 
-  constructor(id: string, desc: any) {
+  constructor(id: string, desc: IScriptColumnDesc) {
     super(id, desc);
     this.script = desc.script || this.script;
   }

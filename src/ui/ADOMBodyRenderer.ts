@@ -5,18 +5,18 @@
 import {select, Selection, event as d3event} from 'd3-selection';
 import 'd3-transition';
 import {max as d3max} from 'd3-array';
-import {forEach} from '../utils';
+import {forEach, matchColumns} from '../utils';
 import Column, {IStatistics} from '../model/Column';
-import {matchColumns, IDOMCellRenderer, ICellRendererFactory} from '../renderer';
 import DataProvider from '../provider/ADataProvider';
-import {IDOMRenderContext} from '../renderer';
+import {IDOMRenderContext} from '../renderer/RendererContexts';
 import ABodyRenderer, {
   ISlicer,
   IRankingColumnData,
   IRankingData,
   IBodyRenderContext,
-  ERenderReason
-} from './ABodyRenderer';
+  ERenderReason} from './ABodyRenderer';
+import ICellRendererFactory from '../renderer/ICellRendererFactory';
+import {IDOMCellRenderer} from '../renderer/IDOMCellRenderers';
 
 export declare type DOMElement = HTMLElement | SVGElement & SVGStylable;
 
@@ -64,8 +64,8 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     const $rankings_enter = $rankings_update.enter().append<DOMElement>(g)
       .attr('class', 'ranking')
       .call(domMapping.transform, (d) => [d.shift, 0]);
-    $rankings_enter.append(g).attr('class', 'rows');
-    $rankings_enter.append(g).attr('class', 'meanlines').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`);
+    $rankingsEnter.append(g).attr('class', 'rows');
+    $rankingsEnter.append(g).attr('class', 'meanlines').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`);
     const $rankings = $rankings_update.merge($rankings_enter);
     //animated shift
     this.animated($rankings).call(domMapping.transform, (d, i) => [d.shift, 0]);
@@ -73,13 +73,13 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
     const toWait: Promise<any>[] = [];
     const renderRanking = ($this: Selection<DOMElement, IRankingData, any, void>, ranking: IRankingData) => {
-      let $rows_update = $this.selectAll(g + '.row').data((d) => d.order, String);
-      let $rows_enter = $rows_update.enter().append(g).attr('class', 'row');
+      let $rows_update = $this.select(g + '.rows').selectAll(g + '.row').data((d) => d.order, String);
+      const $rowsEnter = $rows.enter().append(g).attr('class', 'row');
       let $rows = $rows_update.merge($rows_enter);
       $rows_enter.call(domMapping.transform, (d, i) => [0, context.cellPrevY(i)]);
 
-      $rows_enter.append(domMapping.bg).attr('class', 'bg');
-      $rows_enter
+      $rowsEnter.append(domMapping.bg).attr('class', 'bg');
+      $rowsEnter
         .on('mouseenter', (d) => this.mouseOver(d, true))
         .on('mouseleave', (d) => this.mouseOver(d, false))
         .on('click', (d) => this.select(d, (<MouseEvent>d3event).ctrlKey));
@@ -151,8 +151,8 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
           return;
         }
         h.then((stats: IStatistics) => {
-          const x_pos = d.shift + d.column.getWidth() * stats.mean;
-          domMapping.updateMeanLine($mean, isNaN(x_pos) ? 0 : x_pos, height);
+          const xPos = d.shift + d.column.getWidth() * stats.mean;
+          domMapping.updateMeanLine($mean, isNaN(xPos) ? 0 : xPos, height);
         });
       });
       $meanlines_update.exit().remove();
@@ -169,7 +169,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
   select(dataIndex: number, additional = false) {
     const selected = super.select(dataIndex, additional);
-    this.$node.selectAll(`[data-data-index="${dataIndex}"`).classed('selected', selected);
+    this.$node.selectAll(`[data-data-index="${dataIndex}"]`).classed('selected', selected);
     return selected;
   }
 
@@ -180,7 +180,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     if (indices.length === 0) {
       return;
     } else {
-      let q = indices.map((d) => `[data-data-index="${d}"]`).join(',');
+      const q = indices.map((d) => `[data-data-index='${d}']`).join(',');
       forEach(this.node, q, (d) => d.classList.add('selected'));
     }
   }
@@ -194,7 +194,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
     forEach(this.node, '.hover', (d) => d.classList.remove('hover'));
     if (hover) {
-      forEach(this.node, `[data-data-index="${dataIndex}"]`, setClass);
+      forEach(this.node, `[data-data-index='${dataIndex}']`, setClass);
     }
   }
 
@@ -209,11 +209,11 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
     const $lines_update = $slopes.selectAll('line.slope').data((d) => {
       const cache = new Map<number,number>();
-      d.right.forEach((data_index, pos) => cache.set(data_index, pos));
-      return d.left.map((data_index, pos) => ({
-        data_index: data_index,
+      d.right.forEach((dataIndex, pos) => cache.set(dataIndex, pos));
+      return d.left.map((dataIndex, pos) => ({
+        dataIndex,
         lpos: pos,
-        rpos: cache.get(data_index)
+        rpos: cache.get(dataIndex)
       })).filter((d) => d.rpos != null);
     });
     const $lines_enter = $lines_update.enter().append('line').attr('class', 'slope').attr('x2', this.options.slopeWidth)
@@ -241,8 +241,8 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
   protected abstract updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number);
 
-  protected createContextImpl(index_shift: number): IBodyRenderContext {
-    return this.createContext(index_shift, this.domMapping.creator);
+  protected createContextImpl(indexShift: number): IBodyRenderContext {
+    return this.createContext(indexShift, this.domMapping.creator);
   }
 
   protected updateImpl(data: IRankingData[], context: IBodyRenderContext, width: number, height: number, reason: ERenderReason) {

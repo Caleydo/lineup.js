@@ -47,7 +47,42 @@
     stroke: darkgray;
     stroke-width: 1;
   }
-
+  .sparklinecell {
+    stroke: black;
+  }
+  .boxplotrect {
+    stroke: black;
+    fill: #e0e0e0;
+  }
+  .cellbg {
+    fill: transparent;
+    stroke: none;
+  }
+  .boxplotline {
+    stroke: black;
+    fill: #e0e0e0;
+  }
+  .boxplotallpath {
+    stroke: black;
+    fill: #e0e0e0;
+  }
+  .boxplotsortpath {
+    stroke: #ff0700;
+    fill: #e0e0e0;
+  }
+  .setcircle {
+    stroke: black;
+    fill: black;
+  }
+  .setcircleOpacity {
+    stroke: black;
+    fill: black;
+    opacity: 0.1;
+  }
+  .upsetpath {
+    stroke: black;
+    fill: black;
+  }
   g.row {
     rect.bg {
       fill: transparent;
@@ -73,5 +108,6 @@
         opacity: 0.5;
       }
     }
+
   }
 }

@@ -5,7 +5,7 @@
 import {ascending} from 'd3-array';
 import * as scale from 'd3-scale';
 import Column, {IColumnDesc} from './Column';
-import ValueColumn from './ValueColumn';
+import ValueColumn,{IValueColumnDesc} from './ValueColumn';
 import StringColumn from './StringColumn';
 
 export interface ICategoricalColumn {
@@ -14,6 +14,36 @@ export interface ICategoricalColumn {
 
   getCategories(row: any, index: number): string[];
 }
+
+export interface ICategory {
+  name: string;
+
+  /**
+   * optional label of this category (the one to render)
+   */
+  label?: string;
+  /**
+   * associated value with this category
+   */
+  value?: any;
+  /**
+   * category color
+   * @default next in d3 color 10 range
+   */
+  color?: string;
+}
+
+export interface IBaseCategoricalDesc {
+  /**
+   * separator to split  multi value
+   * @defualt ;
+   */
+  separator?: string;
+
+  categories: (string|ICategory)[];
+}
+
+export declare type ICategoricalDesc = IValueColumnDesc<string> & IBaseCategoricalDesc;
 
 /**
  * checks whether the given column or description is a categorical column, i.e. the value is a list of categories
@@ -24,6 +54,26 @@ export function isCategoricalColumn(col: Column|IColumnDesc) {
   return (col instanceof Column && typeof (<any>col).getCategories === 'function' || (!(col instanceof Column) && (<IColumnDesc>col).type.match(/(categorical|ordinal)/) != null));
 }
 
+export interface ICategoricalFilter {
+  filter: string[]|string|RegExp;
+  filterMissing: boolean;
+}
+
+function isEqualFilter(a: ICategoricalFilter, b: ICategoricalFilter) {
+  if (a === b) {
+    return true;
+  }
+  if (a === null || b === null) {
+    return false;
+  }
+  if (a.filterMissing !== b.filterMissing || (typeof a.filter !== typeof b.filter)) {
+    return false;
+  }
+  if (Array.isArray(a.filter)) {
+    return arrayEquals(<string[]>a.filter, <string[]>b.filter);
+  }
+  return String(a.filter) === String(b.filter);
+}
 
 function arrayEquals<T>(a: T[], b: T[]) {
   const al = a != null ? a.length : 0;
@@ -58,7 +108,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
    * @type {null}
    * @private
    */
-  private currentFilter: string[] = null;
+  private currentFilter: ICategoricalFilter = null;
 
   /**
    * split multiple categories
@@ -66,16 +116,16 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
    */
   private separator = ';';
 
-  constructor(id: string, desc: any) {
+  constructor(id: string, desc: ICategoricalDesc) {
     super(id, desc);
     this.separator = desc.separator || this.separator;
     this.initCategories(desc);
     //TODO infer categories from data
   }
 
-  initCategories(desc: any) {
+  initCategories(desc: IBaseCategoricalDesc) {
     if (desc.categories) {
-      let cats = [],
+      const cats = [],
         cols = this.colors.range().slice(), //work on a copy since it will be manipulated
         labels = new Map<string, string>();
       desc.categories.forEach((cat, i) => {
@@ -135,7 +185,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
 
-  getLabels(row: any, index:number) {
+  getLabels(row: any, index: number) {
     const v = StringColumn.prototype.getValue.call(this, row, index);
     const r = v ? v.split(this.separator) : [];
 
@@ -175,7 +225,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
   dump(toDescRef: (desc: any) => any): any {
-    let r = super.dump(toDescRef);
+    const r = super.dump(toDescRef);
     r.filter = this.currentFilter;
     r.colors = {
       domain: this.colors.domain(),
@@ -190,7 +240,16 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
 
   restore(dump: any, factory: (dump: any) => Column) {
     super.restore(dump, factory);
-    this.currentFilter = dump.filter || null;
+    if ('filter' in dump) {
+      const bak = dump.filter;
+      if (typeof bak === 'string' || Array.isArray(bak)) {
+        this.currentFilter = {filter: bak, filterMissing: false};
+      } else {
+        this.currentFilter = bak;
+      }
+    } else {
+      this.currentFilter = null;
+    }
     if (dump.colors) {
       this.colors.domain(dump.colors.domain).range(dump.colors.range);
     }
@@ -210,7 +269,12 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
       return true;
     }
     const vs = this.getCategories(row, index),
-      filter: any = this.currentFilter;
+      filter = this.currentFilter.filter;
+
+    if (this.currentFilter.filterMissing && vs.length === 0) {
+      return false;
+    }
+
     return vs.every((v) => {
       if (Array.isArray(filter) && filter.length > 0) { //array mode
         return filter.indexOf(v) >= 0;
@@ -227,8 +291,8 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     return this.currentFilter;
   }
 
-  setFilter(filter: string[]) {
-    if (arrayEquals(this.currentFilter, filter)) {
+  setFilter(filter: ICategoricalFilter) {
+    if (isEqualFilter(this.currentFilter, filter)) {
       return;
     }
     this.fire([Column.EVENT_FILTER_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.currentFilter, this.currentFilter = filter);
@@ -239,7 +303,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     const vb = this.getValues(b, bIndex);
     //check all categories
     for (let i = 0; i < Math.min(va.length, vb.length); ++i) {
-      let ci = ascending(va[i], vb[i]);
+      const ci = ascending(va[i], vb[i]);
       if (ci !== 0) {
         return ci;
       }

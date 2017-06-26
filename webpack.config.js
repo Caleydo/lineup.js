@@ -1,5 +1,6 @@
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var path = require('path');
 var pkg = require('./package.json');
 
 var year = (new Date()).getFullYear();
@@ -15,7 +16,7 @@ function generate(bundle, min) {
       'LineUpJS_react': './src/react/index.tsx'
     },
     output: {
-      path: './dist',
+      path: path.resolve('./build'),
       filename: '[name]' + (bundle ? '_bundle' : '') + (min ? '.min' : '') + '.js',
       library: 'LineUpJS',
       libraryTarget: 'umd',
@@ -36,8 +37,8 @@ function generate(bundle, min) {
       //rest depends on type
     ],
     externals: { //react always external
-      react: 'React',
-      'react-dom': 'ReactDOM'
+      react: { amd: 'react', root: 'React', commonjs: 'react', commonjs2: 'react' },
+      'react-dom': { amd: 'react-dom', root: 'ReactDOM', commonjs: 'react-dom', commonjs2: 'react-dom' }
     },
     module: {
       loaders: [

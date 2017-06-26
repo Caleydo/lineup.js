@@ -5,9 +5,10 @@
 import {Selection} from 'd3-selection';
 import DataProvider from '../provider/ADataProvider';
 import Column from '../model/Column';
-import {createSVG, IDOMRenderContext} from '../renderer';
+import {createSVG} from '../renderer/index';
 import {ISlicer, IBodyRenderContext, IRankingData} from './ABodyRenderer';
 import ADOMBodyRenderer, {DOMElement} from './ADOMBodyRenderer';
+import {IDOMRenderContext} from '../renderer/RendererContexts';
 
 const domMappings = {
   svg: {
@@ -74,12 +75,13 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
   }
 
   updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number) {
-    let shifts = [], offset = 0;
+    const shifts = [];
+    let offset = 0;
     data.forEach((r) => {
       const w = r.ranking.flatten(shifts, offset, 2, this.options.columnPadding);
       offset += w + this.options.slopeWidth;
     });
-    this.updateClipPathsImpl(shifts.map(s => s.col), context, height);
+    this.updateClipPathsImpl(shifts.map((s) => s.col), context, height);
 
     { //update frozen clip-path
       let $elem = this.$node.select(`clipPath#c${context.idPrefix}Freeze`);

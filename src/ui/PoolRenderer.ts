@@ -11,7 +11,7 @@ import {toFullTooltip} from './HeaderRenderer';
 class PoolEntry {
   used: number = 0;
 
-  constructor(public desc: IColumnDesc) {
+  constructor(public readonly desc: IColumnDesc) {
 
   }
 }
@@ -28,7 +28,7 @@ export interface IPoolRendererOptions {
 }
 
 export default class PoolRenderer {
-  private options: IPoolRendererOptions = {
+  private readonly options: IPoolRendererOptions = {
     layout: 'vertical',
     elemWidth: 100,
     elemHeight: 40,
@@ -39,7 +39,7 @@ export default class PoolRenderer {
     addAtEndOnClick: false
   };
 
-  private $node: Selection<HTMLElement, any, Element, any>;
+  private readonly $node: Selection<HTMLElement, any, Element, any>;
   private entries: PoolEntry[];
 
   constructor(private data: DataProvider, parent: Element, options: IPoolRendererOptions = {}) {
@@ -108,6 +108,8 @@ export default class PoolRenderer {
   update() {
     const data = this.data;
     const descToShow = this.entries.filter((e) => e.used === 0).map((d) => d.desc);
+    const $headersUpdate = this.$node.selectAll('div.header').data(descToShow);
+    const $headerEnter = $headers.enter().append('div').attr({
     const $headers_update = this.$node.selectAll('div.header').data(descToShow);
     const $headers_enter = $headers_update.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
       const e = <DragEvent>(<any>d3event);
@@ -119,11 +121,11 @@ export default class PoolRenderer {
       }
     }).style('width', this.options.elemWidth + 'px').style('height', this.options.elemHeight + 'px');
     if (this.options.addAtEndOnClick) {
-      $headers_enter.on('click', (d) => {
+      $headerEnter.on('click', (d) => {
         this.data.push(this.data.getLastRanking(), d);
       });
     }
-    $headers_enter.append('span').classed('label', true).text((d) => d.label);
+    $headerEnter.append('span').classed('label', true).text((d) => d.label);
 
     const $headers = $headers_update.merge($headers_enter);
 

@@ -10,7 +10,7 @@ import CompositeNumberColumn from './CompositeNumberColumn';
  * @returns {{type: string, label: string}}
  */
 export function createDesc(label: string = 'Mean') {
-  return {type: 'mean', label: label};
+  return {type: 'mean', label};
 }
 
 export default class MeanColumn extends CompositeNumberColumn {
