@@ -1,10 +1,10 @@
 import Column from '../model/Column';
 import ADialog from './ADialog';
-import * as d3 from 'd3';
+import {Selection, selectAll, event as d3event} from 'd3-selection';
 
 
 export default class RedererTypeDialog extends ADialog {
-  constructor(private readonly column: Column, $header: d3.Selection<Column>, title: string = 'Change Visualization') {
+  constructor(private readonly column: Column, $header: Selection<HTMLElement, Column, any, any>, title: string = 'Change Visualization') {
     super($header, title);
   }
 
@@ -17,10 +17,10 @@ export default class RedererTypeDialog extends ADialog {
     }).join('\n'));
 
 
-    const rendererContent = d3.selectAll('input[name="renderertype"]');
+    const rendererContent = selectAll('input[name="renderertype"]');
 
     rendererContent.on('change', () => {
-      const target = (<MouseEvent>d3.event).target;
+      const target = (<MouseEvent>d3event).target;
       const value = (<HTMLInputElement>target).value;
       this.column.setRendererType(value);
     });

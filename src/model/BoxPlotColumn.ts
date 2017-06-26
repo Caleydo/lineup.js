@@ -3,7 +3,7 @@
  */
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import Column from './Column';
-import {format} from 'd3';
+import {format} from 'd3-format';
 import NumberColumn, {INumberColumn, IMappingFunction, createMappingFunction, ScaleMappingFunction, IMapAbleColumn, INumberFilter, noNumberFilter} from './NumberColumn';
 
 export const SORT_METHOD = {

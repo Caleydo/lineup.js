@@ -42,8 +42,8 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index: numb
     max: ex[1],
     mean: d3mean(arr, indexAccessor),
     count: arr.length,
-    maxBin: d3max(hist_data, (d) => d.length),
-    hist: hist_data
+    maxBin: d3max(histData, (d) => d.length),
+    hist: histData
   };
 }
 
@@ -68,10 +68,10 @@ function computeHist(arr: number[], indices: number[], acc: (row: any, index: nu
       m.set(v, (m.get(v) || 0) + 1);
     });
   });
-  const entries: {cat: string; y: number}[] = [];
-  m.forEach((v, k) => entries.push({cat: k, y: v}));
+  const entries: {cat: string; length: number}[] = [];
+  m.forEach((v, k) => entries.push({cat: k, length: v}));
   return {
-    maxBin: Math.max(...entries.map((d) => d.y)),
+    maxBin: Math.max(...entries.map((d) => d.length)),
     hist: entries
   };
 }

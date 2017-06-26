@@ -109,7 +109,7 @@ export default class PoolRenderer {
     const data = this.data;
     const descToShow = this.entries.filter((e) => e.used === 0).map((d) => d.desc);
     const $headersUpdate = this.$node.selectAll('div.header').data(descToShow);
-    const $headerEnter = $headers_update.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
+    const $headerEnter = $headersUpdate.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
       const e = <DragEvent>(<any>d3event);
       e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
       e.dataTransfer.setData('text/plain', d.label);
@@ -137,7 +137,7 @@ export default class PoolRenderer {
       });
     $headers.attr('title', toFullTooltip);
     $headers.select('span').text((d) => d.label);
-    $headers_update.exit().remove();
+    $headersUpdate.exit().remove();
 
     //compute the size of this node
     switch (this.options.layout) {

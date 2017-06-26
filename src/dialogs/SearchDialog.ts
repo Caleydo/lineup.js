@@ -1,7 +1,7 @@
 import Column from '../model/Column';
 import ADialog from './ADialog';
 import DataProvider from '../provider/ADataProvider';
-import * as d3 from 'd3';
+import {event as d3event, Selection} from 'd3-selection';
 
 
 export default class SearchDialog extends ADialog {
@@ -13,7 +13,7 @@ export default class SearchDialog extends ADialog {
    * @param provider the data provider for the actual search
    * @param title optional title
    */
-  constructor(private readonly column: Column, $header: d3.Selection<Column>, private readonly provider: DataProvider, title: string = 'Search') {
+  constructor(private readonly column: Column, $header: Selection<HTMLElement, Column, any, any>, private readonly provider: DataProvider, title: string = 'Search') {
     super($header, title);
   }
 
@@ -21,7 +21,7 @@ export default class SearchDialog extends ADialog {
     const popup = this.makePopup('<input type="text" size="15" value="" required="required" autofocus="autofocus"><br><label><input type="checkbox">RegExp</label><br>');
 
     popup.select('input[type="text"]').on('input', () => {
-      const target = (<Event>d3.event).target;
+      const target = (<Event>d3event).target;
       let search: any = (<HTMLInputElement>target).value;
       if (search.length >= 3) {
         const isRegex = popup.select('input[type="checkbox"]').property('checked');

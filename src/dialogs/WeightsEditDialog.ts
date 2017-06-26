@@ -1,7 +1,8 @@
 import Column from '../model/Column';
 import StackColumn from '../model/StackColumn';
 import ADialog from './ADialog';
-import {scale as d3scale} from 'd3';
+import {Selection} from 'd3-selection';
+import {scaleLinear} from 'd3-scale';
 
 
 export default class WeightsEditDialog extends ADialog {
@@ -11,7 +12,7 @@ export default class WeightsEditDialog extends ADialog {
    * @param $header the visual header element of this column
    * @param title optional title
    */
-  constructor(private readonly column: StackColumn, $header: d3.Selection<Column>, title: string = 'Edit Weights') {
+  constructor(private readonly column: StackColumn, $header: Selection<HTMLElement, Column, any, any>, title: string = 'Edit Weights') {
     super($header, title);
   }
 
@@ -20,7 +21,7 @@ export default class WeightsEditDialog extends ADialog {
       children = this.column.children.map((d, i) => ({col: d, weight: weights[i] * 100} ));
 
     //map weights to pixels
-    const scale = d3scale.linear().domain([0, 100]).range([0, 120]);
+    const scale = scaleLinear().domain([0, 100]).range([0, 120]);
 
     const $popup = this.makePopup('<table></table>');
 
@@ -28,16 +29,16 @@ export default class WeightsEditDialog extends ADialog {
     const $rows = $popup.select('table').selectAll('tr').data(children);
     const $rowsEnter = $rows.enter().append('tr');
     $rowsEnter.append('td')
-      .append('input').attr({
-      type: 'number',
-      value: (d) => d.weight,
-      min: 0,
-      max: 100,
-      size: 5
-    }).on('input', function (d) {
-      d.weight = +this.value;
-      redraw();
-    });
+      .append<HTMLInputElement>('input').attr('type', 'number')
+      .attr('value', (d) => d.weight)
+      .attr('min', 0)
+      .attr('max', 100)
+      .attr('size', 5)
+      .on('input', function (d) {
+        d.weight = +this.value;
+        redraw();
+      });
+    const $rowsUpdate = $rows.merge($rowsEnter);
 
     $rowsEnter.append('td').append('div')
       .attr('class', (d) => 'bar ' + d.col.cssClass)
@@ -46,7 +47,7 @@ export default class WeightsEditDialog extends ADialog {
     $rowsEnter.append('td').text((d) => d.col.label);
 
     function redraw() {
-      $rows.select('.bar').transition().style('width', (d) => scale(d.weight) + 'px');
+      $rowsUpdate.select('.bar').transition().style('width', (d) => scale(d.weight) + 'px');
     }
 
     redraw();
@@ -57,7 +58,7 @@ export default class WeightsEditDialog extends ADialog {
     });
     $popup.select('.reset').on('click', () => {
       children.forEach((d, i) => d.weight = weights[i] * 100);
-      $rows.select('input').property('value', (d) => d.weight);
+      $rowsUpdate.select('input').property('value', (d) => d.weight);
       redraw();
     });
     $popup.select('.ok').on('click', () => {

@@ -1,6 +1,7 @@
 import LinkColumn from '../model/LinkColumn';
 import Column from '../model/Column';
 import ADialog from './ADialog';
+import {Selection} from 'd3-selection';
 
 export default class EditLinkDialog extends ADialog {
 
@@ -12,7 +13,7 @@ export default class EditLinkDialog extends ADialog {
    * @param idPrefix dom id prefix
    * @param title optional title
    */
-  constructor(private readonly column: LinkColumn, $header: d3.Selection<Column>, private readonly idPrefix: string, private readonly templates: string[] = [], title: string = 'Edit Link ($ as Placeholder)') {
+  constructor(private readonly column: LinkColumn, $header: Selection<HTMLElement, Column, any, any>, private readonly idPrefix: string, private readonly templates: string[] = [], title: string = 'Edit Link ($ as Placeholder)') {
     super($header, title);
   }
 

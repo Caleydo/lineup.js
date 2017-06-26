@@ -24,7 +24,6 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
   createSVG(col: IBoxPlotColumn & Column, context: IDOMRenderContext): ISVGCellRenderer {
     const sortMethod = col.getSortMethod();
     const topPadding = 2.5 * (context.option('rowBarPadding', 1));
-    const scale = d3scale.linear().domain(domain).range([0, col.getWidth()]);
     const scale = scaleLinear().domain([0, 1]).range([0, col.getWidth()]);
     const sortedByMe = col.findMyRanker().getSortCriteria().col === col;
     return {

@@ -2,7 +2,7 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {select, Selection, event as d3event, mouse} from 'd3-selection';
+import {select, Selection, event as d3event, mouse, selectAll} from 'd3-selection';
 import {drag as d3drag} from 'd3-drag';
 import {scaleLinear} from 'd3-scale';
 import {merge} from './utils';
@@ -158,7 +158,7 @@ export default class MappingEditor {
 
     $root.select('input.raw_min')
       .property('value', raw2pixel.domain()[0])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[0] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -170,7 +170,7 @@ export default class MappingEditor {
       });
     $root.select<HTMLInputElement>('input.raw_max')
       .property('value', raw2pixel.domain()[1])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[1] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -186,13 +186,13 @@ export default class MappingEditor {
 
     //lines that show mapping of individual data items
     let datalines = $root.select('g.samples').selectAll('line').data([]);
-    var datalines_update = datalines;
+    let datalinesUpdate = datalines;
     this.dataPromise.then((data) => {
       //to unique values
       data = unique(data);
 
       datalines = datalines.data(data);
-      let datalines_enter = datalines.enter()
+      let datalinesEnter = datalines.enter()
         .append('line')
         .attr('x1',(d) => normal2pixel(that.scale.apply(d)))
         .attr('y1',0)
@@ -202,11 +202,11 @@ export default class MappingEditor {
           const domain = that.scale.domain;
           return (d < domain[0] || d > domain[domain.length - 1]) ? 'hidden' : null;
         });
-        datalines_update = datalines.merge(datalines_enter);
+        datalinesUpdate = datalines.merge(datalinesEnter);
     });
 
     function updateDataLines() {
-      datalines_update
+      datalinesUpdate
         .attr('x1', (d) => normal2pixel(that.scale.apply(d)))
         .attr('x2', raw2pixel)
         .style('visibility', function (d) {
@@ -369,7 +369,7 @@ export default class MappingEditor {
         (<MouseEvent>d3event).stopPropagation();
         removePoint(i);
       });
-      $mapping_enter.append('line').attr('y1',0).attr('y2', height).call(createDrag(function (d) {
+      $mappingEnter.append('line').attr('y1',0).attr('y2', height).call(createDrag(function (d) {
         //drag the line shifts both point in parallel
         const dx = (<any>d3event).dx;
         const nx = clamp(normal2pixel(d.n) + dx, 0, width);
@@ -408,13 +408,13 @@ export default class MappingEditor {
         updateScale();
       }));
 
-      const $mapping_update = $mapping.merge($mapping_enter);
+      const $mappingUpdate = $mapping.merge($mappingEnter);
 
-      $mapping_update.select('line')
+      $mappingUpdate.select('line')
         .attr('x1', (d) => normal2pixel(d.n))
         .attr('x2', (d) => raw2pixel(d.r));
-      $mapping_update.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
-      $mapping_update.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
+      $mappingUpdate.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
+      $mappingUpdate.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
       $mapping.exit().remove();
     }
 
@@ -461,7 +461,7 @@ export default class MappingEditor {
         .attr('max', inputDomain[1])
         .data(initialValues)
         .attr('value', (d) => d)
-        .on('change', function() {
+        .on('change', function(this: HTMLInputElement) {
           const value = parseFloat(this.value);
           if(value >= inputDomain[0] && value <= inputDomain[1]) {
             const selector: string = (this.dataset.filter === 'min')? 'left' : 'right';

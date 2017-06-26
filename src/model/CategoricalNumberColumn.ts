@@ -3,7 +3,7 @@
  */
 
 import {max as d3max, min as d3min} from 'd3-array';
-import {scaleOrdinal, schemeCategory10} from 'd3-scale';
+import {scaleOrdinal, scalePoint, schemeCategory10} from 'd3-scale';
 import Column from './Column';
 import ValueColumn,{IValueColumnDesc} from './ValueColumn';
 import CategoricalColumn, {ICategoricalColumn, IBaseCategoricalDesc, ICategoricalFilter} from './CategoricalColumn';
@@ -25,7 +25,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
    */
   private catLabels = new Map<string, string>();
 
-  private scale = scaleOrdinal<string, number>().rangeRoundPoints([0, 1]);
+  private scale = scaleOrdinal<string, number>();
 
   private currentFilter: ICategoricalFilter = null;
   /**
@@ -33,7 +33,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
    * @type {string}
    */
   private separator = ';';
-  private combiner = d3max;
+  private combiner: (v: number[]) => number = d3max;
 
   constructor(id: string, desc: ICategoricalNumberColumnDesc) {
     super(id, desc);

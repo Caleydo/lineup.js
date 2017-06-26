@@ -74,7 +74,7 @@ export interface IStatistics {
 
 export interface ICategoricalStatistics {
   readonly maxBin: number;
-  readonly hist: {cat: string; y: number}[];
+  readonly hist: {cat: string; length: number}[];
 }
 
 export interface IColumnMetaData {

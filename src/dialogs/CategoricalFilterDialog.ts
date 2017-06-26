@@ -1,6 +1,6 @@
 import CategoricalColumn from '../model/CategoricalColumn';
 import AFilterDialog from './AFilterDialog';
-import {Selection} from 'd3';
+import {Selection} from 'd3-selection';
 
 export default class CategoricalFilterDialog extends AFilterDialog<CategoricalColumn> {
 
@@ -10,7 +10,7 @@ export default class CategoricalFilterDialog extends AFilterDialog<CategoricalCo
    * @param $header the visual header element of this column
    * @param title optional title
    */
-  constructor(column: CategoricalColumn, $header: Selection<CategoricalColumn>, title: string = 'Filter') {
+  constructor(column: CategoricalColumn, $header: Selection<HTMLElement, CategoricalColumn, any, any>, title: string = 'Filter') {
     super(column, $header, title);
   }
 

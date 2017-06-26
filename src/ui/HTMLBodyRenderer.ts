@@ -19,9 +19,9 @@ const domHTMLMappings = {
   },
 
   bg: 'div',
-  updateBG: (sel: Selection<DOMElement, any, any, void>, callback: (d: any, i: number, j: number) => [number, number]) => {
-    sel.style('height', (d, i, j?) => callback(d, i, j)[1] + 'px')
-      .style('width', (d, i, j?) => callback(d, i, j)[0] + 'px');
+  updateBG: (sel: Selection<DOMElement, any, any, void>, callback: (d: any, i: number) => [number, number]) => {
+    sel.style('height', (d, i) => callback(d, i)[1] + 'px')
+      .style('width', (d, i) => callback(d, i)[0] + 'px');
   },
   meanLine: 'div',
   updateMeanLine($mean: Selection<DOMElement, any, any, void>, x: number, height: number) {

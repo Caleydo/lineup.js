@@ -18,7 +18,7 @@ import ABodyRenderer, {
 import ICellRendererFactory from '../renderer/ICellRendererFactory';
 import {IDOMCellRenderer} from '../renderer/IDOMCellRenderers';
 
-export declare type DOMElement = HTMLElement | SVGElement & SVGStylable;
+export declare type DOMElement = HTMLElement | SVGElement;
 
 export interface IDOMMapping {
   root: string;
@@ -60,23 +60,23 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     const domMapping = this.domMapping;
     const g = this.domMapping.g;
 
-    const $rankings_update = $body.selectAll<DOMElement, IRankingData>(g + '.ranking').data(data, (d) => d.id);
-    const $rankings_enter = $rankings_update.enter().append<DOMElement>(g)
+    const $rankingsUpdate = $body.selectAll<DOMElement, IRankingData>(g + '.ranking').data(data, (d) => d.id);
+    const $rankingsEnter = $rankingsUpdate.enter().append<DOMElement>(g)
       .attr('class', 'ranking')
       .call(domMapping.transform, (d) => [d.shift, 0]);
     $rankingsEnter.append(g).attr('class', 'rows');
     $rankingsEnter.append(g).attr('class', 'meanlines').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`);
-    const $rankings = $rankings_update.merge($rankings_enter);
+    const $rankings = $rankingsUpdate.merge($rankingsEnter);
     //animated shift
     this.animated($rankings).call(domMapping.transform, (d, i) => [d.shift, 0]);
 
 
     const toWait: Promise<any>[] = [];
     const renderRanking = ($this: Selection<DOMElement, IRankingData, any, void>, ranking: IRankingData) => {
-      let $rows_update = $this.select(g + '.rows').selectAll(g + '.row').data((d) => d.order, String);
-      const $rowsEnter = $rows.enter().append(g).attr('class', 'row');
-      let $rows = $rows_update.merge($rows_enter);
-      $rows_enter.call(domMapping.transform, (d, i) => [0, context.cellPrevY(i)]);
+      const $rowsUpdate = $this.select(g + '.rows').selectAll(g + '.row').data((d) => d.order, String);
+      const $rowsEnter = $rowsUpdate.enter().append(g).attr('class', 'row');
+      const $rows = $rowsUpdate.merge($rowsEnter);
+      $rowsEnter.call(domMapping.transform, (d, i) => [0, context.cellPrevY(i)]);
 
       $rowsEnter.append(domMapping.bg).attr('class', 'bg');
       $rowsEnter
@@ -86,7 +86,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
       //create templates
       const createTemplates = (node: DOMElement, columns: IRankingColumnData[]) => {
-        matchColumns(node, columns);
+        matchColumns(<any>node, columns);
         //set transform
         columns.forEach((col, ci) => {
           const cnode: any = node.childNodes[ci];
@@ -94,11 +94,11 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
         });
       };
 
-      $rows_enter.append<DOMElement>(g).attr('class', 'cols').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`).each(function (d, i) {
+      $rowsEnter.append<DOMElement>(g).attr('class', 'cols').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`).each(function (d, i) {
         createTemplates(this, ranking.columns);
       });
 
-      $rows_enter.append<DOMElement>(g).attr('class', 'frozen').call(this.domMapping.transform, () => [this.currentFreezeLeft, 0]).each(function (d, i) {
+      $rowsEnter.append<DOMElement>(g).attr('class', 'frozen').call(this.domMapping.transform, () => [this.currentFreezeLeft, 0]).each(function (d, i) {
         createTemplates(this, ranking.frozen);
       });
 
@@ -118,7 +118,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
       const updateColumns = (node: DOMElement, r: IRankingData, i: number, columns: IRankingColumnData[]) => {
         //update nodes and create templates
         return r.data[i].then((row) => {
-          matchColumns(node, columns);
+          matchColumns(<any>node, columns);
           columns.forEach((col, ci) => {
             const cnode: any = node.childNodes[ci];
             domMapping.translate(cnode, col.shift, 0);
@@ -137,13 +137,13 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
         domMapping.setSize(this, maxFrozen, that.options.rowHeight);
         toWait.push(updateColumns(this, ranking, i, ranking.frozen));
       });
-      $rows_update.exit().remove();
-    }
+      $rowsUpdate.exit().remove();
+    };
 
     {
-      let $meanlines_update = $rankings.select(g + '.meanlines').selectAll<DOMElement, null>(domMapping.meanLine + '.meanline').data((d) => d.columns.filter((c) => this.showMeanLine(c.column)));
-      let $meanlines_enter = $meanlines_update.enter().append<DOMElement>(domMapping.meanLine).attr('class', 'meanline');
-      let $meanlines = $meanlines_update.merge($meanlines_enter);
+      const $meanlinesUpdate = $rankings.select(g + '.meanlines').selectAll<DOMElement, null>(domMapping.meanLine + '.meanline').data((d) => d.columns.filter((c) => this.showMeanLine(c.column)));
+      const $meanlinesEnter = $meanlinesUpdate.enter().append<DOMElement>(domMapping.meanLine).attr('class', 'meanline');
+      const $meanlines = $meanlinesUpdate.merge($meanlinesEnter);
       $meanlines.each(function (d: IRankingColumnData, i: number, j) {
         const h = that.histCache.get(d.column.id);
         const $mean = select<DOMElement, IRankingColumnData>(this);
@@ -155,14 +155,14 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
           domMapping.updateMeanLine($mean, isNaN(xPos) ? 0 : xPos, height);
         });
       });
-      $meanlines_update.exit().remove();
+      $meanlinesUpdate.exit().remove();
     }
 
     $rankings.select<DOMElement>(g + '.rows').each(function(d) {
       renderRanking(select<DOMElement, IRankingData>(this), d);
     });
 
-    $rankings_update.exit().remove();
+    $rankingsUpdate.exit().remove();
 
     return Promise.all(toWait);
   }
@@ -201,13 +201,13 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
   renderSlopeGraphs($parent: Selection<Element, any, any, null>, data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number) {
     const slopes = data.slice(1).map((d, i) => ({left: data[i].order, left_i: i, right: d.order, right_i: i + 1}));
 
-    const $slopes_update = $parent.selectAll(this.domMapping.slopes + '.slopegraph').data(slopes);
-    const $slopes_enter = $slopes_update.enter().append(this.domMapping.slopes).attr('class', 'slopegraph');
-    const $slopes = $slopes_update.merge($slopes_enter);
+    const $slopesUpdate = $parent.selectAll(this.domMapping.slopes + '.slopegraph').data(slopes);
+    const $slopesEnter = $slopesUpdate.enter().append(this.domMapping.slopes).attr('class', 'slopegraph');
+    const $slopes = $slopesUpdate.merge($slopesEnter);
     //$slopes.attr('transform', (d, i) => `translate(${(shifts[i + 1].shift - this.options.slopeWidth)},0)`);
     $slopes.call(this.domMapping.updateSlopes, this.options.slopeWidth, height, (d, i) => ((data[i + 1].shift - this.options.slopeWidth)));
 
-    const $lines_update = $slopes.selectAll('line.slope').data((d) => {
+    const $linesUpdate = $slopes.selectAll('line.slope').data((d) => {
       const cache = new Map<number,number>();
       d.right.forEach((dataIndex, pos) => cache.set(dataIndex, pos));
       return d.left.map((dataIndex, pos) => ({
@@ -216,23 +216,23 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
         rpos: cache.get(dataIndex)
       })).filter((d) => d.rpos != null);
     });
-    const $lines_enter = $lines_update.enter().append('line').attr('class', 'slope').attr('x2', this.options.slopeWidth)
-      .on('mouseenter', (d) => this.mouseOver(d.data_index, true))
-      .on('mouseleave', (d) => this.mouseOver(d.data_index, false));
-    $lines_update.merge($lines_enter)
-      .attr('data-data-index', (d) => d.data_index)
+    const $linesEnter = $linesUpdate.enter().append('line').attr('class', 'slope').attr('x2', this.options.slopeWidth)
+      .on('mouseenter', (d) => this.mouseOver(d.dataIndex, true))
+      .on('mouseleave', (d) => this.mouseOver(d.dataIndex, false));
+    $linesUpdate.merge($linesEnter)
+      .attr('data-data-index', (d) => d.dataIndex)
       .attr('y1', (d: any) => context.rowHeight(d.lpos) * 0.5 + context.cellY(d.lpos))
       .attr('y2', (d: any) => context.rowHeight(d.rpos) * 0.5 + context.cellY(d.rpos));
-    $lines_update.exit().remove();
+    $linesUpdate.exit().remove();
 
-    $slopes_update.exit().remove();
+    $slopesUpdate.exit().remove();
   }
 
   updateFreeze(left: number) {
     forEach(this.node, this.domMapping.g + '.row .frozen', (row: DOMElement) => {
       this.domMapping.translate(row, left, 0);
     });
-    const item = <SVGElement & SVGStylable>this.node.querySelector(`clipPath#c${this.options.idPrefix}Freeze`);
+    const item = <SVGElement>this.node.querySelector(`clipPath#c${this.options.idPrefix}Freeze`);
     if (item) {
       this.domMapping.translate(item, left, 0);
     }

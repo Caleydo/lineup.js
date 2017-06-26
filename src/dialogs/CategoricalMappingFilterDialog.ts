@@ -1,7 +1,7 @@
 import AFilterDialog from './AFilterDialog';
 import CategoricalNumberColumn from '../model/CategoricalNumberColumn';
-import DataProvider from '../provider/ADataProvider';
-import {scale as d3scale} from 'd3';
+import {Selection} from 'd3-selection';
+import {scaleLinear} from 'd3-scale';
 
 
 export default class CategoricalMappingFilterDialog extends AFilterDialog<CategoricalNumberColumn> {
@@ -11,7 +11,7 @@ export default class CategoricalMappingFilterDialog extends AFilterDialog<Catego
    * @param column the column to rename
    * @param $header the visual header element of this column
    */
-  constructor(column: CategoricalNumberColumn, $header: d3.Selection<CategoricalNumberColumn>, title: string = 'Edit Categorical Mapping') {
+  constructor(column: CategoricalNumberColumn, $header: Selection<HTMLElement, CategoricalNumberColumn, any, any>, title: string = 'Edit Categorical Mapping') {
     super(column, $header, title);
   }
 
@@ -21,7 +21,7 @@ export default class CategoricalMappingFilterDialog extends AFilterDialog<Catego
     const bakMissing = bakOri.filterMissing;
 
 
-    const scale = d3scale.linear().domain([0, 100]).range([0, 120]);
+    const scale = scaleLinear().domain([0, 100]).range([0, 120]);
 
     const $popup = this.makePopup(`<div class="selectionTable"><table><thead><th class="selectAll"></th><th colspan="2">Scale</th><th>Category</th></thead><tbody></tbody></table></div>
         <label><input class="lu_filter_missing" type="checkbox" ${bakMissing ? 'checked="checked"' : ''}>Filter Missing</label><br>`);
@@ -40,23 +40,23 @@ export default class CategoricalMappingFilterDialog extends AFilterDialog<Catego
       };
     }).sort(this.sortByName('label'));
 
-    const $rows = $popup.select('tbody').selectAll('tr').data(trData);
-    const $rowsEnter = $rows.enter().append('tr');
+    const $rowsUpdate = $popup.select('tbody').selectAll('tr').data(trData);
+    const $rowsEnter = $rowsUpdate.enter().append('tr');
+    const $rows = $rowsUpdate.merge($rowsEnter);
     $rowsEnter.append('td').attr('class', 'checkmark').on('click', (d) => {
       d.isChecked = !d.isChecked;
       redraw();
     });
     $rowsEnter.append('td')
-      .append('input').attr({
-      type: 'number',
-      value: (d) => d.range,
-      min: 0,
-      max: 100,
-      size: 5
-    }).on('input', function (d) {
-      d.range = +this.value;
-      redraw();
-    });
+      .append<HTMLInputElement>('input').attr('type', 'number')
+      .attr('value', (d) => d.range)
+      .attr('min', 0)
+      .attr('max', 100)
+      .attr('size', 5)
+      .on('input', function (d) {
+        d.range = +this.value;
+        redraw();
+      });
     $rowsEnter.append('td').append('div').attr('class', 'bar').style('background-color', (d) => d.color);
     $rowsEnter.append('td').attr('class', 'datalabel').text((d) => d.label);
 

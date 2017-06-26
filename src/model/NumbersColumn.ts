@@ -1,7 +1,9 @@
 /**
  * Created by bikramkawan on 24/11/2016.
  */
-import {median, quantile, mean, scale as d3scale, ascending, format} from 'd3';
+import {median, quantile, mean, ascending} from 'd3-array';
+import {scaleLinear, ScaleLinear} from 'd3-scale';
+import {format} from 'd3-format';
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import Column from './Column';
 import {
@@ -78,7 +80,7 @@ export interface INumbersColumn extends INumberColumn {
   getNumbers(row: any, index: number): number[];
   getRawNumbers(row: any, index: number): number[];
   getDataLength(): number;
-  getRawColorScale(): d3.scale.Linear<string, string>;
+  getRawColorScale(): ScaleLinear<string, string>;
   getThreshold(): number;
 
   getMapping(): IMappingFunction;
@@ -168,7 +170,7 @@ export default class NumbersColumn extends ValueColumn<number[]> implements IAdv
   }
 
   getRawColorScale() {
-    const colorScale = d3scale.linear<string, string>();
+    const colorScale = scaleLinear<string, string>();
     const colorValues = this.getColorValues();
     const domain = this.mapping.domain;
     if (domain[0] < 0) {

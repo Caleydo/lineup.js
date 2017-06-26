@@ -4,12 +4,13 @@ import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
 import {ISVGCellRenderer} from './IDOMCellRenderers';
 import {IDataRow} from '../provider/ADataProvider';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {svg as d3svg, scale as d3scale} from 'd3';
+import {line as d3line, curveLinear} from 'd3-shape';
+import {scaleLinear} from 'd3-scale';
 import Column from '../model/Column';
 
 function createScales(col: INumbersColumn & Column) {
-  const xScale = d3scale.linear().domain([0, col.getDataLength()-1]).range([0, col.getWidth()]);
-  const yScale = d3scale.linear().domain([0, 1]);
+  const xScale = scaleLinear().domain([0, col.getDataLength()-1]).range([0, col.getWidth()]);
+  const yScale = scaleLinear().domain([0, 1]);
   return {xScale, yScale};
 }
 
@@ -17,10 +18,10 @@ export default class SparklineCellRenderer implements ICellRendererFactory {
 
   createSVG(col: INumbersColumn & Column, context: IDOMRenderContext): ISVGCellRenderer {
     const {xScale, yScale} = createScales(col);
-    const line = d3svg.line<number>()
+    const line = d3line<number>()
       .x((d, j) => xScale(j))
       .y(yScale)
-      .interpolate('linear');
+      .curve(curveLinear);
 
     return {
       template: `<path class='sparklinecell'></path>`,

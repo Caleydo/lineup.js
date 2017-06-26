@@ -1,6 +1,6 @@
 import StringColumn from '../model/StringColumn';
 import AFilterDialog from './AFilterDialog';
-import {Selection} from 'd3';
+import {Selection} from 'd3-selection';
 
 
 export default class StringFilterDialog extends AFilterDialog<StringColumn> {
@@ -10,7 +10,7 @@ export default class StringFilterDialog extends AFilterDialog<StringColumn> {
    * @param $header the visual header element of this column
    * @param title optional title
    */
-  constructor(column: StringColumn, $header: Selection<StringColumn>, title: string = 'Filter') {
+  constructor(column: StringColumn, $header: Selection<HTMLElement, StringColumn, any, any>, title: string = 'Filter') {
     super(column, $header, title);
   }
 

@@ -4,22 +4,22 @@ import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
 import {ISVGCellRenderer} from './IDOMCellRenderers';
 import {IDataRow} from '../provider/ADataProvider';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {scale as d3scale} from 'd3';
+import {scaleLinear, ScaleLinear} from 'd3-scale';
 import Column from '../model/Column';
 import {attr, forEach} from '../utils';
 
 export default class VerticalBarCellRenderer implements ICellRendererFactory {
-  private static verticalBarScale(domain: number[], threshold: number, scale: d3.scale.Linear<number,number>, rowHeight: number) {
+  private static verticalBarScale(domain: number[], threshold: number, scale: ScaleLinear<number,number>, rowHeight: number) {
     return (domain[0] < threshold) ? scale.range([0, rowHeight / 2]) : scale.range([0, rowHeight]);
   }
-  private static verticalBarYpos(domain: number[], threshold: number, cellData: number, scale: d3.scale.Linear<number,number>, rowHeight: number) {
+  private static verticalBarYpos(domain: number[], threshold: number, cellData: number, scale: ScaleLinear<number,number>, rowHeight: number) {
     if (domain[0] < threshold) {
       return (cellData < threshold) ? (rowHeight / 2) : rowHeight / 2 - scale(cellData);   // For positive and negative value
     } else {
       return rowHeight - scale(cellData);
     }
   }
-  private static verticalBarHeight(domain: number[], threshold: number, cellData: number, scale: d3.scale.Linear<number,number>, rowHeight: number) {
+  private static verticalBarHeight(domain: number[], threshold: number, cellData: number, scale: ScaleLinear<number,number>, rowHeight: number) {
     return (domain[0] < threshold) ? (rowHeight / 2 - scale(cellData)) : scale(cellData);
   }
 
@@ -27,7 +27,7 @@ export default class VerticalBarCellRenderer implements ICellRendererFactory {
     const colorScale = col.getRawColorScale();
     const cellDimension = col.getWidth() / col.getDataLength();
     const domain = col.getMapping().domain;
-    const defaultScale = d3scale.linear().domain(domain);
+    const defaultScale = scaleLinear().domain(domain);
     const threshold = col.getThreshold();
     let templateRows = '';
     for (let i = 0; i < col.getDataLength(); ++i) {
@@ -56,7 +56,7 @@ export default class VerticalBarCellRenderer implements ICellRendererFactory {
     const colorScale = col.getRawColorScale();
     const cellDimension = col.getWidth() / col.getDataLength();
     const domain = col.getMapping().domain;
-    const defaultScale = d3scale.linear().domain(domain);
+    const defaultScale = scaleLinear().domain(domain);
     const threshold = col.getThreshold();
 
     return (ctx: CanvasRenderingContext2D, d: IDataRow, i: number) => {

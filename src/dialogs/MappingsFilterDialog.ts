@@ -2,7 +2,7 @@ import AFilterDialog from './AFilterDialog';
 import {IMapAbleColumn, IMappingFunction, noNumberFilter} from '../model/NumberColumn';
 import Column from '../model/Column';
 import {offset} from '../utils';
-import {select} from 'd3';
+import {Selection, select} from 'd3-selection';
 import DataProvider from '../provider/ADataProvider';
 import MappingEditor from '../mappingeditor';
 
@@ -16,7 +16,7 @@ export default class MappingsFilterDialog extends AFilterDialog<IMapAbleColumn &
    * @param data the data provider for illustrating the mapping by example
    * @param idPrefix dom id prefix
    */
-  constructor(column: IMapAbleColumn & Column, $header: d3.Selection<IMapAbleColumn & Column>, title: string = 'Change Mapping', private readonly data: DataProvider, private readonly idPrefix: string) {
+  constructor(column: IMapAbleColumn & Column, $header: Selection<HTMLElement, IMapAbleColumn & Column, any, any>, title: string = 'Change Mapping', private readonly data: DataProvider, private readonly idPrefix: string) {
     super(column, $header, title);
   }
 
@@ -29,12 +29,9 @@ export default class MappingsFilterDialog extends AFilterDialog<IMapAbleColumn &
       actfilter = bakfilter;
 
     const popup = select('body').append('div')
-      .attr({
-        'class': 'lu-popup'
-      }).style({
-        left: pos.left + 'px',
-        top: pos.top + 'px'
-      })
+      .attr('class', 'lu-popup')
+      .style('left', pos.left + 'px')
+      .style('top', pos.top + 'px')
       .html(this.dialogForm('<div class="mappingArea"></div>'));
 
     const applyMapping = (newscale: IMappingFunction, filter: {min: number, max: number, filterMissing: boolean}) => {
