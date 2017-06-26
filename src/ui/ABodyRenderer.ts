@@ -17,7 +17,7 @@ export interface ISlicer {
 }
 
 export interface IBodyRenderer extends AEventDispatcher {
-  histCache: Map<string, Promise<IStatistics>>;
+  histCache: Map<string, Promise<IStatistics|ICategoricalStatistics>>;
 
   readonly node: Element;
 

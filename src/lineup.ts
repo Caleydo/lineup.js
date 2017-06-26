@@ -77,7 +77,7 @@ export interface ILineUpConfig {
   /**
    * automatically add a column pool at the end
    */
-  pool?: boolean;
+  pool?: boolean|IPoolRendererOptions;
 
   /**
    * the renderer to use for rendering the columns
@@ -194,7 +194,7 @@ export default class LineUp extends AEventDispatcher {
 
     this.forward(this.body, LineUp.EVENT_HOVER_CHANGED);
     if (this.config.pool && this.config.manipulative) {
-      this.addPool(new PoolRenderer(data, this.node, this.config));
+      this.addPool(new PoolRenderer(data, this.node, this.config.pool || {}));
     }
 
     if (this.config.body.visibleRowsOnly) {
@@ -227,7 +227,7 @@ export default class LineUp extends AEventDispatcher {
    */
   addPool(node: Element, config?: IPoolRendererOptions): PoolRenderer;
   addPool(pool: PoolRenderer): PoolRenderer;
-  addPool(poolOrNode: Element|PoolRenderer, config = this.config) {
+  addPool(poolOrNode: Element|PoolRenderer, config = this.config.pool || {}) {
     if (poolOrNode instanceof PoolRenderer) {
       this.pools.push(<PoolRenderer>poolOrNode);
     } else {
