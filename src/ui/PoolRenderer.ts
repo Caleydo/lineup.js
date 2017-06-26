@@ -109,9 +109,7 @@ export default class PoolRenderer {
     const data = this.data;
     const descToShow = this.entries.filter((e) => e.used === 0).map((d) => d.desc);
     const $headersUpdate = this.$node.selectAll('div.header').data(descToShow);
-    const $headerEnter = $headers.enter().append('div').attr({
-    const $headers_update = this.$node.selectAll('div.header').data(descToShow);
-    const $headers_enter = $headers_update.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
+    const $headerEnter = $headers_update.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
       const e = <DragEvent>(<any>d3event);
       e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
       e.dataTransfer.setData('text/plain', d.label);
@@ -127,7 +125,7 @@ export default class PoolRenderer {
     }
     $headerEnter.append('span').classed('label', true).text((d) => d.label);
 
-    const $headers = $headers_update.merge($headers_enter);
+    const $headers = $headersUpdate.merge($headerEnter);
 
     $headers.attr('class', (d) => `header ${((<any>d).cssClass || '')} ${d.type}`);
     $headers.style('transform', (d, i) => {
@@ -149,7 +147,7 @@ export default class PoolRenderer {
           .style('height', (this.options.elemHeight) + 'px');
         break;
       case 'grid':
-        let perRow = Math.floor(this.options.width / this.options.elemWidth);
+        const perRow = Math.floor(this.options.width / this.options.elemWidth);
         this.$node
           .style('width', perRow * this.options.elemWidth + 'px')
           .style('height', Math.ceil(descToShow.length / perRow) * this.options.elemHeight + 'px');

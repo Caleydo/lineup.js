@@ -7,7 +7,8 @@ import {IDataRow} from '../provider/ADataProvider';
 import {attr} from '../utils';
 import {ICanvasRenderContext} from './RendererContexts';
 import ICanvasCellRenderer  from './ICanvasCellRenderer';
-import {scale as d3scale, min as d3min, max as d3max} from 'd3';
+import {min as d3min, max as d3max} from 'd3-array';
+import {scaleLinear} from 'd3-scale';
 
 
 function computeLabel(v: IBoxPlotData) {
@@ -24,7 +25,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
     const sortMethod = col.getSortMethod();
     const topPadding = 2.5 * (context.option('rowBarPadding', 1));
     const domain = col.getDomain();
-    const scale = d3scale.linear().domain(domain).range([0, col.getWidth()]);
+    const scale = scaleLinear().domain(domain).range([0, col.getWidth()]);
     const sortedByMe = col.findMyRanker().getSortCriteria().col === col;
     return {
 
@@ -79,7 +80,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
     const topPadding = 2.5 * (context.option('rowBarPadding', 1));
     const domain = col.getDomain();
 
-    const scale = d3scale.linear().domain([d3min(domain), d3max(domain)]).range([0, col.getWidth()]);
+    const scale = scaleLinear().domain([d3min(domain), d3max(domain)]).range([0, col.getWidth()]);
     const sortedByMe = col.findMyRanker().getSortCriteria().col === col;
 
     return (ctx: CanvasRenderingContext2D, d: IDataRow, i: number) => {

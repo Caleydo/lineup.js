@@ -4,7 +4,7 @@ import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
 import {ISVGCellRenderer, IHTMLCellRenderer} from './IDOMCellRenderers';
 import {IDataRow} from '../provider/ADataProvider';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {select as d3select} from 'd3';
+import {select as d3select} from 'd3-selection';
 
 
 export default class MultiValueCellRenderer implements ICellRendererFactory {
@@ -18,12 +18,12 @@ export default class MultiValueCellRenderer implements ICellRendererFactory {
       template: `<g class="heatmapcell"></g>`,
       update: (n: SVGGElement, d: IDataRow, i: number) => {
         const rect = d3select(n).selectAll('rect').data(col.getValue(d.v, d.dataIndex));
-        rect.enter().append('rect').attr({
+        const rectEnter = rect.enter().append('rect').attr({
           y: padding,
           width: cellDimension,
           height: context.rowHeight(i)
         });
-        rect.attr({
+        rect.merge(rectEnter.attr({
           x: (d, i) => i * cellDimension,
           fill: colorScale
         });
