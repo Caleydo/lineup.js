@@ -7,7 +7,7 @@ import NumberColumn, {INumberColumn} from '../model/NumberColumn';
 import Ranking from '../model/Ranking';
 import {ICategoricalColumn} from '../model/CategoricalColumn';
 import {merge} from '../utils';
-import * as d3 from 'd3';
+import {mean as d3mean, max as d3max, histogram, extent as d3extent, range as d3range} from 'd3-array';
 import {IStatsBuilder, IDataProviderOptions, IDataRow} from './ADataProvider';
 import ACommonDataProvider from './ACommonDataProvider';
 
@@ -31,18 +31,18 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index: numb
     };
   }
   const indexAccessor = (a, i) => acc(a, indices[i]);
-  const hist = d3.layout.histogram().value(indexAccessor);
+  const hist = histogram().value(indexAccessor);
   if (range) {
-    hist.range(() => range);
+    hist.domain(range);
   }
-  const ex = d3.extent(arr, indexAccessor);
+  const ex = d3extent(arr, indexAccessor);
   const histData = hist(arr);
   return {
     min: ex[0],
     max: ex[1],
-    mean: d3.mean(arr, indexAccessor),
+    mean: d3mean(arr, indexAccessor),
     count: arr.length,
-    maxBin: d3.max(histData, (d) => d.y),
+    maxBin: d3max(histData, (d) => d.length),
     hist: histData
   };
 }
@@ -68,10 +68,10 @@ function computeHist(arr: number[], indices: number[], acc: (row: any, index: nu
       m.set(v, (m.get(v) || 0) + 1);
     });
   });
-  const entries: {cat: string; y: number}[] = [];
-  m.forEach((v, k) => entries.push({cat: k, y: v}));
+  const entries: {cat: string; length: number}[] = [];
+  m.forEach((v, k) => entries.push({cat: k, length: v}));
   return {
-    maxBin: Math.max(...entries.map((d) => d.y)),
+    maxBin: Math.max(...entries.map((d) => d.length)),
     hist: entries
   };
 }
@@ -258,7 +258,7 @@ export default class LocalDataProvider extends ACommonDataProvider {
     //case insensitive search
     search = typeof search === 'string' ? search.toLowerCase() : search;
     const f = typeof search === 'string' ? (v: string) => v.toLowerCase().indexOf((<string>search)) >= 0 : (<RegExp>search).test.bind(search);
-    const indices = d3.range(this._data.length).filter((i) => f(col.getLabel(this._data[i], i)));
+    const indices = d3range(this.data.length).filter((i) => f(col.getLabel(this.data[i], i)));
 
     this.jumpToNearest(indices);
   }

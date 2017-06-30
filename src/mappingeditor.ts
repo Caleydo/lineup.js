@@ -2,7 +2,9 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {select, scale, behavior, Selection, event as d3event, mouse, selectAll} from 'd3';
+import {select, Selection, event as d3event, mouse, selectAll} from 'd3-selection';
+import {drag as d3drag} from 'd3-drag';
+import {scaleLinear} from 'd3-scale';
 import {merge} from './utils';
 import {INumberFilter, IMappingFunction, ScaleMappingFunction, ScriptMappingFunction} from './model/NumberColumn';
 
@@ -66,10 +68,10 @@ export default class MappingEditor {
     return this.computeFilter();
   }
 
-  private build($root: Selection<any>) {
+  private build($root: Selection<HTMLElement, any, HTMLElement, any>) {
     const options = this.options,
       that = this;
-    $root = $root.append('div').classed('lugui-me', true);
+    $root = $root.append<HTMLElement>('div').classed('lugui-me', true);
 
 
     const width = options.width - options.padding_hor * 2;
@@ -146,9 +148,9 @@ export default class MappingEditor {
     </form>`;
 
 
-    const raw2pixel = scale.linear().domain([Math.min(this.scale.domain[0], this.original.domain[0]), Math.max(this.scale.domain[this.scale.domain.length - 1], this.original.domain[this.original.domain.length - 1])])
+    const raw2pixel = scaleLinear().domain([Math.min(this.scale.domain[0], this.original.domain[0]), Math.max(this.scale.domain[this.scale.domain.length - 1], this.original.domain[this.original.domain.length - 1])])
       .range([0, width]);
-    const normal2pixel = scale.linear().domain([0, 1])
+    const normal2pixel = scaleLinear().domain([0, 1])
       .range([0, width]);
 
     const inputDomain = raw2pixel.domain();
@@ -156,7 +158,7 @@ export default class MappingEditor {
 
     $root.select('input.raw_min')
       .property('value', raw2pixel.domain()[0])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[0] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -166,9 +168,9 @@ export default class MappingEditor {
         updateRaw();
         triggerUpdate();
       });
-    $root.select('input.raw_max')
+    $root.select<HTMLInputElement>('input.raw_max')
       .property('value', raw2pixel.domain()[1])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[1] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -184,44 +186,45 @@ export default class MappingEditor {
 
     //lines that show mapping of individual data items
     let datalines = $root.select('g.samples').selectAll('line').data([]);
+    let datalinesUpdate = datalines;
     this.dataPromise.then((data) => {
       //to unique values
       data = unique(data);
 
       datalines = datalines.data(data);
-      datalines.enter()
+      const datalinesEnter = datalines.enter()
         .append('line')
-        .attr({
-          x1: (d) => normal2pixel(that.scale.apply(d)),
-          y1: 0,
-          x2: raw2pixel,
-          y2: height
-        }).style('visibility', function (d) {
-        const domain = that.scale.domain;
-        return (d < domain[0] || d > domain[domain.length - 1]) ? 'hidden' : null;
-      });
+        .attr('x1',(d) => normal2pixel(that.scale.apply(d)))
+        .attr('y1',0)
+        .attr('x2',raw2pixel)
+        .attr('y2',height)
+        .style('visibility', (d) => {
+          const domain = that.scale.domain;
+          return (d < domain[0] || d > domain[domain.length - 1]) ? 'hidden' : null;
+        });
+        datalinesUpdate = datalines.merge(datalinesEnter);
     });
 
     function updateDataLines() {
-      datalines.attr({
-        x1: (d) => normal2pixel(that.scale.apply(d)),
-        x2: raw2pixel
-      }).style('visibility', function (d) {
+      datalinesUpdate
+        .attr('x1', (d) => normal2pixel(that.scale.apply(d)))
+        .attr('x2', raw2pixel)
+        .style('visibility', function (d) {
         const domain = that.scale.domain;
         return (d < domain[0] || d > domain[domain.length - 1]) ? 'hidden' : null;
       });
     }
 
     function createDrag(move) {
-      return behavior.drag()
-        .on('dragstart', function () {
+      return d3drag<SVGElement, any>()
+        .on('start', function () {
           select(this)
             .classed('dragging', true)
             .attr('r', options.radius * 1.1);
           select(`#me${options.idPrefix}mapping-overlay`).classed('hide', true);
         })
         .on('drag', move)
-        .on('dragend', function () {
+        .on('end', function () {
           select(this)
             .classed('dragging', false)
             .attr('r', options.radius);
@@ -281,7 +284,7 @@ export default class MappingEditor {
       });
 
       $root.selectAll('rect.adder').on('click', () => {
-        addPoint(mouse($root.select('svg > g').node())[0]);
+        addPoint(mouse($root.select<SVGGElement>('svg > g').node())[0]);
       });
 
       function createOverlay(this: SVGGElement, d: {n: number, r: number}) {
@@ -366,10 +369,7 @@ export default class MappingEditor {
         (<MouseEvent>d3event).stopPropagation();
         removePoint(i);
       });
-      $mappingEnter.append('line').attr({
-        y1: 0,
-        y2: height
-      }).call(createDrag(function (d) {
+      $mappingEnter.append('line').attr('y1',0).attr('y2', height).call(createDrag(function (d) {
         //drag the line shifts both point in parallel
         const dx = (<any>d3event).dx;
         const nx = clamp(normal2pixel(d.n) + dx, 0, width);
@@ -408,12 +408,13 @@ export default class MappingEditor {
         updateScale();
       }));
 
-      $mapping.select('line').attr({
-        x1: (d) => normal2pixel(d.n),
-        x2: (d) => raw2pixel(d.r)
-      });
-      $mapping.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
-      $mapping.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
+      const $mappingUpdate = $mapping.merge($mappingEnter);
+
+      $mappingUpdate.select('line')
+        .attr('x1', (d) => normal2pixel(d.n))
+        .attr('x2', (d) => raw2pixel(d.r));
+      $mappingUpdate.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
+      $mappingUpdate.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
       $mapping.exit().remove();
     }
 
@@ -460,7 +461,7 @@ export default class MappingEditor {
         .attr('max', inputDomain[1])
         .data(initialValues)
         .attr('value', (d) => d)
-        .on('change', function() {
+        .on('change', function(this: HTMLInputElement) {
           const value = parseFloat(this.value);
           if(value >= inputDomain[0] && value <= inputDomain[1]) {
             const selector: string = (this.dataset.filter === 'min')? 'left' : 'right';
@@ -474,7 +475,7 @@ export default class MappingEditor {
           triggerUpdate();
       });
 
-      $root.selectAll('g.left_filter, g.right_filter')
+      $root.selectAll<SVGGElement, number>('g.left_filter, g.right_filter')
         .data([this.oldFilter.min, this.oldFilter.max])
         .attr('transform', (d, i) => `translate(${i === 0 ? minFilter : maxFilter},0)`).call(createDrag(function (d, i) {
 
@@ -524,7 +525,7 @@ export default class MappingEditor {
 
     updateRaw();
 
-    $root.select('select').on('change', function () {
+    $root.select<HTMLSelectElement>('select').on('change', function () {
       const v = this.value;
       if (v === 'linear_invert') {
         that.scale = new ScaleMappingFunction(raw2pixel.domain(), 'linear', [1, 0]);

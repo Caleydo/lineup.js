@@ -69,12 +69,12 @@ export interface IStatistics {
   readonly mean: number;
   readonly count: number;
   readonly maxBin: number;
-  readonly hist: {x: number; dx: number; y: number;}[];
+  readonly hist: { x0: number; x1: number; length: number;}[];
 }
 
 export interface ICategoricalStatistics {
   readonly maxBin: number;
-  readonly hist: {cat: string; y: number}[];
+  readonly hist: {cat: string; length: number}[];
 }
 
 export interface IColumnMetaData {

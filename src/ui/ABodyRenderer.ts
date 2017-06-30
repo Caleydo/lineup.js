@@ -2,7 +2,7 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import * as d3 from 'd3';
+import {select, Selection} from 'd3-selection';
 import {merge, delayedCall, AEventDispatcher} from '../utils';
 import {Ranking, isNumberColumn} from '../model';
 import Column, {IStatistics, ICategoricalStatistics} from '../model/Column';
@@ -15,6 +15,8 @@ import {renderers as defaultRenderers} from '../renderer/index';
 export interface ISlicer {
   (start: number, length: number, row2y: (i: number) => number): {from: number; to: number};
 }
+
+export type ElementSelection = Selection<HTMLElement | SVGElement, any, any, void>;
 
 export interface IBodyRenderer extends AEventDispatcher {
   histCache: Map<string, Promise<IStatistics>>;
@@ -110,7 +112,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     freezeCols: 0
   };
 
-  protected readonly $node: d3.Selection<any>;
+  protected readonly $node: ElementSelection;
 
   histCache = new Map<string, Promise<IStatistics|ICategoricalStatistics>>();
 
@@ -119,7 +121,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     //merge options
     merge(this.options, options);
 
-    this.$node = d3.select(parent).append(root).classed('lu-body', true);
+    this.$node = select(parent).append<HTMLElement | SVGElement>(root).classed('lu-body', true);
 
     this.changeDataStorage(data);
   }
@@ -213,7 +215,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
    */
   update(reason = ERenderReason.DIRTY) {
     const rankings = this.data.getRankings();
-    const maxElems = d3.max(rankings, (d) => d.getOrder().length) || 0;
+    const maxElems = Math.max(0, ...rankings.map((d) => d.getOrder().length));
     const height = this.options.rowHeight * maxElems;
     const visibleRange = this.slicer(0, maxElems, (i) => i * this.options.rowHeight);
     const orderSlicer = (order: number[]) => {

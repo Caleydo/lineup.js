@@ -2,7 +2,8 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {dispatch, select, event as d3event, Dispatch} from 'd3';
+import {select, event as d3event} from 'd3-selection';
+import {dispatch, Dispatch} from 'd3-dispatch';
 import Column from './model/Column';
 import {IDOMCellRenderer} from './renderer/IDOMCellRenderers';
 
@@ -29,7 +30,7 @@ export function delayedCall(callback: (...args: any[]) => void, timeToDelay = 10
  * base class for event dispatching using d3 event mechanism
  */
 export class AEventDispatcher {
-  private listeners: Dispatch;
+  private listeners: Dispatch<any>;
   private forwarder;
 
   constructor() {
@@ -71,7 +72,7 @@ export class AEventDispatcher {
         type: t, //the event type
         args //the arguments to the listener
       };
-      this.listeners[<string>t].apply(context, args);
+      this.listeners.apply(<string>t, context, args);
     };
     if (Array.isArray(type)) {
       (<string[]>type).forEach(fireImpl.bind(this));

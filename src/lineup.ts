@@ -18,7 +18,8 @@ import {
 import {IHeaderRendererOptions} from './ui/HeaderRenderer';
 import {IBodyRendererOptions, default as ABodyRenderer} from './ui/ABodyRenderer';
 import {AEventDispatcher, ContentScroller, merge}  from './utils';
-import {scale as d3scale, selection, select, Selection} from 'd3';
+import * as d3scale from 'd3-scale';
+import {selection, select, Selection} from 'd3-selection';
 import ICellRendererFactory from './renderer/ICellRendererFactory';
 
 export interface IBodyOptions {
@@ -156,17 +157,17 @@ export default class LineUp extends AEventDispatcher {
     renderers: merge({}, defaultRenderers)
   };
 
-  private $container: Selection<any>;
+  private $container: Selection<Element, any, Element, any>;
 
   private body: IBodyRenderer = null;
   private header: HeaderRenderer = null;
   private pools: PoolRenderer[] = [];
   private contentScroller: ContentScroller = null;
 
-  constructor(container: Selection<any> | Element, public data: DataProvider, config: ILineUpConfig = {}) {
+  constructor(container: Selection<Element, any, Element, any> | Element, public data: DataProvider, config: ILineUpConfig = {}) {
     super();
-    this.$container = container instanceof selection ? <Selection<any>>container : select(<Element>container);
-    this.$container = this.$container.append('div').classed('lu', true);
+    this.$container = container instanceof selection ? <Selection<Element, any, Element, any>>container : select(<Element>container);
+    this.$container = this.$container.append<Element>('div').classed('lu', true);
     this.config.svgLayout = this.config.body;
     this.config.htmlLayout = this.config.header;
 
@@ -368,7 +369,7 @@ export default class LineUp extends AEventDispatcher {
  * @returns {IColumnDesc[]}
  */
 export function deriveColors(columns: IColumnDesc[]) {
-  const colors = d3scale.category10().range().slice();
+  const colors = d3scale.schemeCategory10.slice();
   columns.forEach((col: any) => {
     switch (col.type) {
       case 'number':

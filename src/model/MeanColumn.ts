@@ -2,7 +2,6 @@
  * Created by sam on 04.11.2016.
  */
 
-import {mean as d3mean} from 'd3';
 import CompositeNumberColumn from './CompositeNumberColumn';
 
 /**
@@ -17,7 +16,10 @@ export function createDesc(label: string = 'Mean') {
 export default class MeanColumn extends CompositeNumberColumn {
 
   protected compute(row: any, index: number) {
-    return d3mean(this._children, (d) => d.getValue(row, index));
+    if (this._children.length === 0) {
+      return 0;
+    }
+    return (this._children.reduce((act, d) => act + d.getValue(row, index), 0) / this._children.length);
   }
 
   /**

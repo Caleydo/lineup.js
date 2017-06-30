@@ -2,7 +2,8 @@
  * Created by sam on 04.11.2016.
  */
 
-import {ascending, scale} from 'd3';
+import {ascending} from 'd3-array';
+import * as scale from 'd3-scale';
 import Column, {IColumnDesc} from './Column';
 import ValueColumn,{IValueColumnDesc} from './ValueColumn';
 import StringColumn from './StringColumn';
@@ -12,6 +13,8 @@ export interface ICategoricalColumn {
   readonly categoryLabels: string[];
 
   getCategories(row: any, index: number): string[];
+
+  colorOf(cat: string): string;
 }
 
 export interface ICategory {
@@ -94,7 +97,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
    * colors for each category
    * @type {Ordinal<string, string>}
    */
-  private colors = scale.category10();
+  private colors = scale.scaleOrdinal(scale.schemeCategory10);
 
   /**
    * category labels by default the category name itself
@@ -120,6 +123,11 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     this.separator = desc.separator || this.separator;
     this.initCategories(desc);
     //TODO infer categories from data
+
+    this.setRendererList([
+      {type: 'categorical', label: 'Default'},
+      {type: 'upset', label: 'UpSet'}
+    ]);
   }
 
   initCategories(desc: IBaseCategoricalDesc) {

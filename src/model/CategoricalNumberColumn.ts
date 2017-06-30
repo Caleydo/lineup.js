@@ -2,7 +2,8 @@
  * Created by sam on 04.11.2016.
  */
 
-import {max as d3max, scale, min as d3min} from 'd3';
+import {max as d3max, min as d3min} from 'd3-array';
+import {scaleOrdinal, scalePoint, schemeCategory10} from 'd3-scale';
 import Column from './Column';
 import ValueColumn,{IValueColumnDesc} from './ValueColumn';
 import CategoricalColumn, {ICategoricalColumn, IBaseCategoricalDesc, ICategoricalFilter} from './CategoricalColumn';
@@ -16,7 +17,7 @@ export declare type ICategoricalNumberColumnDesc = IBaseCategoricalDesc & IValue
 export default class CategoricalNumberColumn extends ValueColumn<number> implements INumberColumn, ICategoricalColumn {
   static readonly EVENT_MAPPING_CHANGED = NumberColumn.EVENT_MAPPING_CHANGED;
 
-  private colors = scale.category10();
+  private colors = scaleOrdinal<string,string>(schemeCategory10);
 
   /**
    * category labels by default the category name itself
@@ -24,7 +25,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
    */
   private catLabels = new Map<string, string>();
 
-  private readonly scale = scale.ordinal().rangeRoundPoints([0, 1]);
+  private scale = scaleOrdinal<string, number>();
 
   private currentFilter: ICategoricalFilter = null;
   /**
@@ -32,7 +33,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
    * @type {string}
    */
   private separator = ';';
-  private combiner = d3max;
+  private combiner: (v: number[]) => number = d3max;
 
   constructor(id: string, desc: ICategoricalNumberColumnDesc) {
     super(id, desc);
@@ -99,6 +100,10 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
   }
 
   getNumber(row: any, index: number) {
+    return this.getValue(row, index);
+  }
+
+  getRawNumber(row: any, index: number) {
     return this.getValue(row, index);
   }
 

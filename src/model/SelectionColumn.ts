@@ -2,7 +2,7 @@
  * Created by sam on 04.11.2016.
  */
 
-import {ascending} from 'd3';
+import {ascending} from 'd3-array';
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 
 /**

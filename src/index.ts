@@ -9,6 +9,7 @@ import * as provider_  from './provider';
 import * as renderer_  from './renderer/index';
 import * as ui_  from './ui';
 import LineUp from './lineup';
+import {Selection} from 'd3-selection';
 
 export {deriveColors} from './lineup';
 /**
@@ -39,7 +40,7 @@ export function createLocalStorage(data: any[], columns: model_.IColumnDesc[], o
   return new provider_.LocalDataProvider(data, columns, options);
 }
 
-export function create(data: provider_.DataProvider, container: d3.Selection<any> | Element, config: any = {}) {
+export function create(data: provider_.DataProvider, container: Selection<Element, any, Element, any> | Element, config: any = {}) {
   return new LineUp(container, data, config);
 }
 

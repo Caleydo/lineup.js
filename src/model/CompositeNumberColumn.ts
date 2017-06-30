@@ -2,7 +2,7 @@
  * Created by sam on 04.11.2016.
  */
 
-import {format} from 'd3';
+import {format} from 'd3-format';
 import Column, {IColumnDesc} from './Column';
 import CompositeColumn from './CompositeColumn';
 import NumberColumn, {INumberColumn, isNumberColumn, numberCompare} from './NumberColumn';
@@ -101,6 +101,10 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
   }
 
   getNumber(row: any, index: number) {
+    return this.getValue(row, index);
+  }
+
+  getRawNumber(row: any, index: number) {
     return this.getValue(row, index);
   }
 

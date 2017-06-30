@@ -5,7 +5,7 @@ import {ISVGCellRenderer, IHTMLCellRenderer} from './IDOMCellRenderers';
 import {IDataRow} from '../provider/ADataProvider';
 import {attr} from '../utils';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {hsl} from 'd3';
+import {hsl} from 'd3-color';
 import ICellRendererFactory from './ICellRendererFactory';
 
 
