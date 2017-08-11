@@ -136,7 +136,7 @@ export default class MappingEditor {
         </div>
       </div>
       <div>
-         Extras: <label><input type="checkbox" id="me${options.idPrefix}filterMissing" ${this.oldFilter.filterMissing ? 'checked="checked"' : ''}>Filter Missing Values</label>
+         Extras: <label><input type="checkbox" id="me${options.idPrefix}filterMissing" ${this.oldFilter.filterMissing ? 'checked="checked"' : ''}>Filter out rows containing missing values</label>
       </div>
       <div class="script" style="/* display: none; */">
         <label for="me${options.idPrefix}script_code">Custom Script</label><button>Apply</button>
