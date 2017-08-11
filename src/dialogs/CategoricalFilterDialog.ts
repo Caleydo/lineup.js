@@ -65,8 +65,8 @@ export default class CategoricalFilterDialog extends AFilterDialog<CategoricalCo
     };
 
     popup.select('.cancel').on('click', function () {
-      updateData(bak, bakMissing);
       popup.remove();
+      updateData(bak, bakMissing);
     });
     popup.select('.reset').on('click', function () {
       trData.forEach((d) => d.isChecked = true);

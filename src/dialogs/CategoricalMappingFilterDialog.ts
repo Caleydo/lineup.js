@@ -89,9 +89,9 @@ export default class CategoricalMappingFilterDialog extends AFilterDialog<Catego
     };
 
     $popup.select('.cancel').on('click', () => {
+      $popup.remove();
       updateData(bak, bakMissing);
       this.column.setMapping(range);
-      $popup.remove();
     });
     $popup.select('.reset').on('click', () => {
       trData.forEach((d) => {
