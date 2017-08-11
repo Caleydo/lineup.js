@@ -73,5 +73,7 @@ export default class MappingsFilterDialog extends AFilterDialog<NumberColumn> {
       popup.selectAll('.mappingArea *').remove();
       editor = new MappingEditor(<HTMLElement>popup.select('.mappingArea').node(), act, original, actfilter, dataSample, editorOptions);
     });
+
+    MappingsFilterDialog.registerPopup(popup);
   }
 }
