@@ -3,6 +3,7 @@
 &[data-summary$=hist] {
   display: flex;
 
+  // only create ::before pseudo-elements if the histogram is not in dense mode
   &:not(.#{$lu_css_prefix}-dense) > div[data-title]::before {
     content: attr(data-title);
     position: absolute;
