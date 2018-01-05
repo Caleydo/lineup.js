@@ -39,6 +39,10 @@
 
   &.#{$lu_css_prefix}-dense > div {
     margin: 0;
+
+    &[data-title]::before {
+      content: none;
+    }
   }
 
   > span {
