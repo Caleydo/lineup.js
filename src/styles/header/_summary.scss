@@ -3,6 +3,17 @@
 &[data-summary$=hist] {
   display: flex;
 
+  &:not(.#{$lu_css_prefix}-dense) > div[data-title]::before {
+    content: attr(data-title);
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
   > div {
     flex: 1 1 auto;
     position: relative;
@@ -24,25 +35,10 @@
     > .#{$lu_css_prefix}-selected {
       background-color: $lu_selected_color;
     }
-
-    &[data-title]::before {
-      content: attr(data-title);
-      position: absolute;
-      top: 100%;
-      width: 100%;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      text-align: center;
-    }
   }
 
   &.#{$lu_css_prefix}-dense > div {
     margin: 0;
-
-    &[data-title]::before {
-      content: none;
-    }
   }
 
   > span {
