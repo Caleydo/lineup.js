@@ -10,8 +10,7 @@
     align-items: center;
     position: relative;
 
-    &:before {
-      content: attr(data-cat);
+    > span {
       position: absolute;
       left: 5px;
       right: 3px;
@@ -19,11 +18,5 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-  }
-}
-
-@supports(--text-color: black) {
-  [data-renderer=catdistributionbar] > *:before {
-    color: var(--text-color, black); // custom property `--text-color` is set in CategoricalStackedDistributionalRenderer.ts
   }
 }
