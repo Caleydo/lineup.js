@@ -20,7 +20,13 @@
       right: 3px;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: var(--text-color, black); // custom property `--text-color` is set in CategoricalStackedDistributionlRenderer.ts
+      color: black;
     }
+  }
+}
+
+@supports(--text-color: black) {
+  [data-renderer=catdistributionbar] > *:before {
+    color: var(--text-color, black); // custom property `--text-color` is set in CategoricalStackedDistributionalRenderer.ts
   }
 }
