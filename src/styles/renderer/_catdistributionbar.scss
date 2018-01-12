@@ -4,14 +4,11 @@
 
   > * {
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     width: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
     position: relative;
-    color: transparent;
 
     &:before {
       content: attr(data-cat);
@@ -20,7 +17,7 @@
       right: 3px;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: black;
+      white-space: nowrap;
     }
   }
 }
