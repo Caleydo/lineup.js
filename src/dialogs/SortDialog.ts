@@ -5,7 +5,7 @@ import MultiValueColumn, {SORT_METHOD as ADVANCED_SORT_METHOD, } from '../model/
 import { event as d3event, selectAll } from 'd3';
 
 export default class SortDialog extends ADialog {
-  constructor(private readonly column: IBoxPlotColumn, $header: d3.Selection<Column>, title: string = 'Change Sort Criteria') {
+  constructor(private readonly column: IBoxPlotColumn, $header: d3.Selection<Column>, title: string = 'Sort Criteria') {
     super($header, title);
   }
 
