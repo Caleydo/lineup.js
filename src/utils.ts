@@ -2,7 +2,7 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {dispatch, Dispatch, select, scale as d3scale} from 'd3';
+import {dispatch, Dispatch, select, scale as d3scale, hsl as d3hsl} from 'd3';
 import Column, {IColumnDesc} from './model/Column';
 import {IDOMCellRenderer, IDOMGroupRenderer} from './renderer/IDOMCellRenderers';
 
@@ -578,37 +578,10 @@ export function deriveColors(columns: IColumnDesc[]) {
 }
 
 /**
- * Convert a HEX color string to an RGB array
- * @see https://stackoverflow.com/a/11508164
- * @param {string} hexColor as `#ff0000`
- * @returns {number[]} RGB color array with [red, green, blue] between 0 and 255
- */
-export function hexToRgb(hexColor:string):number[] {
-  hexColor = hexColor.startsWith('#') ? hexColor.substring(1) : hexColor;
-  const bigint = parseInt(hexColor, 16);
-  /* tslint:disable:no-bitwise */
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  /* tslint:enable:no-bitwise */
-  return [r, g, b];
-}
-
-/**
- * Calculate the lightless of an RGB color array
- * @see http://lea.verou.me/chroma-zone/#slide43
- * @param {number[]} rgbColor with [red, green, blue] between 0 and 255
- * @returns {number}
- */
-export function colorLightness(rgbColor:number[]) {
-	return Math.round((Math.min(...rgbColor) + Math.max(...rgbColor))/2.55/2);
-}
-
-/**
- * Adapts the text color for a given background color (as HEX value)
- * @param {string} bgHexColor as `#ff0000`
+ * Adapts the text color for a given background color
+ * @param {string} bgColor as `#ff0000`
  * @returns {string} returns `black` or `white` for best contrast
  */
-export function adaptTextColorToBgColor(bgHexColor:string):string {
-  return colorLightness(hexToRgb(bgHexColor)) > 50 ? 'black' : 'white';
+export function adaptTextColorToBgColor(bgColor:string):string {
+  return d3hsl(bgColor).l > 0.5 ? 'black' : 'white';
 }
