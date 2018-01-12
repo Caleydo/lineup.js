@@ -586,9 +586,11 @@ export function deriveColors(columns: IColumnDesc[]) {
 export function hexToRgb(hexColor:string):number[] {
   hexColor = hexColor.startsWith('#') ? hexColor.substring(1) : hexColor;
   const bigint = parseInt(hexColor, 16);
+  /* tslint:disable:no-bitwise */
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
+  /* tslint:enable:no-bitwise */
   return [r, g, b];
 }
 
