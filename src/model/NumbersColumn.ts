@@ -46,6 +46,7 @@ export declare type INumbersColumnDesc = INumbersDesc & IValueColumnDesc<number[
 
 export interface ISplicer {
   length: number;
+
   splice(values: number[]): number[];
 }
 
