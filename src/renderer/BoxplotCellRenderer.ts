@@ -77,7 +77,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
         q1: data.q1 * width,
         q3: data.q3 * width,
         max: data.max * width,
-        outlier: data.outlier ? data.outlier.map((d) => d * width): undefined
+        outlier: data.outlier ? data.outlier.map((d) => d * width) : undefined
       };
       renderBoxPlot(ctx, scaled, sortedByMe ? sortMethod : '', colorOf(col, d, imposer), rowHeight, topPadding, context);
     };
@@ -121,7 +121,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
     const sort = (col instanceof NumberColumn && col.isGroupSortedByMe().asc !== undefined) ? col.getSortMethod() : '';
     return (ctx: CanvasRenderingContext2D, group: IGroup, rows: IDataRow[]) => {
       const height = context.groupHeight(group);
-       if (rows.every((row) => col.isMissing(row.v, row.dataIndex))) {
+      if (rows.every((row) => col.isMissing(row.v, row.dataIndex))) {
         renderMissingCanvas(ctx, col, rows[0], height); // doesn't matter since all
         return;
       }
@@ -138,14 +138,14 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
         q1: box.q1 * width,
         q3: box.q3 * width,
         max: box.max * width,
-        outlier: box.outlier ? box.outlier.map((d) => d * width): undefined
+        outlier: box.outlier ? box.outlier.map((d) => d * width) : undefined
       };
       renderBoxPlot(ctx, scaled, sort, colorOf(col, null, imposer), height, topPadding, context);
     };
   }
 }
 
-function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotData, sort: string, color: string|null) {
+function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotData, sort: string, color: string | null) {
   n.title = computeLabel(label);
 
   const whiskers = <HTMLElement>n.firstElementChild;
@@ -155,7 +155,7 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   let leftWhisker;
   let rightWhisker;
 
-  if(data.outlier && data.outlier.length > 0) {
+  if (data.outlier && data.outlier.length > 0) {
     leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
     rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
   } else {
@@ -187,7 +187,7 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   // match lengths
   const outliers = <HTMLElement[]>Array.from(n.children).slice(1);
   outliers.slice(data.outlier.length).forEach((v) => v.remove());
-  for(let i = outliers.length; i < data.outlier.length; ++i) {
+  for (let i = outliers.length; i < data.outlier.length; ++i) {
     const p = n.ownerDocument.createElement('div');
     outliers.push(p);
     n.appendChild(p);
@@ -200,14 +200,14 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
 
   if (sort === 'min') {
     whiskers.dataset.sort = '';
-    outliers[0].dataset.sort='min';
+    outliers[0].dataset.sort = 'min';
   } else if (sort === 'max') {
     whiskers.dataset.sort = '';
-    outliers[outliers.length - 1].dataset.sort='max';
+    outliers[outliers.length - 1].dataset.sort = 'max';
   }
 }
 
-function renderBoxPlot(ctx: CanvasRenderingContext2D, box: IBoxPlotData, sort: string, color: string|null, height: number, topPadding: number, context: ICanvasRenderContext) {
+function renderBoxPlot(ctx: CanvasRenderingContext2D, box: IBoxPlotData, sort: string, color: string | null, height: number, topPadding: number, context: ICanvasRenderContext) {
   const boxColor = color || context.option('style.boxplot.box', '#e0e0e0');
   const boxStroke = context.option('style.boxplot.stroke', 'black');
   const boxSortIndicator = context.option('style.boxplot.sortIndicator', '#ffa500');
