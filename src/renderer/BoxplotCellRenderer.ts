@@ -163,17 +163,17 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
     rightWhisker = data.max;
   }
 
-  whiskers.style.left = `${Math.round(leftWhisker * 100)}%`;
+  whiskers.style.left = `${leftWhisker * 100}%`;
   const range = rightWhisker - leftWhisker;
-  whiskers.style.width = `${Math.round(range * 100)}%`;
+  whiskers.style.width = `${range * 100}%`;
 
   //relative within the whiskers
-  box.style.left = `${Math.round((data.q1 - leftWhisker) / range * 100)}%`;
-  box.style.width = `${Math.round((data.q3 - data.q1) / range * 100)}%`;
+  box.style.left = `${(data.q1 - leftWhisker) / range * 100}%`;
+  box.style.width = `${(data.q3 - data.q1) / range * 100}%`;
   box.style.backgroundColor = color;
 
   //relative within the whiskers
-  median.style.left = `${Math.round((data.median - leftWhisker) / range * 100)}%`;
+  median.style.left = `${(data.median - leftWhisker) / range * 100}%`;
 
   if (!data.outlier || data.outlier.length === 0) {
     whiskers.dataset.sort = sort;
