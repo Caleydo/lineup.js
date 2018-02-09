@@ -152,8 +152,16 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   const box = <HTMLElement>whiskers.firstElementChild;
   const median = <HTMLElement>whiskers.lastElementChild;
 
-  const leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
-  const rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+  let leftWhisker;
+  let rightWhisker;
+
+  if (data.outlier && data.outlier.length > 0) {
+    leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
+    rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+  } else {
+    leftWhisker = data.min;
+    rightWhisker = data.max;
+  }
 
   whiskers.style.left = `${leftWhisker * 100}%`;
   const range = rightWhisker - leftWhisker;
