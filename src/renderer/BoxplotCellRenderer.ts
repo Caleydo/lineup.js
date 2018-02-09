@@ -214,8 +214,16 @@ function renderBoxPlot(ctx: CanvasRenderingContext2D, box: IBoxPlotData, sort: s
 
   const boxTopPadding = topPadding + ((height - topPadding * 2) * 0.1);
 
-  const left = Math.max((box.q1 - 1.5 * (box.q3 - box.q1)), box.min);
-  const right = Math.min((box.q3 + 1.5 * (box.q3 - box.q1)), box.max);
+  let left;
+  let right;
+
+  if (box.outlier && box.outlier.length > 0) {
+    left = Math.max((box.q1 - 1.5 * (box.q3 - box.q1)), box.min);
+    right = Math.min((box.q3 + 1.5 * (box.q3 - box.q1)), box.max);
+  } else {
+    left = box.min;
+    right = box.max;
+  }
 
   ctx.fillStyle = boxColor;
   ctx.strokeStyle = boxStroke;
