@@ -60,7 +60,7 @@ export interface IBoxPlotData {
   readonly median: number;
   readonly q1: number;
   readonly q3: number;
-  readonly outlier: number[];
+  readonly outlier?: number[];
 }
 
 export function compareBoxPlot(col: IBoxPlotColumn, a: any, b: any, aIndex: number, bIndex: number) {
