@@ -100,7 +100,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
       return v;
     }
 
-    const outlier = v.outlier? v.outlier : [];
+    const outliers = v.outlier? v.outlier : [];
 
     return {
       min: this.mapping.apply(v.min),
@@ -108,7 +108,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
       median: this.mapping.apply(v.median),
       q1: this.mapping.apply(v.q1),
       q3: this.mapping.apply(v.q3),
-      outlier
+      outlier: outliers.map((outlier) => this.mapping.apply(outlier))
     };
   }
 
