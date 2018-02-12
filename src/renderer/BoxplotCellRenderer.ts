@@ -153,14 +153,16 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   const median = <HTMLElement>whiskers.lastElementChild;
 
   const leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
-  const  rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+  const rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+
+  const outlierData : number[] = data.outlier? data.outlier : [];
 
   if(leftWhisker > data.min) {
-    data.outlier.push(data.min);
+    outlierData.push(data.min);
   }
 
   if(rightWhisker < data.max) {
-    data.outlier.push(data.max);
+    outlierData.push(data.max);
   }
 
   whiskers.style.left = `${leftWhisker * 100}%`;
@@ -175,8 +177,8 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   //relative within the whiskers
   median.style.left = `${(data.median - leftWhisker) / range * 100}%`;
 
-  if (!data.outlier || data.outlier.length === 0) {
-    whiskers.dataset.sort = sort;
+  whiskers.dataset.sort = sort; // add sort criteria to whiskers by default
+  if (!outlierData || outlierData.length === 0) {
     if (n.children.length > 1) {
       n.innerHTML = '';
       n.appendChild(whiskers);
@@ -185,26 +187,29 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   }
 
   // match lengths
+  // create outlier elements
   const outliers = <HTMLElement[]>Array.from(n.children).slice(1);
-  outliers.slice(data.outlier.length).forEach((v) => v.remove());
-  for (let i = outliers.length; i < data.outlier.length; ++i) {
+  outliers.slice(outlierData.length).forEach((v) => v.remove());
+  for (let i = outliers.length; i < outlierData.length; ++i) {
     const p = n.ownerDocument.createElement('div');
     outliers.push(p);
     n.appendChild(p);
   }
 
-  data.outlier.forEach((v, i) => {
+  const minOutlier = Math.min(...outlierData);
+  const maxOutlier = Math.max(...outlierData);
+  outlierData.forEach((v, i) => {
     delete outliers[i].dataset.sort;
-    outliers[i].style.left = `${Math.round(v * 100)}%`;
-  });
+    outliers[i].style.left = `${v * 100}%`;
 
-  if (sort === 'min') {
-    whiskers.dataset.sort = '';
-    outliers[0].dataset.sort = 'min';
-  } else if (sort === 'max') {
-    whiskers.dataset.sort = '';
-    outliers[outliers.length - 1].dataset.sort = 'max';
-  }
+    if (v < leftWhisker && v === minOutlier && sort === 'min') {
+      outliers[i].dataset.sort = 'min';
+      whiskers.dataset.sort = '';
+    } else if (v > rightWhisker && v === maxOutlier && sort === 'max') {
+      outliers[i].dataset.sort = 'max';
+      whiskers.dataset.sort = '';
+    }
+  });
 }
 
 function renderBoxPlot(ctx: CanvasRenderingContext2D, box: IBoxPlotData, sort: string, color: string | null, height: number, topPadding: number, context: ICanvasRenderContext) {
