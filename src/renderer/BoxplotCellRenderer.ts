@@ -201,7 +201,7 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
     outliers[i].style.left = `${v * 100}%`;
 
     // apply the sort criteria style if the value is either the minimum or the maximum value
-    if (v < leftWhisker && v === minOutlier && sort === 'min' || v > rightWhisker && v === maxOutlier && sort === 'max') {
+    if ((v < leftWhisker && v === minOutlier && sort === 'min') || (v > rightWhisker && v === maxOutlier && sort === 'max')) {
       outliers[i].dataset.sort = sort;
       whiskers.dataset.sort = '';
     }
