@@ -152,17 +152,15 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   const box = <HTMLElement>whiskers.firstElementChild;
   const median = <HTMLElement>whiskers.lastElementChild;
 
-  const leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
-  const rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+  let leftWhisker : number;
+  let rightWhisker : number;
 
-  const outlierData : number[] = data.outlier? data.outlier : [];
-
-  if(leftWhisker > data.min) {
-    outlierData.push(data.min);
-  }
-
-  if(rightWhisker < data.max) {
-    outlierData.push(data.max);
+  if (data.outlier && data.outlier.length > 0) {
+    leftWhisker = Math.max(data.q1 - 1.5 * (data.q3 - data.q1), data.min);
+    rightWhisker = Math.min(data.q3 + 1.5 * (data.q3 - data.q1), data.max);
+  } else {
+    leftWhisker = data.min;
+    rightWhisker = data.max;
   }
 
   whiskers.style.left = `${leftWhisker * 100}%`;
@@ -178,7 +176,7 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   median.style.left = `${(data.median - leftWhisker) / range * 100}%`;
 
   whiskers.dataset.sort = sort; // add sort criteria to whiskers by default
-  if (!outlierData || outlierData.length === 0) {
+  if (!data.outlier || data.outlier.length === 0) {
     if (n.children.length > 1) {
       n.innerHTML = '';
       n.appendChild(whiskers);
@@ -189,16 +187,16 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   // match lengths
   // create outlier elements
   const outliers = <HTMLElement[]>Array.from(n.children).slice(1);
-  outliers.slice(outlierData.length).forEach((v) => v.remove());
-  for (let i = outliers.length; i < outlierData.length; ++i) {
+  outliers.slice(data.outlier.length).forEach((v) => v.remove());
+  for (let i = outliers.length; i < data.outlier.length; ++i) {
     const p = n.ownerDocument.createElement('div');
     outliers.push(p);
     n.appendChild(p);
   }
 
-  const minOutlier = Math.min(...outlierData);
-  const maxOutlier = Math.max(...outlierData);
-  outlierData.forEach((v, i) => {
+  const minOutlier = Math.min(...data.outlier);
+  const maxOutlier = Math.max(...data.outlier);
+  data.outlier.forEach((v, i) => {
     delete outliers[i].dataset.sort;
     outliers[i].style.left = `${v * 100}%`;
 
@@ -217,8 +215,16 @@ function renderBoxPlot(ctx: CanvasRenderingContext2D, box: IBoxPlotData, sort: s
 
   const boxTopPadding = topPadding + ((height - topPadding * 2) * 0.1);
 
-  const left = Math.max((box.q1 - 1.5 * (box.q3 - box.q1)), box.min);
-  const right = Math.min((box.q3 + 1.5 * (box.q3 - box.q1)), box.max);
+  let left : number;
+  let right : number;
+
+  if (box.outlier && box.outlier.length > 0) {
+    left = Math.max(box.q1 - 1.5 * (box.q3 - box.q1), box.min);
+    right = Math.min(box.q3 + 1.5 * (box.q3 - box.q1), box.max);
+  } else {
+    left = box.min;
+    right = box.max;
+  }
 
   ctx.fillStyle = boxColor;
   ctx.strokeStyle = boxStroke;
