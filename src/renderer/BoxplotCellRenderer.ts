@@ -202,11 +202,9 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
     delete outliers[i].dataset.sort;
     outliers[i].style.left = `${v * 100}%`;
 
-    if (v < leftWhisker && v === minOutlier && sort === 'min') {
-      outliers[i].dataset.sort = 'min';
-      whiskers.dataset.sort = '';
-    } else if (v > rightWhisker && v === maxOutlier && sort === 'max') {
-      outliers[i].dataset.sort = 'max';
+    // apply the sort criteria style if the value is either the minimum or the maximum value
+    if (v < leftWhisker && v === minOutlier && sort === 'min' || v > rightWhisker && v === maxOutlier && sort === 'max') {
+      outliers[i].dataset.sort = sort;
       whiskers.dataset.sort = '';
     }
   });
