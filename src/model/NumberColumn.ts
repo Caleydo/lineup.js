@@ -10,7 +10,7 @@ import {isMissingValue, isUnknown, missingGroup} from './missing';
 import {IGroupData} from '../ui/engine/interfaces';
 import {
   default as INumberColumn, INumberDesc, numberCompare, groupCompare,
-  SortMethod, ADVANCED_SORT_METHOD, INumberFilter, noNumberFilter, isSameFilter, restoreFilter
+  SortMethod, INumberFilter, noNumberFilter, isSameFilter, restoreFilter
 } from './INumberColumn';
 
 export {default as INumberColumn, isNumberColumn} from './INumberColumn';
@@ -274,7 +274,7 @@ export default class NumberColumn extends ValueColumn<number> implements INumber
   private numberFormat: (n: number) => string = format('.2f');
 
   private currentStratifyThresholds: number[] = [];
-  private groupSortMethod: SortMethod = ADVANCED_SORT_METHOD.median;
+  private groupSortMethod: SortMethod = '';
 
   constructor(id: string, desc: INumberColumnDesc) {
     super(id, desc);
