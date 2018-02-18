@@ -74,7 +74,7 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
   `;
 
   if(col.guessed !== EGuessedState.unknown) {
-    node.querySelector('.lu-label').innerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+    node.querySelector('.lu-label')!.innerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
   }
 
   const dialogBackdropMask:() => IMaskRect = () => {
