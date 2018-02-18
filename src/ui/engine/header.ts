@@ -1,7 +1,7 @@
 /**
  * Created by Samuel Gratzl on 25.07.2017.
  */
-import Column from '../../model/Column';
+import Column, {EGuessedState} from '../../model/Column';
 import {createNestedDesc, createStackDesc, isSupportType} from '../../model';
 import NumbersColumn from '../../model/NumbersColumn';
 import BoxPlotColumn from '../../model/BoxPlotColumn';
@@ -73,8 +73,8 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
     <div class="lu-handle"></div>
   `;
 
-  if(typeof col.guessed !== 'undefined' && col.guessed !== null) {
-    node.querySelector('.lu-label').innerHTML += `<i class="fa fa-${col.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+  if(col.guessed !== EGuessedState.unknown) {
+    node.querySelector('.lu-label').innerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
   }
 
   const dialogBackdropMask:() => IMaskRect = () => {
@@ -104,8 +104,8 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
 
 export function updateHeader(node: HTMLElement, col: Column, ctx: IRankingHeaderContext, interactive: boolean = false) {
   let labelInnerHTML = col.label;
-  if(typeof col.guessed !== 'undefined' && col.guessed !== null) {
-    labelInnerHTML += `<i class="fa fa-${col.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+  if(col.guessed !== EGuessedState.unknown) {
+    labelInnerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
   }
   node.querySelector('.lu-label')!.innerHTML = labelInnerHTML;
   node.title = toFullTooltip(col);
