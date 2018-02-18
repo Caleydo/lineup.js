@@ -80,6 +80,11 @@ export interface IColumnDesc {
    * default group renderer to use
    */
   readonly groupRenderer?: string;
+
+  /**
+   * flag if column type was guessed
+   */
+  readonly guessed?: boolean;
 }
 
 export interface IStatistics {
@@ -148,6 +153,9 @@ export default class Column extends AEventDispatcher {
   static readonly EVENT_VISBILITY_CHANGED = 'visibilityChanged';
   static readonly EVENT_DATA_LOADED = 'dataLoaded';
 
+  static readonly GUESSED_ICON = 'times';
+  static readonly CONFIRMED_ICON = 'check';
+
   /**
    * the id of this column
    */
@@ -174,6 +182,7 @@ export default class Column extends AEventDispatcher {
 
   private readonly rendererInfo: IRendererInfo;
 
+  guessed: boolean = null;
 
   constructor(id: string, public readonly desc: IColumnDesc) {
     super();
@@ -189,6 +198,8 @@ export default class Column extends AEventDispatcher {
       description: desc.description || '',
       color: desc.color || (this.cssClass !== '' ? null : Column.DEFAULT_COLOR)
     };
+
+    this.guessed = desc.guessed;
   }
 
   get id() {

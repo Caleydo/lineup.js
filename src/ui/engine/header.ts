@@ -73,6 +73,10 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
     <div class="lu-handle"></div>
   `;
 
+  if(typeof col.guessed !== 'undefined' && col.guessed !== null) {
+    node.querySelector('.lu-label').innerHTML += `<i class="fa fa-${col.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+  }
+
   const dialogBackdropMask:() => IMaskRect = () => {
     const mask = node.getBoundingClientRect();
     // manipulate bottom to highlight the whole column (and not only the header)
@@ -99,7 +103,11 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
 }
 
 export function updateHeader(node: HTMLElement, col: Column, ctx: IRankingHeaderContext, interactive: boolean = false) {
-  node.querySelector('.lu-label')!.innerHTML = col.label;
+  let labelInnerHTML = col.label;
+  if(typeof col.guessed !== 'undefined' && col.guessed !== null) {
+    labelInnerHTML += `<i class="fa fa-${col.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+  }
+  node.querySelector('.lu-label')!.innerHTML = labelInnerHTML;
   node.title = toFullTooltip(col);
 
   const sort = <HTMLElement>node.querySelector(`i[title='Sort']`)!;
