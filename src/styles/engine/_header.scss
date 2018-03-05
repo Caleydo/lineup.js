@@ -50,6 +50,15 @@ section.#{$lu_css_prefix}-header {
     padding-left: $lu-engine_grip_gap;
     margin-right: $lu-engine_grip_gap;
     font-weight: 500;
+
+    &.has-marker {
+      margin-right: 1em;
+    }
+
+    > i {
+      position: absolute;
+      right: 0.5em;
+    }
   }
 
   > .#{$lu_css_prefix}-sort {
