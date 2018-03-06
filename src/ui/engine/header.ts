@@ -57,6 +57,22 @@ export interface IHeaderOptions {
   resizeable: boolean;
 }
 
+function importMarker(state: EGuessedState): string {
+  if(state === EGuessedState.unknown) {
+    return '';
+  }
+
+  let icon = 'fa-check';
+  let title = `The imported data type has been confirmed.`;
+
+  if(state === EGuessedState.guessed) {
+    icon = 'fa-question';
+    title = `The imported data type was guessed automatically.`;
+  }
+
+  return `<i class="fa ${icon}" title="${title}"></i>`;
+}
+
 export function createHeader(col: Column, document: Document, ctx: IRankingHeaderContext, options: Partial<IHeaderOptions> = {}) {
   options = Object.assign({
     dragAble: true,
@@ -75,7 +91,7 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
 
   if(col.guessed !== EGuessedState.unknown) {
     const labelElement = node.querySelector('.lu-label');
-    labelElement!.innerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
+    labelElement!.innerHTML += importMarker(col.guessed);
     labelElement!.classList.add('has-marker');
   }
 
@@ -105,11 +121,7 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
 }
 
 export function updateHeader(node: HTMLElement, col: Column, ctx: IRankingHeaderContext, interactive: boolean = false) {
-  let labelInnerHTML = col.label;
-  if(col.guessed !== EGuessedState.unknown) {
-    labelInnerHTML += `<i class="fa fa-${col.guessed === EGuessedState.guessed ? Column.GUESSED_ICON : Column.CONFIRMED_ICON}"></i>`;
-  }
-  node.querySelector('.lu-label')!.innerHTML = labelInnerHTML;
+  node.querySelector('.lu-label')!.innerHTML = col.label + importMarker(col.guessed);
   node.title = toFullTooltip(col);
 
   const sort = <HTMLElement>node.querySelector(`i[title='Sort']`)!;

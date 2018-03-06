@@ -159,9 +159,6 @@ export default class Column extends AEventDispatcher {
   static readonly EVENT_VISBILITY_CHANGED = 'visibilityChanged';
   static readonly EVENT_DATA_LOADED = 'dataLoaded';
 
-  static readonly GUESSED_ICON = 'times';
-  static readonly CONFIRMED_ICON = 'check';
-
   /**
    * the id of this column
    */

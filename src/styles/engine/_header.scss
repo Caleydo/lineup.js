@@ -58,6 +58,12 @@ section.#{$lu_css_prefix}-header {
     > i {
       position: absolute;
       right: 0.5em;
+      cursor: default;
+      color: $lu_toolbar_color_base2;
+
+      &:hover {
+        color: $lu_toolbar_color_hover;
+      }
     }
   }
 
