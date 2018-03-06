@@ -121,9 +121,9 @@ export interface IRendererInfo {
 }
 
 export enum EGuessedState {
-  unknown,
-  guessed,
-  checked
+  UNKNOWN,
+  GUESSED,
+  CHECKED
 }
 
 
@@ -203,7 +203,7 @@ export default class Column extends AEventDispatcher {
     };
 
     if (typeof desc.guessed === 'undefined') {
-      this.guessed = EGuessedState.unknown;
+      this.guessed = EGuessedState.UNKNOWN;
     } else {
       this.guessed = desc.guessed;
     }

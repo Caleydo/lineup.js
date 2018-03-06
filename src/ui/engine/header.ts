@@ -58,14 +58,14 @@ export interface IHeaderOptions {
 }
 
 function importMarker(state: EGuessedState): string {
-  if(state === EGuessedState.unknown) {
+  if(state === EGuessedState.UNKNOWN) {
     return '';
   }
 
   let icon = 'fa-check';
   let title = `The imported data type has been confirmed.`;
 
-  if(state === EGuessedState.guessed) {
+  if(state === EGuessedState.GUESSED) {
     icon = 'fa-question';
     title = `The imported data type was guessed automatically.`;
   }
@@ -89,7 +89,7 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
     <div class="lu-handle"></div>
   `;
 
-  if(col.guessed !== EGuessedState.unknown) {
+  if(col.guessed !== EGuessedState.UNKNOWN) {
     const labelElement = node.querySelector('.lu-label');
     labelElement!.innerHTML += importMarker(col.guessed);
     labelElement!.classList.add('has-marker');
