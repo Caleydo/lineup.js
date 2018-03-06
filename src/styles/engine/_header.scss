@@ -52,14 +52,14 @@ section.#{$lu_css_prefix}-header {
     font-weight: 500;
 
     &.has-marker {
-      margin-right: 1em;
+      margin-right: 18px;
     }
 
     > i {
       position: absolute;
-      right: 0.5em;
+      right: 6px;
       cursor: default;
-      color: $lu_toolbar_color_base2;
+      color: $lu_toolbar_color_base;
 
       &:hover {
         color: $lu_toolbar_color_hover;
