@@ -1,7 +1,7 @@
 /**
  * Created by Samuel Gratzl on 25.07.2017.
  */
-import Column from '../../model/Column';
+import Column, {EGuessedState} from '../../model/Column';
 import {createNestedDesc, createStackDesc, isSupportType} from '../../model';
 import NumbersColumn from '../../model/NumbersColumn';
 import BoxPlotColumn from '../../model/BoxPlotColumn';
@@ -57,6 +57,22 @@ export interface IHeaderOptions {
   resizeable: boolean;
 }
 
+function importMarker(state: EGuessedState): string {
+  if(state === EGuessedState.UNKNOWN) {
+    return '';
+  }
+
+  let icon = 'fa-check';
+  let title = `The imported data type has been confirmed.`;
+
+  if(state === EGuessedState.GUESSED) {
+    icon = 'fa-question';
+    title = `The imported data type was guessed automatically.`;
+  }
+
+  return `<i class="fa ${icon}" title="${title}"></i>`;
+}
+
 export function createHeader(col: Column, document: Document, ctx: IRankingHeaderContext, options: Partial<IHeaderOptions> = {}) {
   options = Object.assign({
     dragAble: true,
@@ -72,6 +88,12 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
     <div class="lu-summary"></div>
     <div class="lu-handle"></div>
   `;
+
+  if(col.guessed !== EGuessedState.UNKNOWN) {
+    const labelElement = node.querySelector('.lu-label');
+    labelElement!.innerHTML += importMarker(col.guessed);
+    labelElement!.classList.add('has-marker');
+  }
 
   const dialogBackdropMask:() => IMaskRect = () => {
     const mask = node.getBoundingClientRect();
@@ -99,7 +121,7 @@ export function createHeader(col: Column, document: Document, ctx: IRankingHeade
 }
 
 export function updateHeader(node: HTMLElement, col: Column, ctx: IRankingHeaderContext, interactive: boolean = false) {
-  node.querySelector('.lu-label')!.innerHTML = col.label;
+  node.querySelector('.lu-label')!.innerHTML = col.label + importMarker(col.guessed);
   node.title = toFullTooltip(col);
 
   const sort = <HTMLElement>node.querySelector(`i[title='Sort']`)!;

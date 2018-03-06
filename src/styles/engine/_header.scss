@@ -50,6 +50,21 @@ section.#{$lu_css_prefix}-header {
     padding-left: $lu-engine_grip_gap;
     margin-right: $lu-engine_grip_gap;
     font-weight: 500;
+
+    &.has-marker {
+      margin-right: 18px;
+    }
+
+    > i {
+      position: absolute;
+      right: 6px;
+      cursor: default;
+      color: $lu_toolbar_color_base;
+
+      &:hover {
+        color: $lu_toolbar_color_hover;
+      }
+    }
   }
 
   > .#{$lu_css_prefix}-sort {
