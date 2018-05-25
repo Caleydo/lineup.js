@@ -20,7 +20,7 @@ export default class SortDialog extends ADialog {
     }).join('\n');
     const sortOrders = `
         <label><input type="radio" name="sortorder" value="asc"  ${(order === 'asc') ? 'checked' : ''} > Ascending</label><br>
-        <label><input type="radio" name="sortorder" value="desc"  ${(order === 'desc') ? 'checked' : ''} > Decending</label><br>`;
+        <label><input type="radio" name="sortorder" value="desc"  ${(order === 'desc' || !order) ? 'checked' : ''} > Decending</label><br>`;
 
     const popup = this.makeChoosePopup( `${sortMethods}<strong>Sort Order</strong><br>${sortOrders}`);
 
