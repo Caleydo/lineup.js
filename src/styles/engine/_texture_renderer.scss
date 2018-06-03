@@ -1,0 +1,9 @@
+@import '../vars';
+
+##{$lu-css_prefix}-texture-container{
+  display: flex;
+  overflow: hidden;
+  img{
+    margin-right: 5px;
+  }
+}

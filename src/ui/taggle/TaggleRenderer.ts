@@ -120,6 +120,11 @@ export default class TaggleRenderer extends AEventDispatcher {
     this.update();
   }
 
+  useTextureRenderer(use: boolean){
+    this.renderer.useTextureRenderer = use;
+    this.update();
+  }
+
   destroy() {
     this.renderer.destroy();
     window.removeEventListener('resize', this.resizeListener);

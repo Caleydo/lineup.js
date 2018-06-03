@@ -1,5 +1,5 @@
 import {IEngineRendererOptions} from '../engine/EngineRenderer';
-import {regular, spacefilling} from './LineUpRuleSet';
+//import {regular, spacefilling} from './LineUpRuleSet';
 import {RENDERER_EVENT_HOVER_CHANGED} from '../interfaces';
 import SidePanel from '../panel/SidePanel';
 import DataProvider from '../../provider/ADataProvider';
@@ -42,7 +42,8 @@ export default class Taggle extends AEventDispatcher {
       this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
       this.spaceFilling.addEventListener('click', () => {
         const selected = this.spaceFilling.classList.toggle('chosen');
-        this.renderer.switchRule(selected ? spacefilling : regular);
+        //this.renderer.switchRule(selected ? spacefilling : regular);
+        this.renderer.useTextureRenderer(selected);
       });
     }
 
