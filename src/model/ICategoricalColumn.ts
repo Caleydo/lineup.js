@@ -53,7 +53,7 @@ export function isCategoricalColumn(col: Column | IColumnDesc) {
 }
 
 export interface ICategoricalFilter {
-  filter: string[] | string | RegExp;
+  filter: string[] | string | RegExp | null;
   filterMissing: boolean;
 }
 
