@@ -1,0 +1,18 @@
+
+[data-renderer=numbers],
+[data-renderer=threshold],
+[data-renderer=verticalbar] {
+  display: flex;
+  flex-direction: row;
+  align-content: stretch;
+  align-items: stretch;
+
+  div {
+    flex: 1 1 auto;
+  }
+
+  .#{$lu_css_prefix}-missing {
+    // transform the dash to a square
+    background-size: $lu_missing_dash_height $lu_missing_dash_height;
+  }
+}

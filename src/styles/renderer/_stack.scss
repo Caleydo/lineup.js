@@ -1,0 +1,15 @@
+[data-renderer=stack],
+[data-renderer=nested] {
+  &.lu-grid-space {
+
+  }
+
+  > * {
+    height: 100%;
+    overflow: hidden;
+
+    > * {
+      overflow: hidden;
+    }
+  }
+}

@@ -1,131 +1,76 @@
-import ICellRendererFactory from './ICellRendererFactory';
 import Column from '../model/Column';
-import {INumberColumn, isMissingValue} from '../model/NumberColumn';
-import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
-import {ISVGCellRenderer, IHTMLCellRenderer} from './IDOMCellRenderers';
+import {INumberColumn, isNumberColumn, isNumbersColumn} from '../model/INumberColumn';
 import {IDataRow} from '../provider/ADataProvider';
-import {attr, clipText} from '../utils';
+import {adaptDynamicColorToBgColor, setText, attr, clipText} from '../utils';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
+import ICellRendererFactory from './ICellRendererFactory';
+import IDOMCellRenderer from './IDOMCellRenderers';
+import {colorOf, IImposer} from './impose';
+import {renderMissingCanvas, renderMissingDOM} from './missing';
+import {ICanvasRenderContext, IDOMRenderContext} from './RendererContexts';
 
 
 /**
  * a renderer rendering a bar for numerical columns
  */
 export default class BarCellRenderer implements ICellRendererFactory {
+  readonly title = 'Bar';
+
   /**
    * flag to always render the value
    * @type {boolean}
    */
 
-  constructor(private readonly renderValue: boolean = false, private colorOf: (d: any, i: number, col: Column) => string = (d, i, col) => col.color) {}
-
-  createSVG(col: INumberColumn & Column, context: IDOMRenderContext): ISVGCellRenderer {
-    const paddingTop = context.option('rowBarTopPadding', context.option('rowBarPadding', 1));
-    const paddingBottom = context.option('rowBarBottomPadding', context.option('rowBarPadding', 1));
-    return {
-      template: `<g class='bar'>
-          <rect class='${col.cssClass}' y='${paddingTop}' style='fill: ${col.color}'>
-            <title></title>
-          </rect>
-          <text class='number ${this.renderValue ? '' : 'hoverOnly'}' clip-path='url(#cp${context.idPrefix}clipCol${col.id})'></text>
-        </g>`,
-      update: (n: SVGGElement, d: IDataRow, i: number) => {
-
-        if (col.isMissing(d.v, d.dataIndex)) {
-          // missing
-          n.classList.add('lu-missing');
-          attr(<SVGRectElement>n.querySelector('rect'), {
-            y: paddingTop,
-            width: col.getWidth(),
-            height: context.rowHeight(i) - (paddingTop + paddingBottom)
-          }, {
-            fill: `url(#m${context.idPrefix}MissingPattern)`
-          });
-          attr(<SVGTextElement>n.querySelector('text'), {}).textContent = 'NaN';
-          return;
-        }
-        n.classList.remove('lu-missing');
-
-        const width = col.getWidth() * col.getValue(d.v, d.dataIndex);
-        n.querySelector('rect title').textContent = col.getLabel(d.v, d.dataIndex);
-
-        attr(<SVGRectElement>n.querySelector('rect'), {
-          y: paddingTop,
-          width: isNaN(width) ? 0 : width,
-          height: context.rowHeight(i) - (paddingTop + paddingBottom)
-        }, {
-          fill: this.colorOf(d.v, i, col)
-        });
-        attr(<SVGTextElement>n.querySelector('text'), {}).textContent = col.getLabel(d.v, d.dataIndex);
-      }
-    };
+  constructor(private readonly renderValue: boolean = false) {
   }
 
-  createHTML(col: INumberColumn & Column, context: IDOMRenderContext): IHTMLCellRenderer {
-    const paddingTop = context.option('rowBarTopPadding', context.option('rowBarPadding', 1));
-    const paddingBottom = context.option('rowBarBottomPadding', context.option('rowBarPadding', 1));
+  canRender(col: Column, isGroup: boolean) {
+    return isNumberColumn(col) && !isGroup && !isNumbersColumn(col);
+  }
+
+  createDOM(col: INumberColumn & Column, _context: IDOMRenderContext, imposer?: IImposer): IDOMCellRenderer {
     return {
-      template: `<div class='bar' style='top:${paddingTop}px; background-color: ${col.color}'>
-          <span class='number ${this.renderValue ? '' : 'hoverOnly'}'></span>
+      template: `<div title="">
+          <div style='background-color: ${col.color}'>
+            <span ${this.renderValue ? '' : 'class="lu-hover-only"'}></span>
+          </div>
         </div>`,
-      update: (n: HTMLDivElement, d: IDataRow, i: number) => {
+      update: (n: HTMLDivElement, d: IDataRow) => {
+        const value = col.getNumber(d.v, d.dataIndex);
+        const missing = renderMissingDOM(n, col, d);
+        const w = isNaN(value) ? 0 : Math.round(value * 100 * 100) / 100;
+        const title = col.getLabel(d.v, d.dataIndex);
+        n.title = title;
 
-        if (col.isMissing(d.v, d.dataIndex)) {
-          // missing
-          n.classList.add('lu-missing');
-          attr(n, {
-           title: 'NaN'
-          }, {
-            width: `${col.getWidth()}px`,
-            height: `${context.rowHeight(i) - (paddingTop + paddingBottom)}px`,
-            top: `${paddingTop}px`,
-            'background-color': null
-          });
-          n.querySelector('span').textContent = 'NaN';
-          return;
-        }
-        n.classList.remove('lu-missing');
-
-        const width = col.getWidth() * col.getValue(d.v, d.dataIndex);
-        attr(n, {
-          title: col.getLabel(d.v, d.dataIndex)
+        const bar = n.firstElementChild!;
+        const color = colorOf(col, d, imposer);
+        attr(<HTMLElement>bar, {
+          title
         }, {
-          width: `${isNaN(width) ? 0 : width}px`,
-          height: `${context.rowHeight(i) - (paddingTop + paddingBottom)}px`,
-          top: `${paddingTop}px`,
-          'background-color': this.colorOf(d.v, i, col)
+          width: missing ? '100%' : `${w}%`,
+          'background-color': missing ? null : color
         });
-        n.querySelector('span').textContent = col.getLabel(d.v, d.dataIndex);
+        const item = <HTMLElement>bar.firstElementChild!;
+        setText(item, title);
+        adaptDynamicColorToBgColor(item, color || Column.DEFAULT_COLOR, w / 100);
       }
     };
   }
 
-  createCanvas(col: INumberColumn & Column, context: ICanvasRenderContext): ICanvasCellRenderer {
+  createCanvas(col: INumberColumn & Column, context: ICanvasRenderContext, imposer?: IImposer): ICanvasCellRenderer {
     const paddingTop = context.option('rowBarTopPadding', context.option('rowBarPadding', 1));
     const paddingBottom = context.option('rowBarBottomPadding', context.option('rowBarPadding', 1));
     return (ctx: CanvasRenderingContext2D, d: IDataRow, i: number) => {
-      if (col.isMissing(d.v, d.dataIndex)) {
-        renderMissingValue(ctx, col.getWidth(), context.rowHeight(i));
+      if (renderMissingCanvas(ctx, col, d, context.rowHeight(i))) {
         return;
       }
-      const width = col.getWidth() * col.getValue(d.v, d.dataIndex);
-      ctx.fillStyle = this.colorOf(d.v, i, col);
+      ctx.fillStyle = colorOf(col, d, imposer) || Column.DEFAULT_COLOR;
+      const width = context.colWidth(col) * col.getNumber(d.v, d.dataIndex);
       ctx.fillRect(0, paddingTop, isNaN(width) ? 0 : width, context.rowHeight(i) - (paddingTop + paddingBottom));
       if (this.renderValue || context.hovered(d.dataIndex) || context.selected(d.dataIndex)) {
         ctx.fillStyle = context.option('style.text', 'black');
-        clipText(ctx, col.getLabel(d.v, d.dataIndex), 1, 0, col.getWidth() - 1, context.textHints);
+        clipText(ctx, col.getLabel(d.v, d.dataIndex), 1, 0, context.colWidth(col) - 1, context.textHints);
       }
     };
   }
-}
-
-
-export function renderMissingValue(ctx: CanvasRenderingContext2D, width: number, height: number, x = 0, y = 0) {
-  const dashColor = '#c1c1c1';
-  const dashWidth = 10;
-  const dashHeight = 3;
-  const dashX = (width - x - dashWidth) / 2; // center horizontally
-  const dashY = (height - y - dashHeight) / 2; // center vertically
-  ctx.fillStyle = dashColor;
-  ctx.fillRect(dashX, dashY, dashWidth, dashHeight);
 }

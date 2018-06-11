@@ -4,14 +4,23 @@
 
 import Column from './Column';
 import StringColumn, {IStringColumnDesc} from './StringColumn';
+import {isMissingValue} from './missing';
 
 
-export interface ILinkColumnDesc extends IStringColumnDesc {
+export interface ILinkDesc {
   /**
    * link pattern to use, where $1 will be replaced with the actual value
    */
   link?: string;
+
+  /**
+   * optional list of templates
+   */
+  templates?: string[];
 }
+
+export declare type ILinkColumnDesc = ILinkDesc & IStringColumnDesc;
+
 /**
  * a string column in which the label is a text but the value a link
  */
@@ -21,11 +30,11 @@ export default class LinkColumn extends StringColumn {
    * a pattern used for generating the link, $1 is replaced with the actual value
    * @type {null}
    */
-  private link = null;
+  private link: string | null = null;
 
-  constructor(id: string, desc: any) {
+  constructor(id: string, desc: ILinkColumnDesc) {
     super(id, desc);
-    this.link = desc.link;
+    this.link = desc.link || null;
   }
 
   get headerCssClass() {
@@ -59,7 +68,7 @@ export default class LinkColumn extends StringColumn {
     return r;
   }
 
-  restore(dump: any, factory: (dump: any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column | null) {
     super.restore(dump, factory);
     if (dump.link) {
       this.link = dump.link;
@@ -71,17 +80,14 @@ export default class LinkColumn extends StringColumn {
     if (v && v.alt) {
       return v.alt;
     }
-    return '' + v;
+    return String(v);
   }
 
   isLink(row: any, index: number) {
-    if (this.link) {
-      return true;
-    }
     //get original value
     const v: any = super.getRaw(row, index);
     //convert to link
-    return v && v.href != null;
+    return !isMissingValue(v) && (v.href != null || this.link);
   }
 
   getValue(row: any, index: number) {
@@ -90,8 +96,11 @@ export default class LinkColumn extends StringColumn {
     //convert to link
     if (v && v.href) {
       return v.href;
-    } else if (this.link) {
-      return this.link.replace(/\$1/g, v || '');
+    }
+    if (this.link) {
+      return this.link
+        .replace(/\$1/g, v || '')
+        .replace(/\$2/g, encodeURIComponent(v || ''));
     }
     return v;
   }

@@ -1,20 +1,25 @@
 import Column from '../model/Column';
+import {IDataRow} from '../provider/ADataProvider';
+
+export interface IImposer {
+  color?(row: IDataRow|null): string|null;
+}
 
 /**
  * context for rendering, wrapped as an object for easy extensibility
  */
-interface IRenderContext<T> {
+interface IRenderContext<T, T2> {
   /**
-   * the height of a row
-   * @param index
+   * render a column
+   * @param col
    */
-  rowHeight(index: number): number;
+  renderer(col: Column, imposer?: IImposer): T;
 
   /**
    * render a column
    * @param col
    */
-  renderer(col: Column): T;
+  groupRenderer(col: Column, imposer?: IImposer): T2;
 
   /**
    * prefix used for all generated id names
@@ -24,9 +29,11 @@ interface IRenderContext<T> {
   /**
    * lookup custom options by key
    * @param key key to lookup
-   * @param default_ default value
+   * @param defaultValue default value
    */
   option<T>(key: string, defaultValue: T): T;
+
+  readonly totalNumberOfRows: number;
 }
 
 export default IRenderContext;

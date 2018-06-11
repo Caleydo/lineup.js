@@ -1,30 +1,43 @@
 import Column from '../model/Column';
 import ADialog from './ADialog';
-import {IBoxPlotColumn, SORT_METHOD} from '../model/BoxPlotColumn';
-import MultiValueColumn, {SORT_METHOD as ADVANCED_SORT_METHOD, } from '../model/MultiValueColumn';
-import { event as d3event, selectAll } from 'd3';
+import NumberColumn from '../model/NumberColumn';
+import {ADVANCED_SORT_METHOD, IBoxPlotColumn, SORT_METHOD} from '../model/INumberColumn';
+import BoxPlotColumn from '../model/BoxPlotColumn';
 
 export default class SortDialog extends ADialog {
-  constructor(private readonly column: IBoxPlotColumn, $header: d3.Selection<Column>, title: string = 'Sort Criteria') {
-    super($header, title);
+  constructor(private readonly column: (IBoxPlotColumn|NumberColumn) & Column, header: HTMLElement, title = 'Sort Criteria') {
+    super(header, title);
   }
 
-  openDialog() {
+  protected build():HTMLElement {
     const bak = this.column.getSortMethod();
-    const valueString = Object.keys(this.column instanceof MultiValueColumn ? ADVANCED_SORT_METHOD : SORT_METHOD);
+    const valueString = Object.keys(this.column instanceof BoxPlotColumn ? SORT_METHOD: ADVANCED_SORT_METHOD);
 
-    const popup = this.makeSortPopup(valueString.map((d) => {
-      return `<input type="radio" name="multivaluesort" value=${d}  ${(bak === d) ? 'checked' : ''} > ${d.slice(0,1).toUpperCase() + d.slice(1)} <br>`;
-    }).join('\n'));
+    const order = this.column instanceof NumberColumn ? this.column.isGroupSortedByMe().asc : this.column.isSortedByMe().asc;
 
-    const sortContent = selectAll('input[name=multivaluesort]');
-    sortContent.on('change', () => {
-      const target = (<MouseEvent>d3event).target;
-      const value = (<HTMLInputElement>target).value;
-      this.column.setSortMethod(value);
+    const sortMethods = valueString.map((d) => {
+      return `<label><input type="radio" name="multivaluesort" value="${d}"  ${(bak === d) ? 'checked' : ''} > ${d.slice(0, 1).toUpperCase() + d.slice(1)}</label><br>`;
+    }).join('\n');
+    const sortOrders = `
+        <label><input type="radio" name="sortorder" value="asc"  ${(order === 'asc') ? 'checked' : ''} > Ascending</label><br>
+        <label><input type="radio" name="sortorder" value="desc"  ${(order === 'desc') ? 'checked' : ''} > Decending</label><br>`;
+
+    const popup = this.makeChoosePopup( `${sortMethods}<strong>Sort Order</strong><br>${sortOrders}`);
+
+    Array.from(popup.querySelectorAll('input[name=multivaluesort]')).forEach((n: HTMLInputElement) => {
+      n.addEventListener('change', () => this.column.setSortMethod(n.value));
+    });
+    Array.from(popup.querySelectorAll('input[name=sortorder]')).forEach((n: HTMLInputElement) => {
+      n.addEventListener('change', () => {
+        if (this.column instanceof NumberColumn) {
+          this.column.groupSortByMe(n.value === 'asc');
+        } else {
+          this.column.sortByMe(n.value === 'asc');
+        }
+      });
     });
 
-    this.hidePopupOnClickOutside(popup, sortContent);
+    return popup;
   }
 
 }

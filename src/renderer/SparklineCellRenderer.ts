@@ -1,54 +1,144 @@
 import ICellRendererFactory from './ICellRendererFactory';
-import MultiValueColumn from '../model/MultiValueColumn';
-import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
-import {ISVGCellRenderer} from './IDOMCellRenderers';
+import {ICanvasRenderContext} from './RendererContexts';
+import IDOMCellRenderer, {IDOMGroupRenderer} from './IDOMCellRenderers';
 import {IDataRow} from '../provider/ADataProvider';
-import {attr} from '../utils';
-import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {svg as d3svg} from 'd3';
+import ICanvasCellRenderer, {ICanvasGroupRenderer} from './ICanvasCellRenderer';
+import Column from '../model/Column';
+import {matchRows} from './ANumbersCellRenderer';
+import {forEachChild} from '../utils';
+import {IGroup} from '../model/Group';
+import {renderMissingCanvas, renderMissingDOM} from './missing';
+import {isMissingValue} from '../model/missing';
+import {INumbersColumn, isNumbersColumn} from '../model/INumberColumn';
+
+export function line(data: number[]) {
+  if (data.length === 0) {
+    return '';
+  }
+  let p = '';
+  let moveNext = true;
+
+  data.forEach((d, i) => {
+    if (isMissingValue(d)) {
+      moveNext = true;
+    } else if (moveNext) {
+      p += `M${i},${1 - d} `;
+      moveNext = false;
+    } else {
+      p += `L${i},${1 - d} `;
+    }
+  });
+  return p;
+}
 
 export default class SparklineCellRenderer implements ICellRendererFactory {
+  readonly title = 'Sparkline';
 
-  createSVG(col: MultiValueColumn, context: IDOMRenderContext): ISVGCellRenderer {
-    const scales = col.getSparklineScale();
-    const xScale = scales.xScale.range([0, col.getWidth()]);
-    const yScale = scales.yScale;
-    const line = d3svg.line<number>()
-      .x((d, j) => xScale(j))
-      .y(yScale)
-      .interpolate('linear');
+  canRender(col: Column) {
+    return isNumbersColumn(col);
+  }
+
+  createDOM(col: INumbersColumn & Column): IDOMCellRenderer {
+    const yPos = 1 - col.getMapping().apply(col.getThreshold());
     return {
-      template: `<path class='sparklinecell'></path>`,
-      update: (n: SVGGElement, d: IDataRow, i: number) => {
-        yScale.range([context.rowHeight(i), 0]);
-        attr(n, {
-          d: line(col.getValue(d.v, d.dataIndex))
-        });
+      template: `<svg viewBox="0 0 ${col.getDataLength() - 1} 1" preserveAspectRatio="none meet"><line x1="0" x2="${col.getDataLength() - 1}" y1="${yPos}" y2="${yPos}"></line><path></path></svg>`,
+      update: (n: HTMLElement, d: IDataRow) => {
+        if (renderMissingDOM(n, col, d)) {
+          return;
+        }
+        const data = col.getNumbers(d.v, d.dataIndex);
+        n.querySelector('path')!.setAttribute('d', line(data));
       }
     };
   }
 
-  createCanvas(col: MultiValueColumn, context: ICanvasRenderContext): ICanvasCellRenderer {
-    const scales = col.getSparklineScale();
-    const xScale = scales.xScale.range([0, col.getWidth()]);
-    const yScale = scales.yScale;
-
+  createCanvas(col: INumbersColumn & Column, context: ICanvasRenderContext): ICanvasCellRenderer {
     return (ctx: CanvasRenderingContext2D, d: IDataRow, i: number) => {
-      const data = col.getValue(d.v, d.dataIndex);
-      let xpos: number, ypos: number;
-      yScale.range([context.rowHeight(i), 0]);
+      const h = context.rowHeight(i);
+      if (renderMissingCanvas(ctx, col, d, h)) {
+        return;
+      }
+      const data = col.getNumbers(d.v, d.dataIndex);
+      if (data.length === 0) {
+        return;
+      }
+      ctx.save();
+      const w = context.colWidth(col) / (col.getDataLength()-1);
+
+      // base line
+      ctx.strokeStyle = '#c1c1c1';
+      ctx.beginPath();
+      ctx.moveTo(0, 1 - col.getMapping().apply(col.getThreshold()));
+      ctx.lineTo(w * (data.length-1), h);
+      ctx.stroke();
 
       ctx.strokeStyle = 'black';
-      ctx.fillStyle = 'black';
-      data.forEach((d, i) => {
-        ctx.beginPath();
-        ctx.moveTo(xpos, ypos);
-        xpos = xScale(i);
-        ypos = yScale(d);
-        ctx.lineTo(xpos, ypos);
-        ctx.stroke();
-        ctx.fill();
+      this.renderLine(ctx, data, h, w);
+      ctx.restore();
+    };
+  }
+
+  private renderLine(ctx: CanvasRenderingContext2D, data: number[], w: number, h: number) {
+    ctx.beginPath();
+    let moveNext = false;
+    if (isMissingValue(data[0])) {
+      moveNext = true;
+    } else {
+      ctx.moveTo(0, (1 - data[0]) * h);
+    }
+    for (let i = 1; i < data.length; ++i) {
+      const v = data[i];
+      if (isMissingValue(v)) {
+        moveNext = true;
+      } else if (moveNext) {
+        ctx.moveTo(i * w, (1 - data[i]) * h);
+        moveNext = false;
+      } else {
+        ctx.lineTo(i * w, (1 - data[i]) * h);
+      }
+    }
+    ctx.stroke();
+  }
+
+  createGroupDOM(col: INumbersColumn & Column): IDOMGroupRenderer {
+    const yPos = 1 - col.getMapping().apply(col.getThreshold());
+    return {
+      template: `<svg viewBox="0 0 ${col.getDataLength()} 1" preserveAspectRatio="none meet"><line x1="0" x2="${col.getDataLength() - 1}" y1="${yPos}" y2="${yPos}"></line><path></path></svg>`,
+      update: (n: HTMLElement, _group: IGroup, rows: IDataRow[]) => {
+        //overlapping ones
+        matchRows(n, rows, `<path></path>`);
+        forEachChild(n, ((row, i) => {
+          const d = rows[i];
+          row.setAttribute('d', line(col.getNumbers(d.v, d.dataIndex)));
+        }));
+      }
+    };
+  }
+
+  createGroupCanvas(col: INumbersColumn & Column, context: ICanvasRenderContext): ICanvasGroupRenderer {
+    return (ctx: CanvasRenderingContext2D, group: IGroup, rows: IDataRow[]) => {
+      //overlapping ones
+      const h = context.groupHeight(group);
+      const w = context.colWidth(col);
+      ctx.save();
+
+      ctx.strokeStyle = '#c1c1c1';
+      ctx.beginPath();
+      const tresholdLine = (1 - col.getMapping().apply(col.getThreshold())) * h;
+      ctx.moveTo(0, tresholdLine);
+      ctx.lineTo(w, tresholdLine);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+
+      rows.forEach((d) => {
+        const data = col.getNumbers(d.v, d.dataIndex);
+        if (data.length === 0) {
+          return;
+        }
+        this.renderLine(ctx, data, w, h);
       });
+      ctx.restore();
     };
   }
 }

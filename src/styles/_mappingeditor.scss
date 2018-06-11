@@ -1,12 +1,13 @@
 /**
 mapping editor
  */
+@import 'vars';
 
-$sample_color: black;
-$mapping_color: blue;
-$mapping_color_hover: #0000cf;
+.#{$lu_css_prefix}-mapping-editor {
+  $sample_color: black;
+  $mapping_color: blue;
+  $mapping_color_hover: #0000cf;
 
-.lugui-me {
   margin-bottom: 5px;
   clear: both;
 
@@ -92,7 +93,6 @@ $mapping_color_hover: #0000cf;
     g.filter {
       text {
         font-size: 8pt;
-        alignment-baseline: hanging;
       }
 
       path {
@@ -107,7 +107,8 @@ $mapping_color_hover: #0000cf;
 
       > g {
         cursor: pointer;
-        cursor: -webkit-drag;
+        cursor: -moz-grab;
+        cursor: -webkit-grab; // indicate grab able
 
         &:hover {
           path {

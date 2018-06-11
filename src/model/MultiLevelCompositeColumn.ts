@@ -2,14 +2,17 @@
  * Created by sam on 04.11.2016.
  */
 
-import CompositeColumn, {IMultiLevelColumn} from './CompositeColumn';
-import Column, {IFlatColumn, IColumnDesc} from './Column';
+import CompositeColumn, {IMultiLevelColumn, isMultiLevelColumn} from './CompositeColumn';
+import Column, {IColumnDesc, IFlatColumn} from './Column';
 import StackColumn from './StackColumn';
+import {isNumberColumn} from './INumberColumn';
+import {similar} from '../utils';
 
 export default class MultiLevelCompositeColumn extends CompositeColumn implements IMultiLevelColumn {
   static readonly EVENT_COLLAPSE_CHANGED = StackColumn.EVENT_COLLAPSE_CHANGED;
+  static readonly EVENT_MULTI_LEVEL_CHANGED = StackColumn.EVENT_MULTI_LEVEL_CHANGED;
 
-  private readonly adaptChange;
+  private readonly adaptChange: (old: number, newValue: number) => void;
 
   /**
    * whether this stack column is collapsed i.e. just looks like an ordinary number column
@@ -27,7 +30,7 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
   }
 
   protected createEventList() {
-    return super.createEventList().concat([MultiLevelCompositeColumn.EVENT_COLLAPSE_CHANGED]);
+    return super.createEventList().concat([MultiLevelCompositeColumn.EVENT_COLLAPSE_CHANGED, MultiLevelCompositeColumn.EVENT_MULTI_LEVEL_CHANGED]);
   }
 
   setCollapsed(value: boolean) {
@@ -47,7 +50,7 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
     return r;
   }
 
-  restore(dump: any, factory: (dump: any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column | null) {
     this.collapsed = dump.collapsed === true;
     super.restore(dump, factory);
   }
@@ -62,7 +65,7 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
    * @param index
    */
   insert(col: Column, index: number) {
-    col.on(Column.EVENT_WIDTH_CHANGED + '.stack', this.adaptChange);
+    col.on(`${Column.EVENT_WIDTH_CHANGED}.stack`, this.adaptChange);
     //increase my width
     super.setWidth(this.length === 0 ? col.getWidth() : (this.getWidth() + col.getWidth()));
 
@@ -75,31 +78,45 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
    * @param newValue
    */
   private adaptWidthChange(oldValue: number, newValue: number) {
-    if (oldValue === newValue) {
+    if (similar(oldValue, newValue, 0.5)) {
       return;
     }
-    super.setWidth(this.getWidth() + (newValue - oldValue));
+    const act = this.getWidth();
+    const next = act + (newValue - oldValue);
+    this.fire([MultiLevelCompositeColumn.EVENT_MULTI_LEVEL_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY], act, next);
+    super.setWidth(next);
   }
 
-  removeImpl(child: Column) {
-    child.on(Column.EVENT_WIDTH_CHANGED + '.stack', null);
+  removeImpl(child: Column, index: number) {
+    child.on(`${Column.EVENT_WIDTH_CHANGED}.stack`, null);
     super.setWidth(this.length === 0 ? 100 : this.getWidth() - child.getWidth());
-    return super.removeImpl(child);
+    return super.removeImpl(child, index);
   }
 
   setWidth(value: number) {
-    const factor = this.length / this.getWidth();
+    const act = this.getWidth();
+    const factor = value / act;
     this._children.forEach((child) => {
       //disable since we change it
       child.setWidthImpl(child.getWidth() * factor);
     });
+    if (!similar(act, value, 0.5)) {
+      this.fire([MultiLevelCompositeColumn.EVENT_MULTI_LEVEL_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY], act, value);
+    }
     super.setWidth(value);
   }
 
-  getrendererType() {
+  getRendererType() {
     if (this.getCollapsed()) {
       return MultiLevelCompositeColumn.EVENT_COLLAPSE_CHANGED;
     }
     return super.getRendererType();
+  }
+
+  isMissing(row: any, index: number) {
+    if (this.getCollapsed()) {
+      return this._children.some((c) => (isNumberColumn(c) || isMultiLevelColumn(c)) && c.isMissing(row, index));
+    }
+    return false;
   }
 }

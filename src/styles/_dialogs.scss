@@ -1,88 +1,137 @@
 /**
   popups, e.g., rename dialogs,...
  */
+@import 'vars';
 
-.lu-popup {
-  position: absolute;
-  dominant-baseline: central;
-  text-anchor: middle;
+@at-root {
+  @keyframes dialogs-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 
-  .ok {
+  .#{$lu_css_prefix}-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 8;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+
+    > .#{$lu_css_prefix}-backdrop-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.1);
+      animation: dialogs-fade-in 0.2s;
+    }
+  }
+
+  .#{$lu_css_prefix}-popup {
     position: absolute;
-    right: 10px;
-  }
-}
+    dominant-baseline: central;
+    text-anchor: middle;
 
-.lu-popup,
-.lu-popup2 {
-  background-color: rgba(255, 255, 255, 0.9);
-  position: absolute;
-  padding: 2px;
-  box-shadow: 5px 5px 3px #888;
-  z-index: 9;
-  font-size: 8pt;
-  clear: right;
-
-  input {
-    font-size: 8pt;
+    .ok {
+      position: absolute;
+      right: 10px;
+    }
   }
 
-  .selectionTable {
-    background: white;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 50vh;
+  .#{$lu_css_prefix}-popup,
+  .#{$lu_css_prefix}-popup2 {
+    background-color: white;
+    border: 1px solid black;
+    position: absolute;
+    padding: 5px;
+    z-index: 9;
+    font-size: $lu_dialog_font_size;
+    clear: right;
+    animation: dialogs-fade-in 0.4s;
 
-    td,
-    th {
-      white-space: nowrap;
-      padding: 1px 5px 1px 3px;
+    form {
+      display: block;
+    }
+
+    label {
+      font-weight: normal;
+    }
+
+    input {
+      font-size: 8pt;
+    }
+
+    .selectionTable {
+      background: white;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 50vh;
+
+      td,
+      th {
+        white-space: nowrap;
+        padding: 1px 5px 1px 3px;
+        cursor: pointer;
+      }
+
+      th {
+        border-bottom: #c1c1c1 1px solid;
+      }
+
+      table {
+        width: 95%;
+        border: 0;
+      }
+
+      tr:hover {
+        background-color: lightblue;
+      }
+    }
+
+    .lu-popup-title {
       cursor: pointer;
+      cursor: -webkit-grab;
     }
 
-    th {
-      border-bottom: #c1c1c1 1px solid;
+    .script-description {
+      font-size: 120%;
+      max-width: 50em;
+
+      dl {
+        padding: 1em 0.2em;
+
+        dd {
+          padding-left: 1em;
+        }
+      }
     }
 
-    table {
-      width: 95%;
-      border: 0;
+    .lu-sub-nested {
+      width: 100px;
     }
 
-    tr:hover {
-      background-color: lightblue;
-    }
-  }
-
-  .lu-popup-title {
-    cursor: pointer;
-    cursor: -webkit-grab;
-  }
-
-  .script-description {
-    font-size: 120%;
-    max-width: 50em;
-
-    dl {
-      padding: 1em 0.2em;
-
-      dd {
-        padding-left: 1em;
+    &.lu-rename-dialog {
+      input {
+        width: 100%;
+        display: block;
       }
     }
   }
-}
 
-.lu-popup2 {
-  * {
-    margin: 0;
-  }
+  .#{$lu_css_prefix}-popup2 {
+    * {
+      margin: 0;
+    }
 
-  .ok {
-    float: right;
-  }
+    .ok {
+      float: right;
+    }
 
-  div.bar {
-    height: 1em;
+    div.bar {
+      height: 1em;
+      transition: width 0.5s ease;
+    }
   }
 }

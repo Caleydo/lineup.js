@@ -2,8 +2,7 @@
  * Created by sam on 04.11.2016.
  */
 
-import {max as d3max} from 'd3';
-import CompositeNumberColumn from './CompositeNumberColumn';
+import CompositeNumberColumn, {ICompositeNumberColumnDesc} from './CompositeNumberColumn';
 
 /**
  *  factory for creating a description creating a max column
@@ -13,10 +12,16 @@ import CompositeNumberColumn from './CompositeNumberColumn';
 export function createDesc(label: string = 'Max') {
   return {type: 'max', label};
 }
+
 /**
  * combines multiple columns by using the maximal value
  */
 export default class MaxColumn extends CompositeNumberColumn {
+
+  constructor(id: string, desc: ICompositeNumberColumnDesc) {
+    super(id, desc);
+    this.setDefaultRenderer('interleaving');
+  }
 
   getColor(row: any, index: number) {
     //compute the index of the maximal one
@@ -36,7 +41,7 @@ export default class MaxColumn extends CompositeNumberColumn {
   }
 
   protected compute(row: any, index: number) {
-    return d3max(this._children, (d) => d.getValue(row, index));
+    return Math.max(...this._children.map((d) => d.getValue(row, index)));
   }
 
   /**

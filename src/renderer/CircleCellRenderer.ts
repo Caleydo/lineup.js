@@ -1,59 +1,55 @@
 import ICellRendererFactory from './ICellRendererFactory';
 import Column from '../model/Column';
-import {INumberColumn} from '../model/NumberColumn';
-import {IDOMRenderContext, ICanvasRenderContext} from './RendererContexts';
-import {ISVGCellRenderer} from './IDOMCellRenderers';
+import {INumberColumn, isNumberColumn, isNumbersColumn} from '../model/INumberColumn';
+import {ICanvasRenderContext, IDOMRenderContext} from './RendererContexts';
 import {IDataRow} from '../provider/ADataProvider';
-import {attr, clipText} from '../utils';
+import {attr, clipText, setText} from '../utils';
 import ICanvasCellRenderer from './ICanvasCellRenderer';
-import {renderMissingValue} from './BarCellRenderer';
+import {renderMissingCanvas, renderMissingDOM} from './missing';
+import {colorOf, IImposer} from './impose';
 
 export default class CircleCellRenderer implements ICellRendererFactory {
+  readonly title = 'Proportional Symbol';
 
-  constructor(private readonly renderValue: boolean = false, private colorOf: (d: any, i: number, col: Column) => string = (d, i, col) => col.color) {
-    this.renderValue = renderValue;
+  canRender(col: Column, isGroup: boolean) {
+    return isNumberColumn(col) && !isGroup && !isNumbersColumn(col);
   }
 
-  createSVG(col: INumberColumn & Column, context: IDOMRenderContext): ISVGCellRenderer {
-    const padding = context.option('rowBarPadding', 1);
+  createDOM(col: INumberColumn & Column, _context: IDOMRenderContext, imposer?: IImposer) {
     return {
-      template: `<g class='bar'>
-          <circle class='${col.cssClass}' style='fill: ${col.color}'>
-            <title></title>
-          </circle>
-          <text class='number ${this.renderValue ? '' : 'hoverOnly'}' clip-path='url(#cp${context.idPrefix}clipCol${col.id})'></text>
-        </g>`,
-      update: (n: SVGElement, d: IDataRow, i: number) => {
-        const v = col.getValue(d.v, d.dataIndex);
-        attr(<SVGCircleElement>n.querySelector('circle'), {
-          cy: (context.rowHeight(i) / 2),
-          cx: (col.getWidth() / 2),
-          r: (context.rowHeight(i) / 2) * v
-        });
-        attr(<SVGTextElement>n.querySelector('text'), {}).textContent = col.getLabel(d.v, d.dataIndex);
+      template: `<div style="background: radial-gradient(circle closest-side, red 100%, transparent 100%)" title="">
+              <div class="lu-hover-only"></div>
+          </div>`,
+      update: (n: HTMLElement, d: IDataRow) => {
+        const v = col.getNumber(d.v, d.dataIndex);
+        const p = Math.round(v * 100);
+        const missing = renderMissingDOM(n, col, d);
+        attr(<HTMLElement>n, {}, {
+          background: missing ? null : `radial-gradient(circle closest-side, ${colorOf(col, d, imposer)} ${p}%, transparent ${p}%)`
+        },);
+        setText(n.firstElementChild!, col.getLabel(d.v, d.dataIndex));
       }
     };
   }
 
 
-  createCanvas(col: INumberColumn & Column, context: ICanvasRenderContext): ICanvasCellRenderer {
+  createCanvas(col: INumberColumn & Column, context: ICanvasRenderContext, imposer?: IImposer): ICanvasCellRenderer {
     return (ctx: CanvasRenderingContext2D, d: IDataRow, i: number) => {
-      if (col.isMissing(d.v, d.dataIndex)) {
-        renderMissingValue(ctx, col.getWidth(), context.rowHeight(i));
+      if (renderMissingCanvas(ctx, col, d, context.rowHeight(i))) {
         return;
       }
-      const value = col.getValue(d.v, d.dataIndex);
+
+      const value = col.getNumber(d.v, d.dataIndex);
       const posy = (context.rowHeight(i) / 2);
-      const posx = (col.getWidth() / 2);
-      ctx.fillStyle = this.colorOf(d.v, i, col);
-      ctx.strokeStyle = this.colorOf(d.v, i, col);
+      const posx = (context.colWidth(col) / 2);
+      ctx.strokeStyle = ctx.fillStyle = colorOf(col, d, imposer) || Column.DEFAULT_COLOR;
       ctx.beginPath();
       ctx.arc(posx, posy, (context.rowHeight(i) / 2) * value, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
-      if (this.renderValue || context.hovered(d.dataIndex) || context.selected(d.dataIndex)) {
+      if (context.hovered(d.dataIndex) || context.selected(d.dataIndex)) {
         ctx.fillStyle = context.option('style.text', 'black');
-        clipText(ctx, col.getLabel(d.v, d.dataIndex), 1, 0, col.getWidth() - 1, context.textHints);
+        clipText(ctx, col.getLabel(d.v, d.dataIndex), 1, 0, context.colWidth(col) - 1, context.textHints);
       }
     };
   }

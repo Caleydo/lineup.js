@@ -1,0 +1,30 @@
+@import '../vars';
+
+[data-agg=group] [data-renderer=categorical],
+[data-renderer=histogram] {
+  display: flex;
+  font-size: x-small;
+
+  > * {
+    flex: 1 1 auto;
+    position: relative;
+    margin: 0 1px;
+
+    > div {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 0;
+      width: 100%;
+      transition: height 0.5s linear;
+    }
+
+    > .#{$lu_css_prefix}-selected {
+      background-color: $lu_selected_color;
+    }
+  }
+
+  &.#{$lu_css_prefix}-dense > * {
+    margin: 0;
+  }
+}

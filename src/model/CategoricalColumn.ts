@@ -2,92 +2,26 @@
  * Created by sam on 04.11.2016.
  */
 
-import {ascending, scale} from 'd3';
-import Column, {IColumnDesc} from './Column';
-import ValueColumn,{IValueColumnDesc} from './ValueColumn';
+import {scale} from 'd3';
+import Column from './Column';
+import ValueColumn from './ValueColumn';
 import StringColumn from './StringColumn';
-
-export interface ICategoricalColumn {
-  readonly categories: string[];
-  readonly categoryLabels: string[];
-
-  getCategories(row: any, index: number): string[];
-}
-
-export interface ICategory {
-  name: string;
-
-  /**
-   * optional label of this category (the one to render)
-   */
-  label?: string;
-  /**
-   * associated value with this category
-   */
-  value?: any;
-  /**
-   * category color
-   * @default next in d3 color 10 range
-   */
-  color?: string;
-}
-
-export interface IBaseCategoricalDesc {
-  /**
-   * separator to split  multi value
-   * @defualt ;
-   */
-  separator?: string;
-
-  categories: (string|ICategory)[];
-}
-
-export declare type ICategoricalDesc = IValueColumnDesc<string> & IBaseCategoricalDesc;
-
-/**
- * checks whether the given column or description is a categorical column, i.e. the value is a list of categories
- * @param col
- * @returns {boolean}
- */
-export function isCategoricalColumn(col: Column|IColumnDesc) {
-  return (col instanceof Column && typeof (<any>col).getCategories === 'function' || (!(col instanceof Column) && (<IColumnDesc>col).type.match(/(categorical|ordinal)/) != null));
-}
-
-export interface ICategoricalFilter {
-  filter: string[]|string|RegExp;
-  filterMissing: boolean;
-}
+import {FIRST_IS_NAN, missingGroup} from './missing';
+import {
+  IBaseCategoricalDesc, ICategoricalColumn, ICategoricalDesc, ICategoricalFilter,
+  isEqualFilter,
+} from './ICategoricalColumn';
 
 export function isEmptyFilter(f: ICategoricalFilter) {
   return f === null || (!f.filterMissing && (f.filter === null || f.filter === '' || (Array.isArray(f.filter) && f.filter.length === 0)));
 }
 
-function isEqualFilter(a: ICategoricalFilter, b: ICategoricalFilter) {
-  if (a === b) {
-    return true;
-  }
-  if (a === null || b === null) {
-    return isEmptyFilter(a) === isEmptyFilter(b);
-  }
-  if (a.filterMissing !== b.filterMissing || (typeof a.filter !== typeof b.filter)) {
-    return false;
-  }
-  if (Array.isArray(a.filter)) {
-    return arrayEquals(<string[]>a.filter, <string[]>b.filter);
-  }
-  return String(a.filter) === String(b.filter);
-}
 
-function arrayEquals<T>(a: T[], b: T[]) {
-  const al = a != null ? a.length : 0;
-  const bl = b != null ? b.length : 0;
-  if (al !== bl) {
-    return false;
-  }
-  if (al === 0) {
-    return true;
-  }
-  return a.every((ai, i) => ai === b[i]);
+function colorPool() {
+  // dark, bright, and repeat
+  const colors = scale.category10().range().concat(scale.category20().range().filter((_d,i) => i % 2 === 1));
+  let act = 0;
+  return () => colors[(act ++) % colors.length];
 }
 
 /**
@@ -111,7 +45,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
    * @type {null}
    * @private
    */
-  private currentFilter: ICategoricalFilter = null;
+  private currentFilter: ICategoricalFilter | null = null;
 
   /**
    * split multiple categories
@@ -127,30 +61,35 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
   initCategories(desc: IBaseCategoricalDesc) {
-    if (desc.categories) {
-      const cats = [],
-        cols = this.colors.range().slice(), //work on a copy since it will be manipulated
-        labels = new Map<string, string>();
-      desc.categories.forEach((cat, i) => {
-        if (typeof cat === 'string') {
-          //just the category value
-          cats.push(cat);
-        } else {
-          //the name or value of the category
-          cats.push(cat.name || cat.value);
-          //optional label mapping
-          if (cat.label) {
-            labels.set(cat.name, cat.label);
-          }
-          //optional color
-          if (cat.color) {
-            cols[i] = cat.color;
-          }
-        }
-      });
-      this.catLabels = labels;
-      this.colors.domain(cats).range(cols);
+    if (!desc.categories) {
+      return;
     }
+    const nextColor = colorPool();
+    const cats: string[] = [];
+    const colors: string[] = [];
+    const labels = new Map<string, string>();
+    desc.categories.forEach((cat) => {
+      if (typeof cat === 'string') {
+        //just the category value
+        cats.push(cat);
+        colors.push(nextColor());
+        return;
+      }
+      //the name or value of the category
+      cats.push(cat.name || cat.value);
+      //optional label mapping
+      if (cat.label) {
+        labels.set(cat.name, cat.label);
+      }
+      //optional color
+      if (cat.color) {
+        colors.push(cat.color);
+      } else {
+        colors.push(nextColor());
+      }
+    });
+    this.catLabels = labels;
+    this.colors.domain(cats).range(colors);
   }
 
   get categories() {
@@ -167,17 +106,13 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
       return this.categories;
     }
     //label or identity mapping
-    return this.categories.map((c) => this.catLabels.has(c) ? this.catLabels.get(c) : c);
-  }
-
-  colorOf(cat: string) {
-    return this.colors(cat);
+    return this.categories.map((c) => this.catLabels.has(c) ? this.catLabels.get(c)! : c);
   }
 
   getLabel(row: any, index: number) {
     //no mapping
     if (this.catLabels === null || this.catLabels.size === 0) {
-      return '' + StringColumn.prototype.getValue.call(this, row, index);
+      return StringColumn.prototype.getValue.call(this, row, index);
     }
     return this.getLabels(row, index).join(this.separator);
   }
@@ -186,7 +121,6 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     const l = this.getLabels(row, index);
     return l.length > 0 ? l[0] : null;
   }
-
 
   getLabels(row: any, index: number) {
     const v = StringColumn.prototype.getValue.call(this, row, index);
@@ -206,9 +140,14 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     return r.length > 0 ? r[0] : null;
   }
 
-  getValues(row: any, index: number) {
+  getValues(row: any, index: number): string[] {
     const v = StringColumn.prototype.getValue.call(this, row, index);
     return v ? v.split(this.separator) : [];
+  }
+
+  isMissing(row: any, index: number) {
+    const v = this.getValues(row, index);
+    return !v || v.length === 0;
   }
 
   getCategories(row: any, index: number) {
@@ -241,7 +180,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     return r;
   }
 
-  restore(dump: any, factory: (dump: any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column | null) {
     super.restore(dump, factory);
     if ('filter' in dump) {
       const bak = dump.filter;
@@ -258,7 +197,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     }
     if (Array.isArray(dump.labels)) {
       this.catLabels = new Map<string, string>();
-      dump.labels.forEach((e) => this.catLabels.set(e.key, e.value));
+      dump.labels.forEach((e: { key: string, value: string }) => this.catLabels.set(e.key, e.value));
     }
     this.separator = dump.separator || this.separator;
   }
@@ -267,34 +206,44 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     return this.currentFilter != null;
   }
 
+  static filter(filter: ICategoricalFilter | null, category: string) {
+    if (!filter) {
+      return true;
+    }
+    if (category == null && filter.filterMissing) {
+      return false;
+    }
+    const filterObj = filter.filter;
+    if (Array.isArray(filterObj)) { //array mode
+      return filterObj.indexOf(category) >= 0;
+    }
+    if (typeof filterObj === 'string' && filterObj.length > 0) { //search mode
+      return category != null && category.toLowerCase().indexOf(filterObj.toLowerCase()) >= 0;
+    }
+    if (filterObj instanceof RegExp) { //regex match mode
+      return category != null && filterObj.test(category);
+    }
+    return true;
+  }
+
   filter(row: any, index: number): boolean {
     if (!this.isFiltered()) {
       return true;
     }
-    const vs = this.getCategories(row, index),
-      filter = this.currentFilter.filter;
+    const vs = this.getCategories(row, index);
 
-    if (this.currentFilter.filterMissing && vs.length === 0) {
+    if (this.currentFilter!.filterMissing && vs.length === 0) {
       return false;
     }
 
-    return vs.every((v) => {
-      if (Array.isArray(filter) && filter.length > 0) { //array mode
-        return filter.indexOf(v) >= 0;
-      } else if (typeof filter === 'string' && filter.length > 0) { //search mode
-        return v && v.toLowerCase().indexOf(filter.toLowerCase()) >= 0;
-      } else if (filter instanceof RegExp) { //regex match mode
-        return v != null && v.match(filter).length > 0;
-      }
-      return true;
-    });
+    return vs.every((v) => CategoricalColumn.filter(this.currentFilter, v));
   }
 
   getFilter() {
     return this.currentFilter;
   }
 
-  setFilter(filter: ICategoricalFilter) {
+  setFilter(filter: ICategoricalFilter | null) {
     if (isEqualFilter(this.currentFilter, filter)) {
       return;
     }
@@ -304,14 +253,42 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   compare(a: any, b: any, aIndex: number, bIndex: number) {
     const va = this.getValues(a, aIndex);
     const vb = this.getValues(b, bIndex);
+    if (va.length === 0) {
+      // missing
+      return vb.length === 0 ? 0 : FIRST_IS_NAN;
+    }
+    if (vb.length === 0) {
+      return FIRST_IS_NAN * -1;
+    }
     //check all categories
     for (let i = 0; i < Math.min(va.length, vb.length); ++i) {
-      const ci = ascending(va[i], vb[i]);
+      const ci = va[i].localeCompare(vb[i]);
       if (ci !== 0) {
         return ci;
       }
     }
     //smaller length wins
     return va.length - vb.length;
+  }
+
+  group(row: any, index: number) {
+    if (this.isMissing(row, index)) {
+      return missingGroup;
+    }
+    const name = this.getValue(row, index);
+    if (!name) {
+      return super.group(row, index);
+    }
+    const color = this.getColor(row, index)!;
+    return {name, color};
+  }
+
+  getGroupRenderer() {
+    const current = super.getGroupRenderer();
+    if (current === this.desc.type && this.isGroupedBy() >= 0) {
+      // still the default and the stratification criteria
+      return 'catdistributionbar';
+    }
+    return current;
   }
 }

@@ -1,0 +1,48 @@
+
+[data-agg=detail] [data-renderer=categorical],
+[data-agg=detail] [data-renderer=heatmap],
+[data-agg=group] [data-renderer=heatmap] > div {
+  display: flex;
+  white-space: nowrap;
+
+  :first-child {
+    flex: 0 0 16px;
+    line-height: 100%;
+    margin-right: 0.5em;
+
+    /* border-radius: 8px; */
+  }
+
+  :last-child {
+    width: 0; // set 0 width for firefox to have proper ...
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+[data-agg=group] [data-renderer=heatmap] {
+  display: flex;
+  align-items: center;
+
+  > div {
+    width: 100%;
+  }
+}
+
+[data-agg=group] [data-renderer=catcolor],
+[data-agg=group] [data-renderer=catcolorshifted] {
+  /* center the text for the renderer "Most Frequent Category Color" */
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+
+  > div {
+    position: absolute;
+    height: 100%;
+  }
+
+  > span {
+    z-index: 1;
+  }
+}

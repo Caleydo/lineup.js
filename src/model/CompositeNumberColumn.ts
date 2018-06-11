@@ -5,8 +5,9 @@
 import {format} from 'd3';
 import Column, {IColumnDesc} from './Column';
 import CompositeColumn from './CompositeColumn';
-import NumberColumn, {INumberColumn, numberCompare, isMissingValue} from './NumberColumn';
-
+import NumberColumn, {INumberColumn} from './NumberColumn';
+import {isMissingValue} from './missing';
+import {IGroupData} from '../ui/engine/interfaces';
 
 export interface ICompositeNumberDesc extends IColumnDesc {
   /**
@@ -21,6 +22,9 @@ export interface ICompositeNumberDesc extends IColumnDesc {
    */
   missingValue?: number;
 }
+
+export declare type ICompositeNumberColumnDesc = ICompositeNumberDesc & IColumnDesc;
+
 /**
  * implementation of a combine column, standard operations how to select
  */
@@ -29,7 +33,7 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
 
   private numberFormat: (n: number) => string = format('.3n');
 
-  constructor(id: string, desc: ICompositeNumberDesc) {
+  constructor(id: string, desc: ICompositeNumberColumnDesc) {
     super(id, desc);
 
     if (desc.numberFormat) {
@@ -39,6 +43,9 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
     if (desc.missingValue !== undefined) {
       this.missingValue = desc.missingValue;
     }
+
+    this.setDefaultRenderer('interleaving');
+    this.setDefaultGroupRenderer('interleaving');
   }
 
 
@@ -48,7 +55,7 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
     return r;
   }
 
-  restore(dump: any, factory: (dump: any) => Column) {
+  restore(dump: any, factory: (dump: any) => Column | null) {
     if (dump.missingValue !== undefined) {
       this.missingValue = dump.missingValue;
     }
@@ -64,7 +71,7 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
     }
     const v = this.getValue(row, index);
     //keep non number if it is not a number else convert using formatter
-    return '' + (typeof v === 'number' ? this.numberFormat(v) : v);
+    return String(typeof v === 'number' && !isNaN(v) && isFinite(v) ? this.numberFormat(v) : v);
   }
 
   getValue(row: any, index: number) {
@@ -79,12 +86,13 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
     return v;
   }
 
-  protected compute(row: any, index: number) {
+  protected compute(_row: any, _index: number) {
     return NaN;
   }
 
   getNumber(row: any, index: number) {
-    return this.getValue(row, index);
+    const r = this.getValue(row, index);
+    return r === null ? NaN : r;
   }
 
   getRawNumber(row: any, index: number) {
@@ -96,7 +104,11 @@ export default class CompositeNumberColumn extends CompositeColumn implements IN
   }
 
   compare(a: any, b: any, aIndex: number, bIndex: number) {
-    return numberCompare(this.getValue(a, aIndex), this.getValue(b, bIndex));
+    return NumberColumn.prototype.compare.call(this, a, b, aIndex, bIndex);
+  }
+
+  groupCompare(a: IGroupData, b: IGroupData) {
+    return NumberColumn.prototype.groupCompare.call(this, a, b);
   }
 
   getRendererType(): string {

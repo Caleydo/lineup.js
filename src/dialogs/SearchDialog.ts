@@ -1,54 +1,60 @@
 import Column from '../model/Column';
 import ADialog from './ADialog';
-import DataProvider from '../provider/ADataProvider';
-import * as d3 from 'd3';
-
+import {IDataProvider} from '../provider/ADataProvider';
 
 export default class SearchDialog extends ADialog {
 
   /**
    * opens a search dialog for the given column
    * @param column the column to rename
-   * @param $header the visual header element of this column
+   * @param header the visual header element of this column
    * @param provider the data provider for the actual search
    * @param title optional title
    */
-  constructor(private readonly column: Column, $header: d3.Selection<Column>, private readonly provider: DataProvider, title: string = 'Search') {
-    super($header, title);
+  constructor(private readonly column: Column, header: HTMLElement, private readonly provider: IDataProvider, title = 'Search') {
+    super(header, title);
   }
 
-  openDialog() {
-    const popup = this.makePopup('<input type="text" size="15" value="" required="required" autofocus="autofocus"><br><label><input type="checkbox">RegExp</label><br>');
+  protected build():HTMLElement {
+    const popup = this.makePopup('<input type="text" size="15" value="" required autofocus placeholder="search..."><br><label><input type="checkbox">RegExp</label><br>');
 
-    popup.select('input[type="text"]').on('input', () => {
-      const target = (<Event>d3.event).target;
-      let search: any = (<HTMLInputElement>target).value;
-      if (search.length >= 3) {
-        const isRegex = popup.select('input[type="checkbox"]').property('checked');
-        if (isRegex) {
-          search = new RegExp(search);
-        }
-        this.provider.searchAndJump(search, this.column);
+    const input = <HTMLInputElement>popup.querySelector('input[type="text"]')!;
+    const checkbox = <HTMLInputElement>popup.querySelector('input[type="checkbox"]')!;
+    input.addEventListener('input', () => {
+      let search: any = input.value;
+      if (search.length < 3) {
+        return;
       }
+      const isRegex = checkbox.checked;
+      if (isRegex) {
+        search = new RegExp(search);
+      }
+      this.provider.searchAndJump(search, this.column);
     });
 
     const updateImpl = () => {
-      let search = popup.select('input[type="text"]').property('value');
-      const isRegex = popup.select('input[type="text"]').property('checked');
-      if (search.length > 0) {
-        if (isRegex) {
-          search = new RegExp(search);
-        }
-        this.provider.searchAndJump(search, this.column);
+      let search: string|RegExp = input.value;
+      const isRegex = checkbox.checked;
+      if (search.length === 0) {
+        return;
       }
-      popup.remove();
+      if (isRegex) {
+        search = new RegExp(search);
+      }
+      this.provider.searchAndJump(search, this.column);
     };
 
-    popup.select('input[type="checkbox"]').on('change', updateImpl);
-    popup.select('.ok').on('click', updateImpl);
+    checkbox.addEventListener('change', updateImpl);
 
-    popup.select('.cancel').on('click', function () {
-      popup.remove();
+    this.onButton(popup, {
+      cancel: () => undefined,
+      reset: () => undefined,
+      submit: () => {
+        updateImpl();
+        return true;
+      }
     });
+
+    return popup;
   }
 }
