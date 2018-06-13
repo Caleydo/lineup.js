@@ -50,6 +50,13 @@ export interface IStyleColumn {
 }
 
 
+export enum EGuessedState {
+  UNKNOWN,
+  GUESSED,
+  CHECKED
+}
+
+
 export interface IColumnDesc extends Partial<IStyleColumn> {
   /**
    * label of the column
@@ -59,6 +66,10 @@ export interface IColumnDesc extends Partial<IStyleColumn> {
    * the column type
    */
   type: string;
+  /**
+   * flag if column type was guessed
+   */
+  readonly guessed?: EGuessedState;
 }
 
 

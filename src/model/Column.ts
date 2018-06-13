@@ -1,12 +1,12 @@
 import AEventDispatcher from '../internal/AEventDispatcher';
-import {similar} from '../internal/math';
-import {fixCSS} from '../internal/utils';
-import {defaultGroup} from './Group';
-import {IColumnDesc, IDataRow, IGroup, IGroupData} from './interfaces';
-import {isMissingValue} from './missing';
-import Ranking, {ISortCriteria} from './Ranking';
+import { similar } from '../internal/math';
+import { fixCSS } from '../internal/utils';
+import { defaultGroup } from './Group';
+import { IColumnDesc, IDataRow, IGroup, IGroupData, EGuessedState } from './interfaces';
+import { isMissingValue } from './missing';
+import Ranking, { ISortCriteria } from './Ranking';
 
-export {IColumnDesc} from './interfaces';
+export { IColumnDesc } from './interfaces';
 
 export interface IFlatColumn {
   readonly col: Column;
@@ -37,22 +37,10 @@ export interface IColumnParent {
 
 }
 
-
-
-  /**
-   * flag if column type was guessed
-   */
-  readonly guessed?: EGuessedState;
 export interface IColumnMetaData {
   label: string;
   description: string;
   color: string | null;
-}
-
-export enum EGuessedState {
-  UNKNOWN,
-  GUESSED,
-  CHECKED
 }
 
 /**
@@ -188,9 +176,9 @@ export default class Column extends AEventDispatcher {
    */
   protected createEventList() {
     return super.createEventList().concat([Column.EVENT_WIDTH_CHANGED, Column.EVENT_FILTER_CHANGED,
-      Column.EVENT_LABEL_CHANGED, Column.EVENT_METADATA_CHANGED, Column.EVENT_VISIBILITY_CHANGED, Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED,
-      Column.EVENT_ADD_COLUMN, Column.EVENT_REMOVE_COLUMN, Column.EVENT_RENDERER_TYPE_CHANGED, Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, Column.EVENT_SORTMETHOD_CHANGED, Column.EVENT_MOVE_COLUMN,
-      Column.EVENT_DIRTY, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_GROUPING_CHANGED, Column.EVENT_DATA_LOADED]);
+    Column.EVENT_LABEL_CHANGED, Column.EVENT_METADATA_CHANGED, Column.EVENT_VISIBILITY_CHANGED, Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED,
+    Column.EVENT_ADD_COLUMN, Column.EVENT_REMOVE_COLUMN, Column.EVENT_RENDERER_TYPE_CHANGED, Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, Column.EVENT_SORTMETHOD_CHANGED, Column.EVENT_MOVE_COLUMN,
+    Column.EVENT_DIRTY, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_GROUPING_CHANGED, Column.EVENT_DATA_LOADED]);
   }
 
   getWidth() {
@@ -230,7 +218,7 @@ export default class Column extends AEventDispatcher {
    */
   flatten(r: IFlatColumn[], offset: number, _levelsToGo = 0, _padding = 0): number {
     const w = this.getWidth();
-    r.push({col: this, offset, width: w});
+    r.push({ col: this, offset, width: w });
     return w;
   }
 
@@ -315,12 +303,12 @@ export default class Column extends AEventDispatcher {
   private isSortedByMeImpl(selector: ((r: Ranking) => ISortCriteria[])): { asc: 'asc' | 'desc' | undefined, priority: string | undefined } {
     const ranker = this.findMyRanker();
     if (!ranker) {
-      return {asc: undefined, priority: undefined};
+      return { asc: undefined, priority: undefined };
     }
     const criterias = selector(ranker);
     const index = criterias.findIndex((c) => c.col === this);
     if (index < 0) {
-      return {asc: undefined, priority: undefined};
+      return { asc: undefined, priority: undefined };
     }
     return {
       asc: criterias[index].asc ? 'asc' : 'desc',
