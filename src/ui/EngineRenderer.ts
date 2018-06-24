@@ -16,6 +16,8 @@ import EngineRanking, {IEngineRankingContext} from './EngineRanking';
 import {IRankingHeaderContext, IRankingHeaderContextContainer} from './interfaces';
 import SlopeGraph, {EMode} from './SlopeGraph';
 import DialogManager from './dialogs/DialogManager';
+import {default as CanvasTextureRenderer, ITextureRenderer} from './CanvasTextureRenderer';
+import * as d3 from 'd3-selection';
 
 
 export default class EngineRenderer extends AEventDispatcher {
@@ -37,6 +39,8 @@ export default class EngineRenderer extends AEventDispatcher {
   readonly idPrefix = `lu${Math.random().toString(36).slice(-8).substr(0, 3)}`; //generate a random string with length3;
 
   private enabledHighlightListening: boolean = false;
+  public useTextureRenderer: boolean = false;
+  private textureRenderer: ITextureRenderer;
 
   constructor(protected data: ADataProvider, parent: HTMLElement, options: Readonly<ILineUpOptions>) {
     super();
@@ -132,6 +136,8 @@ export default class EngineRenderer extends AEventDispatcher {
            transform: rotate(${-this.options.labelRotation}deg);
        }`);
     }
+
+    this.textureRenderer = new CanvasTextureRenderer(this.node);
 
     this.initProvider(data);
   }
@@ -316,45 +322,55 @@ export default class EngineRenderer extends AEventDispatcher {
       this.updateHist();
     }
 
-    const round2 = (v: number) => round(v, 2);
-    const rowPadding = round2(this.zoomFactor * this.options.rowPadding!);
-    const groupPadding = round2(this.zoomFactor * this.options.groupPadding!);
+    if (this.useTextureRenderer) {
+      this.hide();
+      this.textureRenderer.show();
+      this.textureRenderer.update(rankings, localData);
 
-    const heightsFor = (ranking: Ranking, data: (IGroupItem | IGroupData)[]) => {
-      if (this.options.dynamicHeight) {
-        const impl = this.options.dynamicHeight(data, ranking);
-        const f = (v: number | any, d: any) => typeof v === 'number' ? v : v(d);
-        if (impl) {
-          return {
-            defaultHeight: round2(this.zoomFactor * impl.defaultHeight),
-            height: (d: IGroupItem | IGroupData) => round2(this.zoomFactor * f(impl.height, d)),
-            padding: (d: IGroupItem | IGroupData) => round2(this.zoomFactor * f(impl.padding, d)),
-          };
+    } else {
+      this.textureRenderer.hide();
+      this.show();
+
+      const round2 = (v: number) => round(v, 2);
+      const rowPadding = round2(this.zoomFactor * this.options.rowPadding!);
+      const groupPadding = round2(this.zoomFactor * this.options.groupPadding!);
+
+      const heightsFor = (ranking: Ranking, data: (IGroupItem | IGroupData)[]) => {
+        if (this.options.dynamicHeight) {
+          const impl = this.options.dynamicHeight(data, ranking);
+          const f = (v: number | any, d: any) => typeof v === 'number' ? v : v(d);
+          if (impl) {
+            return {
+              defaultHeight: round2(this.zoomFactor * impl.defaultHeight),
+              height: (d: IGroupItem | IGroupData) => round2(this.zoomFactor * f(impl.height, d)),
+              padding: (d: IGroupItem | IGroupData) => round2(this.zoomFactor * f(impl.padding, d)),
+            };
+          }
         }
-      }
-      const item = round2(this.zoomFactor * this.options.rowHeight!);
-      const group = round2(this.zoomFactor * this.options.groupHeight!);
-      return {
-        defaultHeight: item,
-        height: (d: IGroupItem | IGroupData) => isGroup(d) ? group : item,
-        padding: rowPadding
+        const item = round2(this.zoomFactor * this.options.rowHeight!);
+        const group = round2(this.zoomFactor * this.options.groupHeight!);
+        return {
+          defaultHeight: item,
+          height: (d: IGroupItem | IGroupData) => isGroup(d) ? group : item,
+          padding: rowPadding
+        };
       };
-    };
 
-    rankings.forEach((r, i) => {
-      const grouped = r.groupData(localData[i]);
+      rankings.forEach((r, i) => {
+        const grouped = r.groupData(localData[i]);
 
-      const {height, defaultHeight, padding} = heightsFor(r.ranking, grouped);
+        const {height, defaultHeight, padding} = heightsFor(r.ranking, grouped);
 
-      const rowContext = nonUniformContext(grouped.map(height), defaultHeight, (index) => {
-        const pad = (typeof padding === 'number' ? padding : padding(grouped[index] || null));
-        if (index >= 0 && grouped[index] && (isGroup(grouped[index]) || (<IGroupItem>grouped[index]).meta === 'last' || (<IGroupItem>grouped[index]).meta === 'first last')) {
-          return groupPadding + pad;
-        }
-        return pad;
+        const rowContext = nonUniformContext(grouped.map(height), defaultHeight, (index) => {
+          const pad = (typeof padding === 'number' ? padding : padding(grouped[index] || null));
+          if (index >= 0 && grouped[index] && (isGroup(grouped[index]) || (<IGroupItem>grouped[index]).meta === 'last' || (<IGroupItem>grouped[index]).meta === 'first last')) {
+            return groupPadding + pad;
+          }
+          return pad;
+        });
+        r.render(grouped, rowContext);
       });
-      r.render(grouped, rowContext);
-    });
+    }
 
     this.updateSlopeGraphs(rankings);
 
@@ -422,7 +438,16 @@ export default class EngineRenderer extends AEventDispatcher {
   destroy() {
     this.takeDownProvider();
     this.table.destroy();
+    this.textureRenderer.destroy();
     this.node.remove();
+  }
+
+  show() {
+    d3.select(this.node).select('main').style('display', null);
+  }
+
+  hide() {
+    d3.select(this.node).select('main').style('display', 'none');
   }
 }
 

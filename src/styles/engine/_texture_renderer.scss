@@ -1,0 +1,15 @@
+@import '../vars';
+
+##{$lu-css_prefix}-texture-container {
+  display: flex;
+  overflow-y: hidden;
+  overflow-x: auto;
+
+  img {
+    margin-right: 5px;
+
+    &.partOfComposite {
+      margin-right: 6px;
+    }
+  }
+}
