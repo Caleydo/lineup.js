@@ -22,7 +22,7 @@
       display: none;
     }
 
-    &[title^='Stratify'][data-priority],
+    &[title^='Group'][data-priority],
     &[title^='Sort'][data-priority] {
       padding-left: 10px;
 
@@ -43,7 +43,7 @@
       }
     }
 
-    &[title^='Stratify'][data-priority] {
+    &[title^='Group'][data-priority] {
       padding-left: 15px;
 
       &::after {
@@ -58,7 +58,7 @@
     @include lu_icons();
   }
 
-  &[title^='Rename + Color']::before {
+  &[title^='Rename']::before {
     content: $lu_icon_pencil_square_o;
   }
 
@@ -79,7 +79,8 @@
   }
 
   &[title^='Reduce by']::before,
-  &[title^='Edit Combine Script']::before {
+  &[title^='Edit Combine Script']::before,
+  &[title^='Customize']::before {
     content: $lu_icon_gears;
   }
 
@@ -95,7 +96,7 @@
     color: $lu_selected_color;
   }
 
-  &[title^='Stratify']::before {
+  &[title^='Group']::before {
     content: $lu_icon_columns;
     transform: rotate(-90deg);
     height: 14px;
@@ -110,7 +111,7 @@
   }
 
   &[title='Sort'][data-sort$='sc']::before,
-  &[title^='Stratify'][data-stratify='true']::before {
+  &[title^='Group'][data-group='true']::before {
     color: $lu_selected_color;
   }
 
@@ -142,8 +143,12 @@
     content: $lu_icon_compress;
   }
 
-  &[title='Remove']::before {
+  &[title^='Remove']::before {
     content: $lu_icon_trash;
+  }
+
+  &[title^='Choose']::before {
+    content: $lu_icon_caret_down;
   }
 
   &[title^='More']::before {
@@ -153,9 +158,17 @@
   &[title^='Contained Columns']::before {
     content: $lu_icon_sitemap;
   }
+
+  &[title='Move Up']::before {
+    content: $lu_icon_up_open;
+  }
+
+  &[title='Move Down']::before {
+    content: $lu_icon_down_open;
+  }
 }
 
-.#{$lu_css_prefix}-header {
+.#{$lu_css_prefix} [data-col-id] {
   /* Override alphabetical sort icons */
   &[data-type='string'],
   &[data-type='categorical'],

@@ -1,4 +1,4 @@
-import AEventDispatcher from '../../internal/AEventDispatcher';
+import AEventDispatcher, {IEventListener} from '../../internal/AEventDispatcher';
 
 export interface IItem {
   id: string;
@@ -22,6 +22,12 @@ export interface ISearchBoxOptions<T extends IItem> {
   placeholder: string;
 }
 
+/**
+ * @asMemberOf SearchBox
+ * @event
+ */
+export declare function select(item: any): void;
+
 
 export default class SearchBox<T extends IItem> extends AEventDispatcher {
   static readonly EVENT_SELECT = 'select';
@@ -29,7 +35,7 @@ export default class SearchBox<T extends IItem> extends AEventDispatcher {
   private readonly options: Readonly<ISearchBoxOptions<T>> = {
     formatItem: (item) => item.text,
     doc: document,
-    placeholder: 'Select...'
+    placeholder: 'Select...',
   };
 
   readonly node: HTMLElement;
@@ -200,5 +206,10 @@ export default class SearchBox<T extends IItem> extends AEventDispatcher {
 
   protected createEventList() {
     return super.createEventList().concat([SearchBox.EVENT_SELECT]);
+  }
+
+  on(type: typeof SearchBox.EVENT_SELECT, listener: typeof select | null): this;
+  on(type: string | string[], listener: IEventListener | null): this {
+    return super.on(type, listener);
   }
 }

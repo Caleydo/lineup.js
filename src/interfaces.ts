@@ -2,12 +2,16 @@ import {IGroupData, IGroupItem} from './model';
 import Ranking from './model/Ranking';
 import {IDataProvider} from './provider';
 import {ICellRendererFactory} from './renderer';
-import {IToolbarAction} from './ui';
+import {IToolbarAction, IToolbarDialogAddon} from './ui';
 
 
-/** number of bins before switching to dense mode
+/**
+ * number of bins before switching to dense mode
  */
 export const DENSE_HISTOGRAM = 19;
+/**
+ * minimal witdh of a column to show the label in the header
+ */
 export const MIN_LABEL_WIDTH = 30;
 /**
  * number of milliseconds to wait before a hovered canvas row will be replaced with a DOM one
@@ -40,6 +44,9 @@ export interface IDynamicHeight {
 }
 
 export interface ILineUpFlags {
+  /**
+   * optimization flag to disable frozen columns for optimizing rendering performance
+   */
   disableFrozenColumns: boolean;
 }
 
@@ -69,6 +76,12 @@ export interface ILineUpOptions {
    * @default false
    */
   sidePanelCollapsed: boolean;
+  /**
+   * show the sorting and grouping hierarchy indicators in the side panel
+   * @default true
+   */
+  hierarchyIndicator: boolean;
+
   /**
    * option to specify the default slope graph mode
    * @default 'item'
@@ -123,9 +136,9 @@ export interface ILineUpOptions {
   customRowUpdate: (row: HTMLElement, rowIndex: number) => void;
 
   /**
-   * register custom toolbar actions
+   * register custom toolbar actions and dialog addons
    */
-  toolbar: {[key: string]: IToolbarAction};
+  toolbar: {[key: string]: IToolbarAction | IToolbarDialogAddon};
   /**
    * register custom renderer factories
    */

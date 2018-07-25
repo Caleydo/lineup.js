@@ -1,7 +1,7 @@
-import { getAllToolbarActions, isSupportType } from '../model/annotations';
+import {getAllToolbarActions, isSupportType, getAllToolbarDialogAddons, isSortingAscByDefault} from '../model/annotations';
 import Column from '../model/Column';
-import { default as CompositeColumn, IMultiLevelColumn } from '../model/CompositeColumn';
-import ADialog, { IDialogContext } from '../ui/dialogs/ADialog';
+import CompositeColumn, {IMultiLevelColumn} from '../model/CompositeColumn';
+import ADialog, {IDialogContext} from '../ui/dialogs/ADialog';
 import ChangeRendererDialog from '../ui/dialogs/ChangeRendererDialog';
 import MoreColumnOptionsDialog from '../ui/dialogs/MoreColumnOptionsDialog';
 import RenameDialog from '../ui/dialogs/RenameDialog';
@@ -15,21 +15,32 @@ import MappingsFilterDialog from './dialogs/MappingsFilterDialog';
 import ReduceDialog from './dialogs/ReduceDialog';
 import ScriptEditDialog from './dialogs/ScriptEditDialog';
 import SearchDialog from './dialogs/SearchDialog';
-import SortDateDialog from './dialogs/SortDateDialog';
-import SortDialog from './dialogs/SortDialog';
-import SortGroupDialog from './dialogs/SortGroupDialog';
-import StratifyThresholdDialog from './dialogs/StratifyThresholdDialog';
 import StringFilterDialog from './dialogs/StringFilterDialog';
 import WeightsEditDialog from './dialogs/WeightsEditDialog';
-import { IRankingHeaderContext } from './interfaces';
+import GroupDialog from './dialogs/GroupDialog';
+import {sortMethods} from './dialogs/utils';
+import {IRankingHeaderContext} from './interfaces';
+import SortDialog from './dialogs/SortDialog';
+import {EAdvancedSortMethod, ESortMethod} from '../model/INumberColumn';
+import {EDateSort} from '../model/DatesColumn';
+import appendNumber from './dialogs/groupNumber';
 
 export interface IUIOptions {
-  shortcut: boolean;
+  shortcut: boolean|'only';
   order: number;
 }
 
+export interface IMouseEvent {
+  stopPropagation(): void;
+  currentTarget: Element;
+  shiftKey: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  [key: string]: any;
+}
+
 export interface IOnClickHandler {
-  (col: Column, evt: { stopPropagation: () => void, currentTarget: Element, [key: string]: any }, ctx: IRankingHeaderContext, level: number): any;
+  (col: Column, evt: IMouseEvent, ctx: IRankingHeaderContext, level: number, viaShortcut: boolean): any;
 }
 
 export interface IToolbarAction {
@@ -40,6 +51,14 @@ export interface IToolbarAction {
   options: Partial<IUIOptions>;
 }
 
+export interface IToolbarDialogAddon {
+  title: string;
+
+  order: number;
+
+  append(col: Column, node: HTMLElement, dialog: IDialogContext, ctx: IRankingHeaderContext): void;
+}
+
 export interface IDialogClass {
   new(col: any, dialog: IDialogContext, ...args: any[]): ADialog;
 }
@@ -48,7 +67,7 @@ function ui(title: string, onClick: IOnClickHandler, options: Partial<IUIOptions
   return { title, onClick, options };
 }
 
-function dialogContext(ctx: IRankingHeaderContext, level: number, evt: { currentTarget: Element }): IDialogContext {
+export function dialogContext(ctx: IRankingHeaderContext, level: number, evt: { currentTarget: Element }): IDialogContext {
   return {
     attachment: <HTMLElement>evt.currentTarget,
     level,
@@ -67,15 +86,70 @@ function uiDialog(title: string, dialogClass: IDialogClass, extraArgs: ((ctx: IR
   };
 }
 
+function uiSortMethod(methods: string[]): IToolbarDialogAddon {
+  methods = methods.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  return {
+    title: 'Sort By',
+    order: 2,
+    append(col, node, dialog) {
+      sortMethods(node, <any>col, methods, dialog.idPrefix);
+    }
+  };
+}
+
 const sort: IToolbarAction = {
   title: 'Sort',
-  onClick: (col, _evt, ctx, level) => {
+  onClick: (col, evt, ctx, level) => {
     ctx.dialogManager.removeAboveLevel(level);
-    col.toggleMySorting();
+    if (!evt.ctrlKey) {
+      col.toggleMySorting();
+      return;
+    }
+    const ranking = col.findMyRanker()!;
+    const current = ranking.getSortCriteria();
+    const order = col.isSortedByMe();
+
+    const isAscByDefault = isSortingAscByDefault(col);
+
+    if (order.priority === undefined) {
+      ranking.sortBy(col, isAscByDefault, current.length);
+      return;
+    }
+    let next: string|undefined = undefined;
+    if (isAscByDefault) {
+      next = order.asc ? 'desc' : undefined;
+    } else {
+      next = !order.asc ? 'asc' : undefined;
+    }
+    ranking.sortBy(col, next === 'asc', next ? order.priority : -1);
   },
   options: {
-    shortcut: true,
+    shortcut: 'only',
     order: 1
+  }
+};
+
+const sortBy: IToolbarAction = {
+  title: 'Sort By &hellip;',
+  onClick: (col, evt, ctx, level) => {
+    const dialog = new SortDialog(col, false, dialogContext(ctx, level, evt), ctx);
+    dialog.open();
+  },
+  options: {
+    shortcut: false,
+    order: 1
+  }
+};
+
+const sortGroupBy: IToolbarAction = {
+  title: 'Sort Group By &hellip;',
+  onClick: (col, evt, ctx, level) => {
+    const dialog = new SortDialog(col, true, dialogContext(ctx, level, evt), ctx);
+    dialog.open();
+  },
+  options: {
+    shortcut: false,
+    order: 3
   }
 };
 
@@ -86,7 +160,7 @@ const rename: IToolbarAction = {
     dialog.open();
   },
   options: {
-    order: 3
+    order: 4
   }
 };
 
@@ -134,17 +208,31 @@ const remove: IToolbarAction = {
     }
     ctx.provider.removeRanking(ranking);
     ctx.provider.ensureOneRanking();
-    return;
   },
   options: {
     order: 90
   }
 };
 
-const stratify = ui('Stratify', (col, _evt, ctx, level) => {
+const group = ui('Group', (col, evt, ctx, level) => {
   ctx.dialogManager.removeAboveLevel(level);
-  col.groupByMe();
-}, { shortcut: true, order: 2 });
+
+  if (!evt.ctrlKey) {
+    col.groupByMe();
+    return;
+  }
+  const ranking = col.findMyRanker()!;
+  const current = ranking.getGroupCriteria();
+  const order = current.indexOf(col);
+
+  ranking.groupBy(col, order >= 0 ? -1 : current.length);
+}, { shortcut: 'only', order: 2 });
+
+const groupBy = ui('Group By &hellip;', (col, evt, ctx, level) => {
+  const dialog = new GroupDialog(col, dialogContext(ctx, level, evt), ctx);
+  dialog.open();
+}, { shortcut: false, order: 2 });
+
 
 const collapse = ui('Compress', (col, evt, ctx, level) => {
   ctx.dialogManager.removeAboveLevel(level);
@@ -154,24 +242,31 @@ const collapse = ui('Compress', (col, evt, ctx, level) => {
   i.title = mcol.getCollapsed() ? 'Expand' : 'Compress';
 });
 
-export const toolbarActions: { [key: string]: IToolbarAction } = {
-  stratify,
+const toolbarAddons: { [key: string]: IToolbarDialogAddon } = {
+  sortNumber: uiSortMethod(Object.keys(EAdvancedSortMethod)),
+  sortNumbers: uiSortMethod(Object.keys(EAdvancedSortMethod)),
+  sortBoxPlot: uiSortMethod(Object.keys(ESortMethod)),
+  sortDates: uiSortMethod(Object.keys(EDateSort)),
+  sortGroup: uiSortMethod(['count', 'name']),
+  groupNumber: <IToolbarDialogAddon>{
+    title: 'Split',
+    order: 2,
+    append: appendNumber
+  }
+};
+
+export const toolbarActions: { [key: string]: IToolbarAction | IToolbarDialogAddon } = Object.assign({
+  group,
+  groupBy,
   collapse,
   sort,
+  sortBy,
+  sortGroupBy,
   more,
   clone,
   remove,
   rename,
-  vis,
   search: uiDialog('Search &hellip;', SearchDialog, (ctx) => [ctx.provider], { shortcut: true, order: 3 }),
-  sortNumbers: uiDialog('Sort by &hellip;', SortDialog),
-  sortDates: uiDialog('Sort by &hellip;', SortDateDialog),
-  sortNumbersGroup: uiDialog('Sort Group by &hellip;', SortDialog),
-  sortGroup: uiDialog('Sort Group by &hellip;', SortGroupDialog, () => [], { shortcut: true, order: 1 }),
-  stratifyThreshold: uiDialog('Stratify by Threshold &hellip;', StratifyThresholdDialog, () => [], {
-    shortcut: true,
-    order: 2
-  }),
   filterMapped: uiDialog('Filter &hellip;', MappingsFilterDialog, (ctx) => [ctx], { shortcut: true }),
   filterString: uiDialog('Filter &hellip;', StringFilterDialog, () => [], { shortcut: true }),
   filterCategorical: uiDialog('Filter &hellip;', CategoricalFilterDialog, () => [], { shortcut: true }),
@@ -189,15 +284,16 @@ export const toolbarActions: { [key: string]: IToolbarAction } = {
     (<CompositeColumn>col).children.reverse().forEach((c) => col.insertAfterMe(c));
     col.removeMe();
   })
-};
+}, toolbarAddons);
 
 const cache = new Map<string, IToolbarAction[]>();
+const cacheAddon = new Map<string, IToolbarDialogAddon[]>();
 
 export default function getToolbar(col: Column, ctx: IRankingHeaderContext) {
   if (cache.has(col.desc.type)) {
     return cache.get(col.desc.type)!;
   }
-  const icons = ctx.toolbar;
+  const icons = <{ [key: string]: IToolbarAction }>ctx.toolbar;
   const actions = new Set<IToolbarAction>();
   if (!col.fixed) {
     actions.add(remove);
@@ -211,6 +307,7 @@ export default function getToolbar(col: Column, ctx: IRankingHeaderContext) {
 
   if (!isSupportType(col)) {
     actions.add(sort);
+    actions.add(sortBy);
     actions.add(rename);
     actions.add(clone);
   }
@@ -237,4 +334,42 @@ export default function getToolbar(col: Column, ctx: IRankingHeaderContext) {
   });
   cache.set(col.desc.type, r);
   return r;
+}
+
+export function getToolbarDialogAddons(col: Column, key: string, ctx: IRankingHeaderContext) {
+  const cacheKey = `${col.desc.type}@${key}`;
+  if (cacheAddon.has(cacheKey)) {
+    return cacheAddon.get(cacheKey)!;
+  }
+  const icons = <{ [key: string]: IToolbarDialogAddon }>ctx.toolbar;
+  const actions = new Set<IToolbarDialogAddon>();
+
+  const keys = getAllToolbarDialogAddons(col, key);
+
+  keys.forEach((key) => {
+    if (icons.hasOwnProperty(key)) {
+      actions.add(icons[key]);
+    } else {
+      console.warn('cannot find: ', col.desc.type, key);
+    }
+  });
+
+  const r = Array.from(actions).sort((a, b) => {
+    if (a.order === b.order) {
+      return a.title.localeCompare(b.title);
+    }
+    return (a.order || 50) - (b.order || 50);
+  });
+  cacheAddon.set(cacheKey, r);
+  return r;
+}
+
+export function isSortAble(col: Column, ctx: IRankingHeaderContext) {
+  const toolbar = getToolbar(col, ctx);
+  return toolbar.includes(sortBy);
+}
+
+export function isGroupAble(col: Column, ctx: IRankingHeaderContext) {
+  const toolbar = getToolbar(col, ctx);
+  return toolbar.includes(groupBy);
 }
