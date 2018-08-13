@@ -55,7 +55,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
 
   private readonly renderCtx: IRankingBodyContext;
   private data: (IGroupItem | IGroupData)[] = [];
-  private readonly selection: SelectionManager;
+  readonly selection: SelectionManager;
   private highlight: number = -1;
   private readonly canvasPool: HTMLCanvasElement[] = [];
 

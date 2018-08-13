@@ -79,7 +79,7 @@ export default class SelectionManager extends AEventDispatcher {
     return super.createEventList().concat([SelectionManager.EVENT_SELECT_RANGE]);
   }
 
-  private select(additional: boolean, startNode?: HTMLElement, endNode?: HTMLElement) {
+  select(additional: boolean, startNode?: HTMLElement, endNode?: HTMLElement) {
     if (!startNode || !endNode || startNode === endNode) {
       return; // no single
     }

@@ -33,23 +33,40 @@ export default class Taggle extends ALineUp {
     this.node.insertBefore(this.panel.node, this.node.firstChild);
     {
       this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
-            <input type="checkbox">
+            <input class="spaceFilling" type="checkbox">
             <span>Overview</span>
+            <input class="expand" type="checkbox">
+            <span>Expand</span>
+            <input class="s2d" type="button" value="S2D">
+            <input class="d2s" type="button" value="D2S">
             <div></div>
           </label></div>`);
       const spaceFilling = spaceFillingRule(this.options);
       this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
-      const input = <HTMLInputElement>this.spaceFilling.querySelector('input');
-      input.onchange = () => {
+      const ruleInput = <HTMLInputElement>this.spaceFilling.querySelector('input.spaceFilling');
+      ruleInput.onchange = () => {
         const selected = this.spaceFilling.classList.toggle('chosen');
         //self.setTimeout(() => this.renderer.switchRule(selected ? spaceFilling : null));
         this.renderer.useTextureRenderer(selected);
       };
       if (this.options.overviewMode) {
-        input.checked = true;
+        ruleInput.checked = true;
         this.spaceFilling.classList.toggle('chosen');
         this.renderer.switchRule(spaceFilling);
       }
+      const expandInput = <HTMLInputElement>this.spaceFilling.querySelector('input.expand');
+      expandInput.onchange = () => {
+        const selected = expandInput.checked;
+        this.renderer.expandTextureRenderer(selected);
+      };
+      const s2dInput = <HTMLInputElement>this.spaceFilling.querySelector('input.s2d');
+      s2dInput.onclick = () => {
+        this.renderer.s2d();
+      };
+      const d2sInput = <HTMLInputElement>this.spaceFilling.querySelector('input.d2s');
+      d2sInput.onclick = () => {
+        this.renderer.d2s();
+      };
     }
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
   }
