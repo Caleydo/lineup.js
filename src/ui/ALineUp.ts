@@ -3,6 +3,7 @@ import AEventDispatcher from '../internal/AEventDispatcher';
 import Column from '../model/Column';
 import DataProvider from '../provider/ADataProvider';
 import {IEventListener} from '../internal/AEventDispatcher';
+import {getUnsupportedBrowserError, SUPPORTED_FIREFOX_VERSION, SUPPORTED_CHROME_VERSION, SUPPORTED_EDGE_VERSION} from '../browser';
 
 /**
  * emitted when the highlight changes
@@ -26,8 +27,23 @@ export abstract class ALineUp extends AEventDispatcher implements ILineUpLike {
 
   private highlightListeners = 0;
 
-  constructor(public readonly node: HTMLElement, public data: DataProvider) {
+  public readonly isBrowserSupported: boolean;
+
+  constructor(public readonly node: HTMLElement, public data: DataProvider, ignoreIncompatibleBrowser: boolean) {
     super();
+
+    const error = getUnsupportedBrowserError();
+    this.isBrowserSupported = ignoreIncompatibleBrowser || !error;
+
+    if (!this.isBrowserSupported) {
+      this.node.classList.add('lu-unsupported-browser');
+      this.node.innerHTML = `<span>${error}</span>
+      <div class="lu-unsupported-browser-hint">
+        <a href="https://www.mozilla.org/en-US/firefox/" rel="noopener" target="_blank" data-browser="firefox" data-version="${SUPPORTED_FIREFOX_VERSION}"></a>
+        <a href="https://www.google.com/chrome/index.html" rel="noopener" target="_blank" data-browser="chrome" data-version="${SUPPORTED_CHROME_VERSION}" title="best support"></a>
+        <a href="https://www.microsoft.com/en-us/windows/microsoft-edge" rel="noopener" target="_blank" data-browser="edge" data-version="${SUPPORTED_EDGE_VERSION}"></a>
+      </div><span>use the <code>ignoreUnsupportedBrowser=true</code> option to ignore this error at your own risk</span>`;
+    }
 
     this.forward(this.data, `${DataProvider.EVENT_SELECTION_CHANGED}.main`);
   }
