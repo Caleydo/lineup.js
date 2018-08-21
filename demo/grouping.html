@@ -23,23 +23,22 @@
         cat2: cats[Math.floor(Math.random() * 3)]
       })
     }
-
     const builder = LineUpJS.builder(arr);
+    builder.deriveColumns();
+    // and two rankings
+    const ranking = LineUpJS.buildRanking()
+      .supportTypes()
+      .group()
+      .allColumns() // add all columns
+      .groupBy('cat')
+      .sortBy('a', 'desc')
+      .sortBy('d', 'asc')
 
-    // manually define columns
     builder
-    .column(LineUpJS.buildStringColumn('d').label('Label').width(100))
-    .column(LineUpJS.buildCategoricalColumn('cat', cats).color('green'))
-    .column(LineUpJS.buildCategoricalColumn('cat2', cats).color('blue'))
-    .column(LineUpJS.buildNumberColumn('a', [0, 10]).color('blue'))
-    .column(LineUpJS.buildNumberColumn('a', [0, 10]).color('gray').label('test'))
-	  .rowHeight(50, 2)
-	  .groupRowHeight(100, 5);
+      .ranking(ranking);
 
-    builder
-      .defaultRanking();
 
-    const lineup = builder.build(document.body);
+    builder.buildTaggle(document.body);
   };
 </script>
 
