@@ -11,9 +11,16 @@
   > div {
     top: 0;
     bottom: 0;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
 
     > div {
       height: 100%;
+    }
+
+    > span.#{$lu_css_prefix}-hover-only {
+      position: relative; // required to position .lu-gradient-text
     }
   }
 }
@@ -22,7 +29,8 @@
   [data-renderer$=number] {
     > div > div {
       display: flex;
-      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
   }
 }

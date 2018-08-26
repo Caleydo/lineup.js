@@ -35,6 +35,8 @@ import OverviewDetailRenderer from './OverviewDetailRenderer';
 export {
   default as IRenderContext,
   IImposer,
+  ERenderMode,
+  ISummaryRenderer,
   IGroupCellRenderer,
   ICellRenderer,
   ICellRendererFactory

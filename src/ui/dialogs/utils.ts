@@ -1,4 +1,5 @@
 import Column from '../../model';
+import {forEach, uniqueId} from '../../renderer/utils';
 
 /** @internal */
 export function updateFilterState(attachment: HTMLElement, column: Column, filtered: boolean) {
@@ -19,4 +20,18 @@ export function updateFilterState(attachment: HTMLElement, column: Column, filte
   Array.from(root.querySelectorAll(`[data-col-id="${column.id}"] i[title^=Filter]`)).forEach(toggle);
 }
 
-export {randomId, forEach, forEachChild} from '../../renderer/utils';
+/** @internal */
+export function sortMethods(node: HTMLElement, column: {setSortMethod(v: string): void, getSortMethod(): string}, methods: string[], idPrefix: string) {
+  const id = uniqueId(idPrefix);
+  const bak = column.getSortMethod();
+  methods.forEach((d) => node.insertAdjacentHTML('beforeend', `<div class="checkbox"><input id="${id}${d}" type="radio" name="multivaluesort" value="${d}"  ${(bak === d) ? 'checked' : ''} ><label for="${id}${d}">${d.slice(0, 1).toUpperCase() + d.slice(1)}</label></div>`));
+
+  forEach(node, 'input[name=multivaluesort]', (n: HTMLInputElement) => {
+    n.addEventListener('change', () => column.setSortMethod(n.value), {
+      passive: true
+    });
+  });
+}
+
+
+export {uniqueId, forEach, forEachChild} from '../../renderer/utils';

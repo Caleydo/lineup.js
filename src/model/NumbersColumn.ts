@@ -1,7 +1,8 @@
 import {LazyBoxPlotData} from '../internal';
-import {toolbar} from './annotations';
-import ArrayColumn, {IArrayColumnDesc, IArrayDesc} from './ArrayColumn';
-import Column from './Column';
+import {toolbar, SortByDefault, dialogAddons} from './annotations';
+import ArrayColumn, {IArrayColumnDesc, IArrayDesc, spliceChanged} from './ArrayColumn';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import ValueColumn, {dataLoaded} from './ValueColumn';
 import {IDataRow} from './interfaces';
 import {isDummyNumberFilter, restoreFilter} from './internal';
 import {
@@ -13,25 +14,46 @@ import {
   ScaleMappingFunction
 } from './MappingFunction';
 import {isMissingValue} from './missing';
-import NumberColumn from './NumberColumn';
+import NumberColumn, {colorMappingChanged} from './NumberColumn';
 import {IAdvancedBoxPlotData} from '../internal/math';
+import {IEventListener} from '../internal/AEventDispatcher';
+import {IColorMappingFunction, restoreColorMapping, createColorMappingFunction} from './ColorMappingFunction';
 
 
 export interface INumbersDesc extends IArrayDesc, IMapAbleDesc {
   readonly sort?: EAdvancedSortMethod;
 }
 
-
 export declare type INumbersColumnDesc = INumbersDesc & IArrayColumnDesc<number>;
 
-@toolbar('sortNumbers', 'filterMapped')
+/**
+ * emitted when the mapping property changes
+ * @asMemberOf NumbersColumn
+ * @event
+ */
+export declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+
+/**
+ * emitted when the sort method property changes
+ * @asMemberOf NumbersColumn
+ * @event
+ */
+export declare function sortMethodChanged(previous: EAdvancedSortMethod, current: EAdvancedSortMethod): void;
+
+@toolbar('filterMapped', 'colorMapped')
+@dialogAddons('sort', 'sortNumbers')
+@SortByDefault('descending')
 export default class NumbersColumn extends ArrayColumn<number> implements INumbersColumn {
   static readonly EVENT_MAPPING_CHANGED = NumberColumn.EVENT_MAPPING_CHANGED;
+  static readonly EVENT_COLOR_MAPPING_CHANGED = NumberColumn.EVENT_COLOR_MAPPING_CHANGED;
+  static readonly EVENT_SORTMETHOD_CHANGED = NumberColumn.EVENT_SORTMETHOD_CHANGED;
+
   static readonly CENTER = 0;
 
   private sort: EAdvancedSortMethod;
   private mapping: IMappingFunction;
   private original: IMappingFunction;
+  private colorMapping: IColorMappingFunction;
   /**
    * currently active filter
    * @type {{min: number, max: number}}
@@ -43,6 +65,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     super(id, desc);
     this.mapping = restoreMapping(desc);
     this.original = this.mapping.clone();
+    this.colorMapping = restoreColorMapping(this.color, desc);
 
     this.sort = desc.sort || EAdvancedSortMethod.median;
 
@@ -117,7 +140,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (this.sort === sort) {
       return;
     }
-    this.fire([Column.EVENT_SORTMETHOD_CHANGED], this.sort, this.sort = sort);
+    this.fire([NumbersColumn.EVENT_SORTMETHOD_CHANGED], this.sort, this.sort = sort);
     // sort by me if not already sorted by me
     if (!this.isSortedByMe().asc) {
       this.sortByMe();
@@ -129,6 +152,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     r.sortMethod = this.getSortMethod();
     r.filter = !isDummyNumberFilter(this.currentFilter) ? this.currentFilter : null;
     r.map = this.mapping.dump();
+    r.colorMapping = this.colorMapping.dump();
     return r;
   }
 
@@ -145,10 +169,32 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     } else if (dump.domain) {
       this.mapping = new ScaleMappingFunction(dump.domain, 'linear', dump.range || [0, 1]);
     }
+    if (dump.colorMapping) {
+      this.colorMapping = createColorMappingFunction(this.color, dump.colorMapping);
+    }
   }
 
   protected createEventList() {
-    return super.createEventList().concat([NumbersColumn.EVENT_MAPPING_CHANGED]);
+    return super.createEventList().concat([NumbersColumn.EVENT_COLOR_MAPPING_CHANGED, NumbersColumn.EVENT_MAPPING_CHANGED, NumbersColumn.EVENT_SORTMETHOD_CHANGED]);
+  }
+
+  on(type: typeof NumbersColumn.EVENT_COLOR_MAPPING_CHANGED, listener: typeof colorMappingChanged | null): this;
+  on(type: typeof NumbersColumn.EVENT_MAPPING_CHANGED, listener: typeof mappingChanged | null): this;
+  on(type: typeof NumbersColumn.EVENT_SORTMETHOD_CHANGED, listener: typeof sortMethodChanged | null): this;
+  on(type: typeof ArrayColumn.EVENT_SPLICE_CHANGED, listener: typeof spliceChanged | null): this;
+  on(type: typeof ValueColumn.EVENT_DATA_LOADED, listener: typeof dataLoaded | null): this;
+  on(type: typeof Column.EVENT_WIDTH_CHANGED, listener: typeof widthChanged | null): this;
+  on(type: typeof Column.EVENT_LABEL_CHANGED, listener: typeof labelChanged | null): this;
+  on(type: typeof Column.EVENT_METADATA_CHANGED, listener: typeof metaDataChanged | null): this;
+  on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
+  on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
+  on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
+  on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
+  on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
+  on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this {
+    return super.on(<any>type, listener);
   }
 
   getOriginalMapping() {
@@ -164,6 +210,21 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
       return;
     }
     this.fire([NumbersColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.mapping.clone(), this.mapping = mapping);
+  }
+
+  getColor(row: IDataRow) {
+    return NumberColumn.prototype.getColor.call(this, row);
+  }
+
+  getColorMapping() {
+    return this.colorMapping.clone();
+  }
+
+  setColorMapping(mapping: IColorMappingFunction) {
+    if (this.colorMapping.eq(mapping)) {
+      return;
+    }
+    this.fire([NumbersColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
   }
 
   isFiltered() {

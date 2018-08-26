@@ -50,7 +50,7 @@
     animation: #{$lu_css_prefix}-dialogs-fade-in 0.4s;
 
     strong {
-      margin: 0.2em;
+      margin: 1em 0.2em 0.4em;
       display: inline-block;
     }
   }
@@ -102,6 +102,7 @@
 
     button[type=submit] {
       float: right;
+      color: darken($lu_toolbar_color_base, 20%); // slightly darker primary action
     }
 
     &.#{$lu_css_prefix}-sub-nested {
@@ -177,6 +178,44 @@
 
       dl {
         padding: 1em 0.2em;
+      }
+    }
+  }
+
+  .#{$lu_css_prefix}-dialog-color {
+    width: 15em;
+
+    > strong[data-toggle] {
+      cursor: pointer;
+
+      &::before {
+        @include lu_icons();
+
+        content: $lu_icon_caret_right;
+        width: 0.8em;
+      }
+
+      &[data-toggle=open]::before {
+        content: $lu_icon_caret_down;
+      }
+    }
+
+    input[disabled] {
+      cursor: not-allowed;
+      opacity: 0.2;
+    }
+
+    [data-toggle=""] + div {
+      display: none;
+    }
+
+    label.#{$lu_css_prefix}-color-custom {
+      display: inline-flex;
+      justify-content: space-between;
+
+      > input {
+        width: unset;
+        flex: 1 1 0;
       }
     }
   }

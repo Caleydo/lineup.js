@@ -1,7 +1,7 @@
 import {nonUniformContext, MultiTableRowRenderer, GridStyleManager} from 'lineupengine';
 import {ILineUpOptions} from '../interfaces';
 import {findOption, ICategoricalStatistics, IStatistics, round} from '../internal';
-import AEventDispatcher, {suffix} from '../internal/AEventDispatcher';
+import AEventDispatcher, {suffix, IEventListener} from '../internal/AEventDispatcher';
 import {
   Column, ICategoricalColumn, IDataRow, IGroupData, IGroupItem, isCategoricalColumn, isGroup,
   isNumberColumn, INumberColumn
@@ -19,9 +19,16 @@ import DialogManager from './dialogs/DialogManager';
 import {default as CanvasTextureRenderer, ITextureRenderer} from './CanvasTextureRenderer';
 import * as d3 from 'd3-selection';
 
+/**
+ * emitted when the highlight changes
+ * @asMemberOf EngineRenderer
+ * @param dataIndex the highlghted data index or -1 for none
+ * @event
+ */
+export declare function highlightChanged(dataIndex: number): void;
 
 export default class EngineRenderer extends AEventDispatcher {
-  static readonly EVENT_HIGHLIGHT_CHANGED = 'highlightChanged';
+  static readonly EVENT_HIGHLIGHT_CHANGED = EngineRanking.EVENT_HIGHLIGHT_CHANGED;
 
   protected readonly options: Readonly<ILineUpOptions>;
 
@@ -172,6 +179,12 @@ export default class EngineRenderer extends AEventDispatcher {
   protected createEventList() {
     return super.createEventList().concat([EngineRenderer.EVENT_HIGHLIGHT_CHANGED]);
   }
+
+  on(type: typeof EngineRenderer.EVENT_HIGHLIGHT_CHANGED, listener: typeof highlightChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this {
+    return super.on(type, listener);
+  }
+
 
   setDataProvider(data: ADataProvider) {
     this.takeDownProvider();

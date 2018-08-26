@@ -2,30 +2,60 @@ import {ILineUpLike} from '../interfaces';
 import AEventDispatcher from '../internal/AEventDispatcher';
 import Column from '../model/Column';
 import DataProvider from '../provider/ADataProvider';
+import {IEventListener} from '../internal/AEventDispatcher';
+import {getUnsupportedBrowserError, SUPPORTED_FIREFOX_VERSION, SUPPORTED_CHROME_VERSION, SUPPORTED_EDGE_VERSION} from '../browser';
+
+/**
+ * emitted when the highlight changes
+ * @asMemberOf ALineUp
+ * @param dataIndex the highlghted data index or -1 for none
+ * @event
+ */
+export declare function highlightChanged(dataIndex: number): void;
+
+/**
+ * emitted when the selection changes
+ * @asMemberOf ALineUp
+ * @param dataIndices the selected data indices
+ * @event
+ */
+export declare function selectionChanged(dataIndices: number[]): void;
 
 export abstract class ALineUp extends AEventDispatcher implements ILineUpLike {
-  /**
-   * triggered when the user click on a row
-   * @argument dataIndices:number[] the selected data indices
-   */
   static readonly EVENT_SELECTION_CHANGED = DataProvider.EVENT_SELECTION_CHANGED;
-
-  /**
-   * triggered when the user hovers over a row
-   * @argument dataIndex:number the selected data index or <0 if no row
-   */
   static readonly EVENT_HIGHLIGHT_CHANGED = 'highlightChanged';
 
   private highlightListeners = 0;
 
-  constructor(public readonly node: HTMLElement, public data: DataProvider) {
+  public readonly isBrowserSupported: boolean;
+
+  constructor(public readonly node: HTMLElement, public data: DataProvider, ignoreIncompatibleBrowser: boolean) {
     super();
+
+    const error = getUnsupportedBrowserError();
+    this.isBrowserSupported = ignoreIncompatibleBrowser || !error;
+
+    if (!this.isBrowserSupported) {
+      this.node.classList.add('lu-unsupported-browser');
+      this.node.innerHTML = `<span>${error}</span>
+      <div class="lu-unsupported-browser-hint">
+        <a href="https://www.mozilla.org/en-US/firefox/" rel="noopener" target="_blank" data-browser="firefox" data-version="${SUPPORTED_FIREFOX_VERSION}"></a>
+        <a href="https://www.google.com/chrome/index.html" rel="noopener" target="_blank" data-browser="chrome" data-version="${SUPPORTED_CHROME_VERSION}" title="best support"></a>
+        <a href="https://www.microsoft.com/en-us/windows/microsoft-edge" rel="noopener" target="_blank" data-browser="edge" data-version="${SUPPORTED_EDGE_VERSION}"></a>
+      </div><span>use the <code>ignoreUnsupportedBrowser=true</code> option to ignore this error at your own risk</span>`;
+    }
 
     this.forward(this.data, `${DataProvider.EVENT_SELECTION_CHANGED}.main`);
   }
 
   protected createEventList() {
     return super.createEventList().concat([ALineUp.EVENT_HIGHLIGHT_CHANGED, ALineUp.EVENT_SELECTION_CHANGED]);
+  }
+
+  on(type: typeof ALineUp.EVENT_HIGHLIGHT_CHANGED, listener: typeof highlightChanged | null): this;
+  on(type: typeof ALineUp.EVENT_SELECTION_CHANGED, listener: typeof selectionChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this {
+    return super.on(type, listener);
   }
 
   destroy() {
