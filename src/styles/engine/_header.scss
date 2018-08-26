@@ -68,7 +68,8 @@ section.#{$lu_css_prefix}-header {
     }
 
     &[data-renderer=aggregate],
-    &[data-renderer=selection] {
+    &[data-renderer=selection],
+    &[data-renderer=detail] {
       display: block; // have just a before element
     }
   }

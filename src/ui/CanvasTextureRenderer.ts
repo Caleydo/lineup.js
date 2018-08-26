@@ -7,20 +7,24 @@ import NumbersColumn from '../model/NumbersColumn';
 import CategoricalColumn from '../model/CategoricalColumn';
 import CategoricalsColumn from '../model/CategoricalsColumn';
 import CompositeColumn from '../model/CompositeColumn';
-import AggregateGroupColumn from '../model/AggregateGroupColumn';
 import * as d3 from 'd3-selection';
 import * as drag from 'd3-drag';
 import {ILineUpOptions} from '../interfaces';
 import EngineRenderer from './EngineRenderer';
 import {MultiTableRowRenderer} from 'lineupengine';
+import SelectionColumn from '../model/SelectionColumn';
+import OverviewDetailColumn from '../model/OverviewDetailColumn';
+import Ranking from '../model/Ranking';
 
 export interface ITextureRenderer {
-  update(rankings: EngineRanking[], localData: IDataRow[][]): void;
+  update(rankings?: EngineRanking[], localData?: IDataRow[][]): void;
   expandTextureRenderer(use: boolean): void;
   destroy(): void;
   show(): void;
   hide(): void;
   updateSelection(dataIndices: number[]): void;
+  addRanking(ranking: EngineRanking): void;
+  removeRanking(ranking: Ranking | null): void;
   s2d(): void;
   d2s(): void;
 }
@@ -39,7 +43,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private currentNodeHeight: number = 0;
   private currentRankingWidths: number[] = [];
   private engineRenderer: EngineRenderer;
-  private engineRankings: EngineRanking[] = [];
+  private engineRankings: EngineRanking[][] = [];
   private skipUpdateEvents: number = 0;
   private alreadyExpanded: boolean = false;
   private expandLaterRows: any[] = [];
@@ -68,13 +72,13 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   updateSelection(dataIndices: number[]) {
     const s = new Set(dataIndices);
-    this.engineRankings.forEach((r) => r.updateSelection(s));
+    this.engineRankings.forEach((v) => v.forEach((r) => r.updateSelection(s)));
     this.drawSelection();
+    this.update();
   }
 
-  update(rankings: EngineRanking[], localData: IDataRow[][]) {
+  update(rankings: EngineRanking[] = this.currentRankings, localData: IDataRow[][] = this.currentLocalData) {
     this.detailParts = [];
-    this.currentRankings = rankings;
     this.currentLocalData = localData;
     this.currentNodeHeight = this.node.offsetHeight;
     let totalWidth = 0;
@@ -93,23 +97,85 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   private renderColumns (rankings: EngineRanking[], localData: IDataRow[][]) {
-    this.node.innerHTML = ''; //remove all children
-    this.engineRankings = [];
-
     rankings.forEach((r, i) => {
+      let gIndex = 0;
+      const aggregatedParts = <any>[];
+      r.ranking.getGroups().forEach((g) => {
+        if (this.engineRenderer.ctx.provider.isAggregated(r.ranking, g)) {
+          aggregatedParts.push([gIndex, gIndex + g.order.length - 1]);
+        }
+        gIndex += g.order.length;
+      });
+
+      const rankingIndex = this.currentRankings.findIndex((v) => v === r);
+      this.engineRankings[rankingIndex] = [];
+      //TODO: combine
+      this.detailParts = [];
+      let startIndex = -1;
+      for (let j = 0; j < localData[i].length; j++) {
+        if (this.engineRenderer.ctx.provider.isDetail(localData[i][j].i)) {
+          if (startIndex === -1) {
+            startIndex = j;
+          }
+        } else if (startIndex !== -1) {
+          this.detailParts.push([startIndex, j-1]);
+          startIndex = -1;
+        }
+      }
+      if (startIndex !== -1) {
+        this.detailParts.push([startIndex, localData[i].length-1]);
+      }
+
+      const aggregateIndices = <any>[];
+      aggregatedParts.forEach((g: any) => {
+        for (let j = 0; j < this.detailParts.length; j++) {
+          if (g[0] <= this.detailParts[j][0]) {
+            if (g[1] <= this.detailParts[j][0]) {
+              this.detailParts.splice(j, 0, g);
+              aggregateIndices.push(j);
+              return;
+            } else {
+              if (g[1] < this.detailParts[j][1]) {
+                this.detailParts.splice(j, 1, g, [g[1] + 1, this.detailParts[j][1]]);
+                aggregateIndices.push(j);
+                return;
+              } else {
+                this.detailParts.splice(j, 1);
+              }
+            }
+          } else {
+            if (g[0] <= this.detailParts[j][1]) {
+              if (g[1] < this.detailParts[j][1]) {
+                this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1], g, [g[1] + 1, this.detailParts[j][1]]);
+                aggregateIndices.push(j + 1);
+                return;
+              } else {
+                this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1]);
+              }
+            }
+          }
+        }
+        this.detailParts.push(g);
+        aggregateIndices.push(this.detailParts.length - 1);
+      });
+
       const dataParts = <any>[];
       const expandableParts = <any>[];
+      const aggregateParts = <any>[];
       if(this.detailParts.length === 0) {
         dataParts.push(localData[i].length);
       } else {
         let next = 0;
-        this.detailParts.forEach((v) => {
+        this.detailParts.forEach((v, j) => {
           const curFrom = v[0];
           const curTo = v[1];
           if (curFrom > next) {
             dataParts.push(curFrom);
           }
           expandableParts.push(dataParts.length);
+          if (aggregateIndices.includes(j)) {
+            aggregateParts.push(dataParts.length);
+          }
           dataParts.push(curTo + 1);
           next = curTo + 1;
         });
@@ -117,36 +183,57 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
           dataParts.push(localData[i].length);
         }
       }
+//
       let curIndex = 0;
-      const rankingDiv = this.node.ownerDocument.createElement('div');
-      rankingDiv.classList.add('rankingContainer');
-      this.node.appendChild(rankingDiv);
+      const rankingDiv = <any>d3.select(this.node).select(`[data-ranking="${rankingIndex}"]`)!.node();
+      if (!rankingDiv) {
+        return;
+      }
+      rankingDiv.innerHTML = ''; //remove all children
+      const grouped = r.groupData(localData[i]);
+      let aggregateOffset = 0;
       dataParts.forEach((v: number, di: number) => {
         const expandable = expandableParts.includes(di);
-        const data = localData[i].slice(curIndex, v);
-        const grouped = r.groupData(data);
+        const aggregated = aggregateParts.includes(di);
+        let newOffset = 0;
+        if (aggregated) {
+          newOffset = v - curIndex - 1;
+        }
+        const data = grouped.slice(curIndex - aggregateOffset, v - aggregateOffset - newOffset);
+
         const rowDiv = this.node.ownerDocument.createElement('div');
         rowDiv.setAttribute('data-from', `${curIndex}`);
         rowDiv.setAttribute('data-to', `${v-1}`);
-        rowDiv.classList.add('row');
-
-        const textureDiv = this.node.ownerDocument.createElement('div');
-        textureDiv.style.height = `${data.length / localData[i].length * this.currentNodeHeight}px`;
-        textureDiv.classList.add('textureContainer');
-        if (!expandable) {
-          textureDiv.classList.add('always');
-        }
-        this.renderedColumns = [];
-        r.ranking.flatColumns.forEach((column) => this.createColumn(column, grouped, textureDiv, false, expandable));
-        curIndex = v;
-        rowDiv.appendChild(textureDiv);
+        rowDiv.classList.add('rowContainer');
         rankingDiv.appendChild(rowDiv);
+
+        curIndex = v;
+        aggregateOffset += newOffset;
+
+        if (!aggregated) {
+          const textureDiv = this.node.ownerDocument.createElement('div');
+          textureDiv.style.height = `${data.length / localData[i].length * this.currentNodeHeight}px`;
+          textureDiv.classList.add('textureContainer');
+          if (!expandable) {
+            textureDiv.classList.add('always');
+          }
+          this.renderedColumns = [];
+          r.ranking.flatColumns.forEach((column) => this.createColumn(column, data, textureDiv, false, expandable));
+          rowDiv.appendChild(textureDiv);
+        }
         if (expandable) {
           const expandLater = () => {
             const engineRendererDiv = this.node.ownerDocument.createElement('article');
             //const id = `renderRow_${di}`;
             engineRendererDiv.classList.add('engineRendererContainer');
-            engineRendererDiv.style.height = `${(this.options.rowHeight + this.options.rowPadding) * data.length + 10}px`;
+            if (aggregated) {
+              engineRendererDiv.classList.add('always');
+            }
+            if (aggregated) {
+              engineRendererDiv.style.height = `${45}px`;
+            } else {
+              engineRendererDiv.style.height = `${(this.options.rowHeight + this.options.rowPadding) * data.length + 10}px`;
+            }
             engineRendererDiv.style.width = `${this.currentRankingWidths[i]}px`;
 
             rowDiv.appendChild(engineRendererDiv);
@@ -159,12 +246,12 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
               flags: this.options.flags
             }));
 
-            this.engineRenderer.render(engineRanking, data);
-            this.engineRankings.push(engineRanking);
+            this.engineRenderer.render(engineRanking, <any>data);
+            this.engineRankings[rankingIndex].push(engineRanking);
             engineRanking.on(EngineRanking.EVENT_UPDATE_DATA, () => this.handleUpdateEvent(r));
             this.skipUpdateEvents++;
           };
-          if (this.alreadyExpanded) {
+          if (this.alreadyExpanded || aggregated) {
             expandLater();
           } else {
             this.expandLaterRows.push(expandLater);
@@ -228,17 +315,20 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       newElement = this.generateImage(grouped.map((value) => {
         return [(<any>value).v[(<any>col.desc).column]];
       }), CanvasTextureRenderer.getColorScale(col));
+    } else if (column instanceof SelectionColumn) {
+      const col = <SelectionColumn>column;
+      newElement = this.generateImage(grouped.map((value) => {
+        return [this.engineRenderer.ctx.provider.isSelected((<any>value).i)];
+      }), CanvasTextureRenderer.getColorScale(col));
+    } else if (column instanceof OverviewDetailColumn) {
+      const col = <OverviewDetailColumn>column;
+      newElement = this.generateImage(grouped.map((value) => {
+        return [this.engineRenderer.ctx.provider.isDetail((<any>value).i)];
+      }), CanvasTextureRenderer.getColorScale(col));
     } else if ('children' in column) {
       //handle composite columns
       (<CompositeColumn>column).children.forEach((c) => this.createColumn(c, grouped, container, true, expandable));
       return;
-    } else if (column instanceof AggregateGroupColumn) {
-        newElement = this.createAggregateColumn(column.getWidth(), grouped.length, expandable);
-        if (expandable) {
-          newElement.onclick = () => {
-            newElement.parentNode.parentNode.parentNode.classList.add('expanded');
-          };
-        }
     } else {
       newElement = this.node.ownerDocument.createElement('canvas');
     }
@@ -273,6 +363,22 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         .range(categories.map((v) => v.color));
       return colorScale;
     }
+
+    if (column instanceof SelectionColumn) {
+      const colorScale = scaleOrdinal<boolean, string>();
+      colorScale
+        .domain([false, true])
+        .range(['transparent', 'orange']);
+      return colorScale;
+    }
+
+    if (column instanceof OverviewDetailColumn) {
+      const colorScale = scaleOrdinal<boolean, string>();
+      colorScale
+        .domain([false, true])
+        .range(['transparent', 'blue']);
+      return colorScale;
+    }
     return null;
   }
 
@@ -301,23 +407,6 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       });
     });
     ctx.save();
-  }
-
-  private createAggregateColumn(width: number, height: number, expandable: boolean) {
-    const canvas = this.node.ownerDocument.createElement('canvas');
-    canvas.setAttribute('height', `${height}`);
-    canvas.setAttribute('width', `${width}`);
-    canvas.classList.add('aggregateColumn');
-    const ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
-
-    if (expandable) {
-      ctx.fillStyle = '#499cff';
-    } else {
-      ctx.fillStyle = '#000000';
-    }
-    ctx.fillRect(width-2, 0, 2, height);
-    ctx.save();
-    return canvas;
   }
 
   expandTextureRenderer(use: boolean) {
@@ -352,8 +441,11 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     const currentPosition = d3.mouse(element);
     if(currentPosition[1] === this.dragStartPosition[1]) {
       if (!d3.event.sourceEvent.ctrlKey) {
-        this.detailParts = [];
-        this.renderColumns(this.currentRankings, this.currentLocalData);
+        if (d3.event.sourceEvent.altKey) {
+          this.engineRenderer.ctx.provider.setDetail([]);
+        } else {
+          this.engineRenderer.ctx.provider.setSelection([]);
+        }
       }
       return;
     }
@@ -366,16 +458,37 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     if (fromIndex > toIndex) {
       return;
     }
-    if (!d3.event.sourceEvent.ctrlKey) {
-      this.detailParts = [];
-    }
-    const i = this.detailParts.findIndex((v) => v[0] >= toIndex);
-    if(i === -1) {
-      this.detailParts.push([fromIndex, toIndex]);
+    const ranking = element.parentElement.getAttribute('data-ranking');
+    const indices : number[] = d3.event.sourceEvent.ctrlKey ? (d3.event.sourceEvent.altKey ? this.engineRenderer.ctx.provider.getDetail() : this.engineRenderer.ctx.provider.getSelection()) :[];
+    this.currentLocalData[ranking].slice(fromIndex, toIndex).forEach((d) => {
+      indices.push(d.i);
+    });
+    if (d3.event.sourceEvent.altKey) {
+      this.engineRenderer.ctx.provider.setDetail(indices);
     } else {
-      this.detailParts.splice(i, 0, [fromIndex, toIndex]);
+      this.engineRenderer.ctx.provider.setSelection(indices);
     }
-    this.renderColumns(this.currentRankings, this.currentLocalData);
+  }
+
+  addRanking(ranking: EngineRanking) {
+    this.currentRankings.push(ranking);
+    const rankingDiv = this.node.ownerDocument.createElement('div');
+    rankingDiv.classList.add('rankingContainer');
+    rankingDiv.setAttribute('data-ranking', `${this.currentRankings.length-1}`);
+    this.node.appendChild(rankingDiv);
+  }
+
+  removeRanking(ranking: Ranking | null) {
+    if (!ranking) {
+      this.node.innerHTML = '';
+    }
+    const index = this.currentRankings.findIndex((r) => r.ranking === ranking);
+    if (index < 0) {
+      return; // error
+    }
+    this.currentRankings.splice(index, 1);
+    this.engineRankings.splice(index, 1);
+    d3.select(this.node).select(`[data-ranking="${index}"]`).remove();
   }
 
   destroy() {
@@ -391,38 +504,40 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   s2d() {
-    this.detailParts = [];
-    let startIndex = -1;
-    for (let i = 0; i < this.currentLocalData[0].length; i++) {
-      if (this.engineRenderer.ctx.provider.isSelected(this.currentLocalData[0][i].i)) {
-        if (startIndex === -1) {
-          startIndex = i;
-        }
-      } else if (startIndex !== -1) {
-        this.detailParts.push([startIndex, i-1]);
-        startIndex = -1;
-      }
-    }
-    if (startIndex !== -1) {
-      this.detailParts.push([startIndex, this.currentLocalData[0].length-1]);
-    }
-    this.renderColumns(this.currentRankings, this.currentLocalData);
+    this.engineRenderer.ctx.provider.setDetail(this.engineRenderer.ctx.provider.getSelection());
+    //this.detailParts = [];
+    //let startIndex = -1;
+    //for (let i = 0; i < this.currentLocalData[0].length; i++) {
+    //  if (this.engineRenderer.ctx.provider.isSelected(this.currentLocalData[0][i].i)) {
+    //    if (startIndex === -1) {
+    //      startIndex = i;
+    //    }
+    //  } else if (startIndex !== -1) {
+    //    this.detailParts.push([startIndex, i-1]);
+    //    startIndex = -1;
+    //  }
+    //}
+    //if (startIndex !== -1) {
+    //  this.detailParts.push([startIndex, this.currentLocalData[0].length-1]);
+    //}
+    //this.renderColumns(this.currentRankings, this.currentLocalData);
   }
 
   d2s() {
-    d3.select(this.node).selectAll('.engineRendererContainer').nodes().forEach((v: any, i: number) => {
-      const first = d3.select(v).select('.lu-row:first-child').node();
-      const last = d3.select(v).select('.lu-row:last-child').node();
-      if (typeof first !== 'undefined' && typeof last !== 'undefined') {
-        this.engineRankings[i].selection.select(i !== 0, <any>first, <any>last);
-      }
-    });
+    this.engineRenderer.ctx.provider.setSelection(this.engineRenderer.ctx.provider.getDetail());
+    //d3.select(this.node).selectAll('.engineRendererContainer').nodes().forEach((v: any, i: number) => {
+    //  const first = d3.select(v).select('.lu-row:first-child').node();
+    //  const last = d3.select(v).select('.lu-row:last-child').node();
+    //  if (typeof first !== 'undefined' && typeof last !== 'undefined') {
+    //    this.engineRankings[i].selection.select(i !== 0, <any>first, <any>last);
+    //  }
+    //});
   }
 
   drawSelection() {
-    d3.select(this.node).selectAll('.aggregateColumn').nodes().forEach((v: any) => {
+    d3.select(this.node).selectAll('.selectionColumn').nodes().forEach((v: any) => {
       let parent = v.parentElement;
-      while (!parent.classList.contains('row')) {
+      while (!parent.classList.contains('rowContainer')) {
         parent = parent.parentElement;
       }
       const fromIndex = parseInt(parent.getAttribute('data-from'), 10);

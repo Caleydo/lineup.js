@@ -31,6 +31,7 @@ import StringMapColumn from './StringMapColumn';
 import StringsColumn from './StringsColumn';
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import ImpositionBoxPlotColumn from './ImpositionBoxPlotColumn';
+import OverviewDetailColumn from './OverviewDetailColumn';
 
 export {isSupportType, Category, SupportType} from './annotations';
 export {isMissingValue, isUnknown, FIRST_IS_NAN, missingGroup} from './missing';
@@ -166,6 +167,7 @@ export function models() {
     date: DateColumn,
     dateMap: DatesMapColumn,
     dates: DatesColumn,
+    detail: OverviewDetailColumn,
     group: GroupColumn,
     hierarchy: HierarchyColumn,
     imposition: ImpositionCompositeColumn,

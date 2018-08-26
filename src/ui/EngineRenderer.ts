@@ -184,6 +184,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   private takeDownProvider() {
     this.data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, null);
+    this.data.on(`${ADataProvider.EVENT_DETAIL_CHANGED}.body`, null);
     this.data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, null);
     this.data.on(`${ADataProvider.EVENT_REMOVE_RANKING}.body`, null);
     this.data.on(`${ADataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, null);
@@ -197,6 +198,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   private initProvider(data: ADataProvider) {
     data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, () => this.updateSelection(data.getSelection()));
+    data.on(`${ADataProvider.EVENT_DETAIL_CHANGED}.body`, () => this.updateDetail(data.getDetail()));
     data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, (ranking: Ranking) => {
       this.addRanking(ranking);
     });
@@ -218,6 +220,12 @@ export default class EngineRenderer extends AEventDispatcher {
     this.rankings.forEach((r) => r.updateSelection(s));
     this.textureRenderer.updateSelection(dataIndices);
     this.slopeGraphs.forEach((r) => r.updateSelection(s));
+  }
+
+  private updateDetail(dataIndices: number[]) {
+    const s = new Set(dataIndices);
+    this.rankings.forEach((r) => r.updateDetail(s));
+    this.textureRenderer.update();
   }
 
   private updateHist(ranking?: EngineRanking, col?: Column) {
@@ -276,6 +284,7 @@ export default class EngineRenderer extends AEventDispatcher {
     ranking.on(suffix('.renderer', Ranking.EVENT_ORDER_CHANGED), () => this.updateHist(r));
 
     this.rankings.push(r);
+    this.textureRenderer.addRanking(r);
     this.update([r]);
   }
 
@@ -309,6 +318,7 @@ export default class EngineRenderer extends AEventDispatcher {
     if (slope) {
       this.table.remove(slope);
     }
+    this.textureRenderer.removeRanking(ranking);
   }
 
   update(rankings: EngineRanking[] = this.rankings) {
@@ -363,7 +373,7 @@ export default class EngineRenderer extends AEventDispatcher {
       this.show();
 
       rankings.forEach((r, i) => {
-        this.render(r, localData[i]);
+        this.render(r, r.groupData(localData[i]));
       });
     }
 
@@ -373,9 +383,7 @@ export default class EngineRenderer extends AEventDispatcher {
     this.table.widthChanged();
   }
 
-  render(r: EngineRanking, localData: IDataRow[]) {
-    const grouped = r.groupData(localData);
-
+  render(r: EngineRanking, grouped: (IGroupData | IGroupItem)[]) {
     const {height, defaultHeight, padding} = this.heightsFor(r.ranking, grouped);
 
     const that = this;

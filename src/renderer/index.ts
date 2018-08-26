@@ -30,6 +30,7 @@ import StringCellRenderer from './StringCellRenderer';
 import TableCellRenderer from './TableCellRenderer';
 import UpSetCellRenderer from './UpSetCellRenderer';
 import VerticalBarCellRenderer from './VerticalBarCellRenderer';
+import OverviewDetailRenderer from './OverviewDetailRenderer';
 
 export {
   default as IRenderContext,
@@ -55,6 +56,7 @@ export const renderers: { [key: string]: ICellRendererFactory } = {
   categorical: new CategoricalCellRenderer(),
   circle: new CircleCellRenderer(),
   default: defaultCellRenderer,
+  detail: new OverviewDetailRenderer(),
   dot: new DotCellRenderer(),
   group: new GroupCellRenderer(),
   heatmap: new HeatmapCellRenderer(),

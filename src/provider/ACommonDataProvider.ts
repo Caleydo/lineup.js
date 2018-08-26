@@ -2,6 +2,7 @@ import {createAggregateDesc, createRankDesc, createSelectionDesc, IColumnDesc, I
 import {IOrderedGroup} from '../model/Group';
 import Ranking from '../model/Ranking';
 import ADataProvider, {IDataProviderOptions} from './ADataProvider';
+import {createDetailDesc} from '../model/OverviewDetailColumn';
 
 
 function isComplexAccessor(column: any) {
@@ -164,6 +165,7 @@ abstract class ACommonDataProvider extends ADataProvider {
       if (this.multiSelections) {
         r.push(this.create(createSelectionDesc())!);
       }
+      r.push(this.create(createDetailDesc())!);
     }
     this.getColumns().forEach((col) => {
       const c = this.create(col);

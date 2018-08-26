@@ -9,7 +9,7 @@
     display: flex;
     flex-direction: column;
 
-    .row {
+    .rowContainer {
       position: relative;
 
       .textureContainer {
@@ -49,14 +49,14 @@
     }
   }
 
-  .row.expanded {
+  .rowContainer.expanded {
     .engineRendererContainer:not(.always) {
       display: block;
     }
   }
 
   &.expand,
-  .row.expanded {
+  .rowContainer.expanded {
     .textureContainer:not(.always) {
       display: none;
     }

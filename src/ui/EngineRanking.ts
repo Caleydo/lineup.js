@@ -532,6 +532,22 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     }, true);
   }
 
+  updateDetail(detailDataIndices: { has(i: number): boolean }) {
+    super.forEachRow((node: HTMLElement, rowIndex: number) => {
+      if (this.renderCtx.isGroup(rowIndex)) {
+        this.updateRow(node, rowIndex);
+        return;
+      }
+
+      const dataIndex = parseInt(node.dataset.i!, 10);
+      if (detailDataIndices.has(dataIndex)) {
+        node.classList.add('lu-detail');
+      } else {
+        node.classList.remove('lu-detail');
+      }
+    }, true);
+  }
+
   updateColumnWidths() {
     // update the column context in place
     (<any>this._context).column = nonUniformContext(this._context.columns.map((w) => w.width), 100, COLUMN_PADDING);

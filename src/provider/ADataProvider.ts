@@ -14,6 +14,7 @@ import Ranking from '../model/Ranking';
 import StackColumn from '../model/StackColumn';
 import {exportRanking, IExportOptions} from './utils';
 import {isSupportType} from '../model/annotations';
+import {createDetailDesc} from '../model/OverviewDetailColumn';
 
 export {IExportOptions} from './utils';
 
@@ -50,6 +51,16 @@ export interface IDataProvider extends AEventDispatcher {
 
   isSelected(i: number): boolean;
 
+  detailAllOf(ranking: Ranking): void;
+
+  getDetail(): number[];
+
+  setDetail(dataIndices: number[]): void;
+
+  toggleDetail(i: number, additional?: boolean): boolean;
+
+  isDetail(i: number): boolean;
+
   removeRanking(ranking: Ranking): void;
 
   ensureOneRanking(): void;
@@ -85,6 +96,7 @@ export interface IDataProvider extends AEventDispatcher {
  */
 abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
   static readonly EVENT_SELECTION_CHANGED = 'selectionChanged';
+  static readonly EVENT_DETAIL_CHANGED = 'detailChanged';
   static readonly EVENT_ADD_COLUMN = Ranking.EVENT_ADD_COLUMN;
   static readonly EVENT_REMOVE_COLUMN = Ranking.EVENT_REMOVE_COLUMN;
   static readonly EVENT_ADD_RANKING = 'addRanking';
@@ -109,6 +121,8 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
    * @type {OrderedSet}
    */
   private readonly selection = new OrderedSet<number>();
+
+  private readonly detail = new OrderedSet<number>();
 
   //ranking.id@group.name
   private aggregations = new Set<string>();
@@ -141,7 +155,7 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
       ADataProvider.EVENT_ADD_COLUMN, ADataProvider.EVENT_REMOVE_COLUMN,
       ADataProvider.EVENT_ADD_RANKING, ADataProvider.EVENT_REMOVE_RANKING,
       ADataProvider.EVENT_DIRTY, ADataProvider.EVENT_DIRTY_HEADER, ADataProvider.EVENT_DIRTY_VALUES,
-      ADataProvider.EVENT_ORDER_CHANGED, ADataProvider.EVENT_SELECTION_CHANGED,
+      ADataProvider.EVENT_ORDER_CHANGED, ADataProvider.EVENT_SELECTION_CHANGED, ADataProvider.EVENT_DETAIL_CHANGED,
       ADataProvider.EVENT_ADD_DESC, ADataProvider.EVENT_CLEAR_DESC,
       ADataProvider.EVENT_JUMP_TO_NEAREST, ADataProvider.EVENT_GROUP_AGGREGATION_CHANGED]);
   }
@@ -335,6 +349,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
       (<ISelectionColumnDesc>desc).accessor = (row: IDataRow) => this.isSelected(row.i);
       (<ISelectionColumnDesc>desc).setter = (row: IDataRow, value: boolean) => value ? this.select(row.i) : this.deselect(row.i);
       (<ISelectionColumnDesc>desc).setterAll = (rows: IDataRow[], value: boolean) => value ? this.selectAll(rows.map((d) => d.i)) : this.deselectAll(rows.map((d) => d.i));
+    } else if (desc.type === 'detail') {
+      (<ISelectionColumnDesc>desc).accessor = (row: IDataRow) => this.isDetail(row.i);
+      (<ISelectionColumnDesc>desc).setter = (row: IDataRow, value: boolean) => value ? this.addDetail(row.i) : this.removeDetail(row.i);
+      (<ISelectionColumnDesc>desc).setterAll = (rows: IDataRow[], value: boolean) => value ? this.addDetailAll(rows.map((d) => d.i)) : this.removeDetailAll(rows.map((d) => d.i));
     } else if (desc.type === 'aggregate') {
       (<IAggregateGroupColumnDesc>desc).isAggregated = (ranking: Ranking, group: IGroup) => this.isAggregated(ranking, group);
       (<IAggregateGroupColumnDesc>desc).setAggregated = (ranking: Ranking, group: IGroup, value: boolean) => this.setAggregated(ranking, group, value);
@@ -411,6 +429,7 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return {
       uid: this.uid,
       selection: this.getSelection(),
+      detail: this.getDetail(),
       aggregations: Array.from(this.aggregations),
       rankings: this.rankings.map((r) => r.dump(this.toDescRef))
     };
@@ -472,6 +491,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     if (dump.selection) {
       dump.selection.forEach((s: number) => this.selection.add(s));
     }
+    //restore detail
+    if (dump.detail) {
+      dump.detail.forEach((s: number) => this.detail.add(s));
+    }
     if (dump.aggregations) {
       this.aggregations.clear();
       dump.aggregations.forEach((a: string) => this.aggregations.add(a));
@@ -519,6 +542,8 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
           return this.create(createRankDesc());
         case 'selection':
           return this.create(createSelectionDesc());
+        case 'detail':
+          return this.create(createDetailDesc());
         case 'group':
           return this.create(createGroupDesc());
         case 'aggregate':
@@ -659,6 +684,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return this.selection.has(index);
   }
 
+  isDetail(index: number) {
+    return this.detail.has(index);
+  }
+
   /**
    * also select the given row
    * @param index
@@ -672,6 +701,14 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     }
     this.selection.add(index);
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
+  }
+
+  addDetail(index: number) {
+    if (this.detail.has(index)) {
+      return; //no change
+    }
+    this.detail.add(index);
+    this.fire(ADataProvider.EVENT_DETAIL_CHANGED, this.getDetail());
   }
 
   /**
@@ -706,8 +743,22 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  addDetailAll(indices: number[]) {
+    if (indices.every((i) => this.detail.has(i))) {
+      return; //no change
+    }
+    indices.forEach((index) => {
+      this.detail.add(index);
+    });
+    this.fire(ADataProvider.EVENT_DETAIL_CHANGED, this.getDetail());
+  }
+
   selectAllOf(ranking: Ranking) {
     this.setSelection(ranking.getOrder());
+  }
+
+  detailAllOf(ranking: Ranking) {
+    this.setDetail(ranking.getOrder());
   }
 
   /**
@@ -723,6 +774,17 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     }
     this.selection.clear();
     this.selectAll(indices);
+  }
+
+  setDetail(indices: number[]) {
+    if (indices.length === 0) {
+      return this.clearDetail();
+    }
+    if (this.detail.size === indices.length && indices.every((i) => this.detail.has(i))) {
+      return; //no change
+    }
+    this.detail.clear();
+    this.addDetailAll(indices);
   }
 
   /**
@@ -748,6 +810,23 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return true;
   }
 
+  toggleDetail(index: number, additional = false) {
+    if (this.isDetail(index)) {
+      if (additional) {
+        this.removeDetail(index);
+      } else {
+        this.clearDetail();
+      }
+      return false;
+    }
+    if (additional) {
+      this.addDetail(index);
+    } else {
+      this.setDetail([index]);
+    }
+    return true;
+  }
+
   /**
    * deselect the given row
    * @param index
@@ -758,6 +837,14 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     }
     this.selection.delete(index);
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
+  }
+
+  removeDetail(index: number) {
+    if (!this.detail.has(index)) {
+      return; //no change
+    }
+    this.detail.delete(index);
+    this.fire(ADataProvider.EVENT_DETAIL_CHANGED, this.getDetail());
   }
 
   /**
@@ -774,6 +861,16 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  removeDetailAll(indices: number[]) {
+    if (indices.every((i) => !this.detail.has(i))) {
+      return; //no change
+    }
+    indices.forEach((index) => {
+      this.detail.delete(index);
+    });
+    this.fire(ADataProvider.EVENT_DETAIL_CHANGED, this.getDetail());
+  }
+
   /**
    * returns a promise containing the selected rows
    * @return {Promise<any[]>}
@@ -785,12 +882,23 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return this.view(this.getSelection());
   }
 
+  detailRows(): Promise<any[]> | any[] {
+    if (this.detail.size === 0) {
+      return [];
+    }
+    return this.view(this.getDetail());
+  }
+
   /**
    * returns the currently selected indices
    * @returns {Array}
    */
   getSelection() {
     return Array.from(this.selection);
+  }
+
+  getDetail() {
+    return Array.from(this.detail);
   }
 
   /**
@@ -802,6 +910,14 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     }
     this.selection.clear();
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, [], false);
+  }
+
+  clearDetail() {
+    if (this.detail.size === 0) {
+      return; //no change
+    }
+    this.detail.clear();
+    this.fire(ADataProvider.EVENT_DETAIL_CHANGED, [], false);
   }
 
   /**
