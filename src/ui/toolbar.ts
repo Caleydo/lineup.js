@@ -297,6 +297,16 @@ export const toolbarActions: { [key: string]: IToolbarAction | IToolbarDialogAdd
     const ss = new Set(s);
     const others = order.filter((d) => !ss.has(d));
     ctx.provider.setSelection(others);
+  }),
+  selectionToOverviewDetail: ui('S2D', (_col, _evt, ctx, level) => {
+    ctx.dialogManager.removeAboveLevel(level - 1); // close itself
+    const s = ctx.provider.getSelection();
+    ctx.provider.setDetail(s);
+  }),
+  overviewDetailToSelection: ui('D2S', (_col, _evt, ctx, level) => {
+    ctx.dialogManager.removeAboveLevel(level - 1); // close itself
+    const d = ctx.provider.getDetail();
+    ctx.provider.setSelection(d);
   })
 }, toolbarAddons);
 

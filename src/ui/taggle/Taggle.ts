@@ -43,10 +43,8 @@ export default class Taggle extends ALineUp {
       this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
             <input class="spaceFilling" type="checkbox">
             <span>Overview</span>
-            <input class="expand" type="checkbox">
-            <span>Expand</span>
-            <input class="s2d" type="button" value="S2D">
-            <input class="d2s" type="button" value="D2S">
+            <input id="lu-toggle-expand" class="expand" type="checkbox">
+            <span for="lu-toggle-expand">Expand</span>
             <div></div>
           </label></div>`);
       const spaceFilling = spaceFillingRule(this.options);
@@ -66,14 +64,6 @@ export default class Taggle extends ALineUp {
       expandInput.onchange = () => {
         const selected = expandInput.checked;
         this.renderer!.expandTextureRenderer(selected);
-      };
-      const s2dInput = <HTMLInputElement>this.spaceFilling.querySelector('input.s2d');
-      s2dInput.onclick = () => {
-        this.renderer!.s2d();
-      };
-      const d2sInput = <HTMLInputElement>this.spaceFilling.querySelector('input.d2s');
-      d2sInput.onclick = () => {
-        this.renderer!.d2s();
       };
     }
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
