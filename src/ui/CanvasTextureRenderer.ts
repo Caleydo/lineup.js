@@ -30,6 +30,7 @@ export interface ITextureRenderer {
 }
 
 export default class CanvasTextureRenderer implements ITextureRenderer {
+  static readonly MAX_CANVAS_SIZE = 32767;
 
   readonly node: HTMLElement;
   readonly canvas: any;
@@ -134,26 +135,23 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
               this.detailParts.splice(j, 0, g);
               aggregateIndices.push(j);
               return;
-            } else {
-              if (g[1] < this.detailParts[j][1]) {
-                this.detailParts.splice(j, 1, g, [g[1] + 1, this.detailParts[j][1]]);
-                aggregateIndices.push(j);
-                return;
-              } else {
-                this.detailParts.splice(j, 1);
-              }
             }
-          } else {
-            if (g[0] <= this.detailParts[j][1]) {
-              if (g[1] < this.detailParts[j][1]) {
-                this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1], g, [g[1] + 1, this.detailParts[j][1]]);
-                aggregateIndices.push(j + 1);
-                return;
-              } else {
-                this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1]);
-              }
+            if (g[1] < this.detailParts[j][1]) {
+              this.detailParts.splice(j, 1, g, [g[1] + 1, this.detailParts[j][1]]);
+              aggregateIndices.push(j);
+              return;
             }
+            this.detailParts.splice(j, 1);
           }
+          if (g[0] > this.detailParts[j][1]) {
+            return;
+          }
+          if (g[1] < this.detailParts[j][1]) {
+              this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1], g, [g[1] + 1, this.detailParts[j][1]]);
+              aggregateIndices.push(j + 1);
+              return;
+            }
+            this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1]);
         }
         this.detailParts.push(g);
         aggregateIndices.push(this.detailParts.length - 1);
@@ -183,7 +181,6 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
           dataParts.push(localData[i].length);
         }
       }
-//
       let curIndex = 0;
       const rankingDiv = <any>d3.select(this.node).select(`[data-ranking="${rankingIndex}"]`)!.node();
       if (!rankingDiv) {
@@ -211,15 +208,18 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         aggregateOffset += newOffset;
 
         if (!aggregated) {
-          const textureDiv = this.node.ownerDocument.createElement('div');
-          textureDiv.style.height = `${data.length / localData[i].length * this.currentNodeHeight}px`;
-          textureDiv.classList.add('textureContainer');
-          if (!expandable) {
-            textureDiv.classList.add('always');
+          const height = data.length / localData[i].length * this.currentNodeHeight;
+          if (height >= 1) { //only render parts larger than 1px
+            const textureDiv = this.node.ownerDocument.createElement('div');
+            textureDiv.style.height = `${height}px`;
+            textureDiv.classList.add('textureContainer');
+            if (!expandable) {
+              textureDiv.classList.add('always');
+            }
+            this.renderedColumns = [];
+            r.ranking.flatColumns.forEach((column) => this.createColumn(column, data, textureDiv, false, expandable));
+            rowDiv.appendChild(textureDiv);
           }
-          this.renderedColumns = [];
-          r.ranking.flatColumns.forEach((column) => this.createColumn(column, data, textureDiv, false, expandable));
-          rowDiv.appendChild(textureDiv);
         }
         if (expandable) {
           const expandLater = () => {
@@ -294,35 +294,35 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       columnContainer.classList.add('partOfComposite');
     }
 
-    let newElement = <any>null;
+    let newElements = <any>[];
     if (column instanceof NumbersColumn) {
       const col = <NumbersColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return (<any>value).v[(<any>col.desc).column];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if (column instanceof NumberColumn) {
       const col = <NumberColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return [(<any>value).v[(<any>col.desc).column]];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if (column instanceof CategoricalsColumn) {
       const col = <CategoricalsColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return (<any>value).v[(<any>col.desc).column];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if (column instanceof CategoricalColumn) {
       const col = <CategoricalColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return [(<any>value).v[(<any>col.desc).column]];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if (column instanceof SelectionColumn) {
       const col = <SelectionColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return [this.engineRenderer.ctx.provider.isSelected((<any>value).i)];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if (column instanceof OverviewDetailColumn) {
       const col = <OverviewDetailColumn>column;
-      newElement = this.generateImage(grouped.map((value) => {
+      newElements = this.generateImage(grouped.map((value) => {
         return [this.engineRenderer.ctx.provider.isDetail((<any>value).i)];
       }), CanvasTextureRenderer.getColorScale(col));
     } else if ('children' in column) {
@@ -330,10 +330,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       (<CompositeColumn>column).children.forEach((c) => this.createColumn(c, grouped, container, true, expandable));
       return;
     } else {
-      newElement = this.node.ownerDocument.createElement('canvas');
+      newElements.push(this.node.ownerDocument.createElement('canvas'));
     }
 
-    columnContainer.appendChild(newElement);
+    newElements.forEach((newElement: any) => columnContainer.appendChild(newElement));
 
     container.appendChild(columnContainer);
     this.renderedColumns.push(column.id);
@@ -356,10 +356,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       return colorScale;
     }
     if (column instanceof CategoricalColumn) {
-      const colorScale = scaleOrdinal<number, string>();
+      const colorScale = scaleOrdinal<string, string>();
       const categories = column.categories;
       colorScale
-        .domain(categories.map((v) => v.value))
+        .domain(categories.map((v) => v.name))
         .range(categories.map((v) => v.color));
       return colorScale;
     }
@@ -383,16 +383,24 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   private generateImage(data: any[][], colorScale: any) {
-    const height = data.length;
-    let width = 0;
-    if(height > 0) {
-      width = data[0].length;
+    const totalLength = data.length;
+    const newElements = <any>[];
+    while (data.length > 0) {
+      const chunk = data.splice(0, CanvasTextureRenderer.MAX_CANVAS_SIZE);
+      const height = chunk.length;
+      let width = 0;
+      if(height > 0) {
+        width = chunk[0].length;
+      }
+      const canvas = this.node.ownerDocument.createElement('canvas');
+      canvas.setAttribute('height', `${height}`);
+      canvas.setAttribute('width', `${width}`);
+      canvas.style.flexGrow = `${height}`;
+      canvas.style.height = `${chunk.length / totalLength * 100}%`;
+      this.drawOntoCanvas(chunk, colorScale, canvas);
+      newElements.push(canvas);
     }
-    const canvas = this.node.ownerDocument.createElement('canvas');
-    canvas.setAttribute('height', `${height}`);
-    canvas.setAttribute('width', `${width}`);
-    this.drawOntoCanvas(data, colorScale, canvas);
-    return canvas;
+    return newElements;
   }
 
   private drawOntoCanvas(data: any[][], colorScale: any, canvas: any) {

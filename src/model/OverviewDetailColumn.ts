@@ -27,7 +27,7 @@ export interface IDetailColumnDesc extends IValueColumnDesc<boolean> {
  * a checkbox column for selections
  */
 @SupportType()
-@toolbar('sort', 'stratify', 'selectionToOverviewDetail', 'overviewDetailToSelection')
+@toolbar('sort', 'sortBy', 'group', 'groupBy', 'selectionToOverviewDetail', 'overviewDetailToSelection')
 @Category('support')
 export default class OverviewDetailColumn extends ValueColumn<boolean> {
   private static DETAILED_GROUP: IGroup = {

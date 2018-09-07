@@ -18,6 +18,9 @@
         .columnContainer {
           flex: 0 0 auto;
           margin-right: 5px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
 
           &.partOfComposite {
             margin-right: 6px;

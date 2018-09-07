@@ -40,12 +40,22 @@ export default class Taggle extends ALineUp {
     this.renderer.pushUpdateAble((ctx) => this.panel!.update(ctx));
     this.node.insertBefore(this.panel.node, this.node.firstChild);
     {
+      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-expand-button-chooser"><label>
+            <input class="expand" type="checkbox">
+            <span>Expand</span>
+          </label></div>`);
+      const expandButton = <HTMLElement>this.node.querySelector('.lu-expand-button-chooser')!;
+      const expandInput = <HTMLInputElement>expandButton.querySelector('input.expand');
+      expandInput.onchange = () => {
+        const selected = expandInput.checked;
+        this.renderer!.expandTextureRenderer(selected);
+      };
+      expandButton.onclick = () => {
+        expandInput.checked = !expandInput.checked;
+      };
       this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
             <input class="spaceFilling" type="checkbox">
             <span>Overview</span>
-            <input id="lu-toggle-expand" class="expand" type="checkbox">
-            <span for="lu-toggle-expand">Expand</span>
-            <div></div>
           </label></div>`);
       const spaceFilling = spaceFillingRule(this.options);
       this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
@@ -54,17 +64,19 @@ export default class Taggle extends ALineUp {
         const selected = this.spaceFilling!.classList.toggle('chosen');
         //self.setTimeout(() => this.renderer.switchRule(selected ? spaceFilling : null));
         this.renderer!.useTextureRenderer(selected);
+        if (selected) {
+          expandButton.style.display = '';
+        } else {
+          expandButton.style.display = 'none';
+        }
       };
       if (this.options.overviewMode) {
         ruleInput.checked = true;
         this.spaceFilling.classList.toggle('chosen');
         this.renderer.switchRule(spaceFilling);
+      } else {
+        expandButton.style.display = 'none';
       }
-      const expandInput = <HTMLInputElement>this.spaceFilling.querySelector('input.expand');
-      expandInput.onchange = () => {
-        const selected = expandInput.checked;
-        this.renderer!.expandTextureRenderer(selected);
-      };
     }
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
   }
