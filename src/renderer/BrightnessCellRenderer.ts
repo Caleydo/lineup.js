@@ -3,7 +3,7 @@ import {ICategoricalStatistics, IStatistics} from '../internal/math';
 import {IDataRow, INumberColumn, isNumberColumn, isMapAbleColumn} from '../model';
 import Column from '../model/Column';
 import {isNumbersColumn} from '../model/INumberColumn';
-import {CANVAS_HEIGHT} from '../styles';
+import {CANVAS_HEIGHT, cssClass} from '../styles';
 import {colorOf} from './impose';
 import {default as IRenderContext, ERenderMode, ICellRendererFactory, IImposer} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
@@ -44,7 +44,7 @@ export default class BrightnessCellRenderer implements ICellRendererFactory {
     const width = context.colWidth(col);
     return {
       template: `<div title="">
-        <div style="background-color: ${col.color}"></div><div> </div>
+        <div class="${cssClass('cat-color')}" style="background-color: ${col.color}"></div><div class="${cssClass('cat-label')}"> </div>
       </div>`,
       update: (n: HTMLElement, d: IDataRow) => {
         const missing = renderMissingDOM(n, col, d);

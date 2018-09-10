@@ -2,6 +2,7 @@ import {round} from '../../internal';
 import StackColumn from '../../model/StackColumn';
 import ADialog, {IDialogContext} from './ADialog';
 import {forEach} from './utils';
+import {cssClass} from '../../styles';
 
 /** @internal */
 export default class WeightsEditDialog extends ADialog {
@@ -26,11 +27,16 @@ export default class WeightsEditDialog extends ADialog {
   }
 
   protected build(node: HTMLElement) {
-    node.classList.add('lu-filter-table', 'lu-weights-table');
 
     const children = this.column.children;
-    node.insertAdjacentHTML('beforeend', `<div>
-        ${this.weights.map((weight, i) => `<div><input type="number" value="${round(weight * 100, 2)}" min="0" max="100" step="any"><span><span style="background-color: ${children[i].color}; width: ${round(weight * 100, 2)}%"></span></span>${children[i].label}</div>`).join('')}
+    node.insertAdjacentHTML('beforeend', `<div class="${cssClass('dialog-table')}">
+        ${this.weights.map((weight, i) => `<div class="${cssClass('dialog-weights-table-entry')}>
+          <input type="number" value="${round(weight * 100, 2)}" min="0" max="100" step="any">
+          <span class="${cssClass('dialog-filter-color-bar')}">
+            <span style="background-color: ${children[i].color}; width: ${round(weight * 100, 2)}%"></span>
+          </span>
+          ${children[i].label}
+        </div>`).join('')}
     </div>`);
     this.forEach('input[type=number]', (d: HTMLInputElement) => {
       d.oninput = () => {

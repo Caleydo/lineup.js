@@ -19,6 +19,7 @@ import SearchBox, {IGroupSearchItem, ISearchBoxOptions} from './SearchBox';
 import SidePanelRanking from './SidePanelRanking';
 import {dialogContext} from '../toolbar';
 import ChooseRankingDialog from '../dialogs/ChooseRankingDialog';
+import {aria, cssClass} from '../../styles';
 
 
 interface IColumnDescCategory {
@@ -64,6 +65,7 @@ export default class SidePanel {
     placeholder: 'Add Column...',
     formatItem: (item: IColumnWrapper | IGroupSearchItem<IColumnWrapper>, node: HTMLElement) => {
       node.dataset.typeCat = isWrapper(item) ? item.category.name : (<IColumnWrapper>item.children[0]).category.name;
+      node.classList.add(cssClass('typed-icon'));
       if (isWrapper(item)) {
         node.dataset.type = item.desc.type;
       }
@@ -83,7 +85,7 @@ export default class SidePanel {
     Object.assign(this.options, options);
 
     this.node = document.createElement('aside');
-    this.node.classList.add('lu-side-panel');
+    this.node.classList.add(cssClass('side-panel'));
 
     this.search = this.options.chooser ? new SearchBox<IColumnWrapper>(this.options) : null;
 
@@ -94,11 +96,11 @@ export default class SidePanel {
 
   private init() {
     this.node.innerHTML = `
-      <aside class="lu-stats"></aside>
-      <header>
-        <i class="lu-action" title="Choose &hellip;"><span aria-hidden="true">Choose &hellip;</span></i>
+      <aside class="${cssClass('stats')}"></aside>
+      <header class="${cssClass('side-panel-rankings')}">
+        <i class="${cssClass('action')}" title="Choose &hellip;">${aria('Choose &hellip;')}</i>
       </header>
-      <main></main>
+      <main class="${cssClass('side-panel-main')}"></main>
     `;
 
     {
@@ -111,7 +113,7 @@ export default class SidePanel {
     }
 
     if (this.options.collapseable) {
-      this.node.insertAdjacentHTML('beforeend', `<div class="lu-collapser" title="Collapse Panel"></div>`);
+      this.node.insertAdjacentHTML('beforeend', `<div class="${cssClass('collapser')}" title="Collapse Panel">${aria('Collapse Panel')}</div>`);
       const last = <HTMLElement>this.node.lastElementChild;
       last.onclick = () => this.collapsed = !this.collapsed;
       this.collapsed = this.options.collapseable === 'collapsed';
@@ -126,6 +128,7 @@ export default class SidePanel {
     }
     this.chooser = this.node.ownerDocument.createElement('header');
     this.chooser.innerHTML = '<form></form>';
+    this.chooser.classList.add(cssClass('side-panel-chooser'));
     this.chooser.firstElementChild!.appendChild(this.search.node);
     this.search.on(SearchBox.EVENT_SELECT, (panel: IColumnWrapper) => {
       const col = this.data.create(panel.desc);
@@ -231,11 +234,11 @@ export default class SidePanel {
   }
 
   get collapsed() {
-    return this.node.classList.contains('lu-collapsed');
+    return this.node.classList.contains(cssClass('collapsed'));
   }
 
   set collapsed(value: boolean) {
-    this.node.classList.toggle('lu-collapsed', value);
+    this.node.classList.toggle(cssClass('collapsed'), value);
     if (value) {
       return;
     }
@@ -251,7 +254,7 @@ export default class SidePanel {
     if (active && this.chooser) {
       active.node.insertAdjacentElement('afterbegin', this.chooser);
       // scroll to body
-      const parent = <HTMLElement>this.node.closest('.lu')!;
+      const parent = <HTMLElement>this.node.closest(`.${cssClass()}`)!;
       const body = parent ? parent.querySelector(`article[data-ranking="${active.ranking.id}"]`) : null;
       if (body) {
         body.scrollIntoView();
@@ -286,7 +289,7 @@ export default class SidePanel {
     if (this.collapsed) {
       return;
     }
-    const stats = <HTMLElement>this.node.querySelector('aside.lu-stats');
+    const stats = <HTMLElement>this.node.querySelector(`.${cssClass('stats')}`);
     const s = this.data.getSelection();
     const r = this.data.getFirstRanking();
     const visible = r ? r.getGroups().reduce((a, b) => a + b.order.length, 0) : 0;

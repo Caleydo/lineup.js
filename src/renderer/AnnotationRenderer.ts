@@ -2,7 +2,7 @@ import {IDataRow} from '../model';
 import AnnotateColumn from '../model/AnnotateColumn';
 import Column from '../model/Column';
 import StringCellRenderer from './StringCellRenderer';
-import {noop} from './utils';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class AnnotationRenderer extends StringCellRenderer {
@@ -14,21 +14,22 @@ export default class AnnotationRenderer extends StringCellRenderer {
 
   create(col: AnnotateColumn) {
     return {
-      template: `<div class='annotations text'>
-        <input class='lu-hover-only'>
-        <span class='text lu-not-hover'></span>
+      template: `<div>
+        <span></span>
+        <input class="${cssClass('hover-only')} ${cssClass('annotate-input')}">
        </div>`,
       update: (n: HTMLElement, d: IDataRow) => {
-        const input: HTMLInputElement = <HTMLInputElement>n.firstElementChild!;
+        const label = <HTMLElement>n.firstElementChild!;
+        const input = <HTMLInputElement>n.lastElementChild!;
         input.onchange = () => {
+          label.textContent = input.value;
           col.setValue(d, input.value);
         };
         input.onclick = (event) => {
           event.stopPropagation();
         };
-        n.lastElementChild!.textContent = input.value = col.getLabel(d);
-      },
-      render: noop
+        label.textContent = input.value = col.getLabel(d);
+      }
     };
   }
 }

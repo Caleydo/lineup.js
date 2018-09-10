@@ -1,5 +1,5 @@
 import {ICategoricalStatistics, IStatistics} from '../internal/math';
-import {ICategoricalColumn, IDataRow, IGroup, INumberColumn} from '../model';
+import {ICategoricalColumn, IDataRow, IGroup, INumberColumn, IGroupMeta} from '../model';
 import Column from '../model/Column';
 import {IDataProvider} from '../provider/ADataProvider';
 import DialogManager from '../ui/dialogs/DialogManager';
@@ -25,9 +25,12 @@ export interface ICellRenderer {
    * @param i the order relative index
    * @param group the group this row is part of
    */
-  update(node: HTMLElement, d: IDataRow, i: number, group: IGroup): void;
+  update(node: HTMLElement, d: IDataRow, i: number, group: IGroup, meta: IGroupMeta): void;
 
-  render(ctx: CanvasRenderingContext2D, d: IDataRow, i: number, group: IGroup): void;
+  /**
+   * render a low detail canvas row
+   */
+  render?(ctx: CanvasRenderingContext2D, d: IDataRow, i: number, group: IGroup, meta: IGroupMeta): void | boolean;
 }
 
 /**
@@ -82,6 +85,8 @@ export interface IRenderContext {
    * prefix used for all generated id names
    */
   readonly idPrefix: string;
+
+  asElement(html: string): HTMLElement;
 
   /**
    * lookup custom options by key

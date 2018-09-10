@@ -2,6 +2,8 @@ import {MIN_LABEL_WIDTH} from '../config';
 import Column from '../model/Column';
 import {IArrayColumn} from '../model/IArrayColumn';
 import {hsl} from 'd3-color';
+import {cssClass} from '../styles';
+import IRenderContext from './interfaces';
 
 /**
  * utility function to sets attributes and styles in a nodes
@@ -36,8 +38,7 @@ export function noop() {
 /** @internal */
 export const noRenderer = {
   template: `<div></div>`,
-  update: noop,
-  render: noop
+  update: noop
 };
 
 /** @internal */
@@ -80,7 +81,7 @@ export function forEachChild<T extends Element>(node: Element, callback: (d: T, 
  * @param columns columns to check
  * @internal
  */
-export function matchColumns(node: HTMLElement, columns: {column: Column, template: string, rendererId: string}[]) {
+export function matchColumns(node: HTMLElement, columns: {column: Column, template: string, rendererId: string}[], ctx: IRenderContext) {
   if (node.childElementCount === 0) {
     // initial call fast method
     node.innerHTML = columns.map((c) => c.template).join('');
@@ -118,8 +119,8 @@ export function matchColumns(node: HTMLElement, columns: {column: Column, templa
   columns.forEach((col) => {
     let cnode = <HTMLElement>node.querySelector(`[data-column-id="${col.column.id}"]`);
     if (!cnode) {
-      node.insertAdjacentHTML('beforeend', col.template);
-      cnode = <HTMLElement>node.lastElementChild!;
+      cnode = ctx.asElement(col.template);
+      cnode.classList.add(cssClass('renderer'));
       cnode.dataset.columnId = col.column.id;
       cnode.dataset.renderer = col.rendererId;
     }
@@ -134,6 +135,8 @@ export function wideEnough(col: IArrayColumn<any>, length: number = col.labels.l
 }
 
 
+
+const adaptColorCache: {[bg: string]: string} = {};
 /**
  * Adapts the text color for a given background color
  * @param {string} bgColor as `#ff0000`
@@ -141,7 +144,11 @@ export function wideEnough(col: IArrayColumn<any>, length: number = col.labels.l
  * @internal
  */
 export function adaptTextColorToBgColor(bgColor: string): string {
-  return hsl(bgColor).l > 0.5 ? 'black' : 'white';
+  const bak = adaptColorCache[bgColor];
+  if (bak) {
+    return bak;
+  }
+  return adaptColorCache[bgColor] = hsl(bgColor).l > 0.5 ? 'black' : 'white';
 }
 
 
@@ -166,7 +173,7 @@ export function adaptDynamicColorToBgColor(node: HTMLElement, bgColor: string, t
   node.innerText = title;
 
   const span = node.ownerDocument.createElement('span');
-  span.classList.add('lu-gradient-text');
+  span.classList.add(cssClass('gradient-text'));
   span.style.color = adapt;
   span.innerText = title;
   node.appendChild(span);

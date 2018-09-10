@@ -1,13 +1,14 @@
 @import '../vars';
 
-$engine_assets: '~lineupengine/src/assets';
 @import '~lineupengine/src/style';
 
-.lineup-engine {
-  > header .#{$lu_css_prefix}-header,
-  .#{$lu_css_prefix}-row > * {
-    margin-right: $lu_engine_grip_gap;
-  }
+.#{$engine_css_prefix}-th {
+  box-sizing: border-box;
+  margin-right: $lu_engine_grip_gap;
+}
+
+.#{$engine_css_prefix}-td {
+  box-sizing: border-box;
 }
 
 @import './header';
