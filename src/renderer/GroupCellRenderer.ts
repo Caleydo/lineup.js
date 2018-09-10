@@ -1,8 +1,8 @@
-import {IDataRow, IGroup} from '../model';
+import {IDataRow, IGroup, IGroupMeta} from '../model';
 import Column from '../model/Column';
 import GroupColumn from '../model/GroupColumn';
 import {ICellRendererFactory} from './interfaces';
-import {noop, noRenderer} from './utils';
+import {noRenderer} from './utils';
 
 /** @internal */
 export default class GroupCellRenderer implements ICellRendererFactory {
@@ -18,14 +18,14 @@ export default class GroupCellRenderer implements ICellRendererFactory {
       update(node: HTMLElement, _row: IDataRow, i: number, group: IGroup) {
         const p = (<HTMLElement>node.firstElementChild!);
         if (i !== 0) {
-          p.innerText = '';
+          p.textContent = '';
         } else if (Array.isArray((<any>group).order)) {
-          p.innerText = `${group.name} (${(<any>group).order.length})`;
+          p.textContent = `${group.name} (${(<any>group).order.length})`;
         } else {
-          p.innerText = group.name;
+          p.textContent = group.name;
         }
       },
-      render: noop
+      render: (_ctx: CanvasRenderingContext2D, _row: IDataRow, _i: number, _group: IGroup, meta: IGroupMeta) => Boolean(meta)
     };
   }
 
@@ -33,7 +33,7 @@ export default class GroupCellRenderer implements ICellRendererFactory {
     return {
       template: `<div><div></div></div>`,
       update(node: HTMLElement, group: IGroup, rows: IDataRow[]) {
-        (<HTMLElement>node.firstElementChild!).innerText = `${group.name} (${rows.length})`;
+        (<HTMLElement>node.firstElementChild!).textContent = `${group.name} (${rows.length})`;
       }
     };
   }

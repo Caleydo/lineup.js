@@ -3,7 +3,8 @@ import Column from '../model/Column';
 import StringColumn from '../model/StringColumn';
 import {ERenderMode, ICellRendererFactory} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {noop, noRenderer, setText} from './utils';
+import {noRenderer, setText} from './utils';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class LinkCellRenderer implements ICellRendererFactory {
@@ -16,7 +17,7 @@ export default class LinkCellRenderer implements ICellRendererFactory {
   create(col: StringColumn) {
     const align = col.alignment || 'left';
     return {
-      template: `<a${align !== 'left' ? ` class="lu-${align}"` : ''} target="_blank" href=""></a>`,
+      template: `<a${align !== 'left' ? ` class="${cssClass(align)}"` : ''} target="_blank" rel="noopener" href=""></a>`,
       update: (n: HTMLAnchorElement, d: IDataRow) => {
         if (renderMissingDOM(n, col, d)) {
           return;
@@ -27,8 +28,7 @@ export default class LinkCellRenderer implements ICellRendererFactory {
         } else {
           n.innerHTML = col.getLabel(d);
         }
-      },
-      render: noop
+      }
     };
   }
 
@@ -39,7 +39,7 @@ export default class LinkCellRenderer implements ICellRendererFactory {
       if (col.isMissing(row)) {
         continue;
       }
-      examples.push(`<a target="_blank" href="${col.getValue(row)}">${col.getLabel(row)}</a>`);
+      examples.push(`<a target="_blank" rel="noopener" href="${col.getValue(row)}">${col.getLabel(row)}</a>`);
       if (examples.length >= numExampleRows) {
         break;
       }

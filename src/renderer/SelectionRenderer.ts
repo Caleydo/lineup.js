@@ -2,8 +2,8 @@ import {IDataRow, IGroup} from '../model';
 import Column from '../model/Column';
 import SelectionColumn from '../model/SelectionColumn';
 import {default as IRenderContext, ICellRendererFactory} from './interfaces';
-import {noop} from './utils';
 import {IDataProvider} from '../provider/ADataProvider';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class SelectionRenderer implements ICellRendererFactory {
@@ -29,8 +29,7 @@ export default class SelectionRenderer implements ICellRendererFactory {
 
           col.toggleValue(d);
         };
-      },
-      render: noop
+      }
     };
   }
 
@@ -41,14 +40,14 @@ export default class SelectionRenderer implements ICellRendererFactory {
         const selected = rows.reduce((act, r) => col.getValue(r) ? act + 1 : act, 0);
         const all = selected >= rows.length / 2;
         if (all) {
-          n.classList.add('lu-group-selected');
+          n.classList.add(cssClass('group-selected'));
         } else {
-          n.classList.remove('lu-group-selected');
+          n.classList.remove(cssClass('group-selected'));
         }
         n.onclick = function (event) {
           event.preventDefault();
           event.stopPropagation();
-          const value = n.classList.toggle('lu-group-selected');
+          const value = n.classList.toggle(cssClass('group-selected'));
           col.setValues(rows, value);
         };
       }
@@ -56,18 +55,22 @@ export default class SelectionRenderer implements ICellRendererFactory {
   }
 
   createSummary(col: SelectionColumn, context: IRenderContext) {
+    const unchecked = cssClass('icon-unchecked');
+    const checked = cssClass('icon-checked');
     return {
-      template: `<div title="(Un)Select All" data-icon="unchecked"></div>`,
+      template: `<div title="(Un)Select All" class="${unchecked}"></div>`,
       update: (node: HTMLElement) => {
         node.onclick = (evt) => {
           evt.stopPropagation();
-          const icon = node.dataset.icon;
-          if (icon === 'unchecked') {
+          const isunchecked = node.classList.contains(unchecked);
+          if (isunchecked) {
             context.provider.selectAllOf(col.findMyRanker()!);
-            node.dataset.icon = 'checked';
+            node.classList.remove(unchecked);
+            node.classList.add(checked);
           } else {
             context.provider.setSelection([]);
-            node.dataset.icon = 'unchecked';
+            node.classList.remove(checked);
+            node.classList.add(unchecked);
           }
         };
       }
@@ -86,7 +89,7 @@ export function rangeSelection(provider: IDataProvider, rankingId: string, dataI
     return false; // no other or deselect
   }
   const order = ranking.getOrder();
-  const lookup = new Map(ranking.getOrder().map((d, i) => <[number, number]>[d, i]));
+  const lookup = new Map(order.map((d, i) => <[number, number]>[d, i]));
   const distances = selection.map((d) => {
     const index = (lookup.has(d) ? lookup.get(d)! : Infinity);
     return {s: d, index, distance: Math.abs(relIndex - index)};

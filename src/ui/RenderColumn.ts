@@ -5,6 +5,7 @@ import {ISummaryRenderer} from '../renderer/interfaces';
 import {createHeader, updateHeader} from './header';
 import {IRankingContext} from './interfaces';
 import {ILineUpFlags} from '../interfaces';
+import {cssClass, engineCssClass} from '../styles/index';
 
 
 export interface IRenderers {
@@ -45,7 +46,8 @@ export default class RenderColumn implements IColumn {
     if (this.renderers.singleTemplate)  {
       return <HTMLElement>this.renderers.singleTemplate.cloneNode(true);
     }
-    const elem = asElement(this.ctx.document, this.renderers.single.template);
+    const elem = this.ctx.asElement(this.renderers.single.template);
+    elem.classList.add(cssClass(`renderer-${this.renderers.singleId}`), cssClass('detail'));
     elem.dataset.renderer = this.renderers.singleId;
     elem.dataset.group = 'd';
 
@@ -60,7 +62,8 @@ export default class RenderColumn implements IColumn {
     if (this.renderers.groupTemplate)  {
       return <HTMLElement>this.renderers.groupTemplate.cloneNode(true);
     }
-    const elem = asElement(this.ctx.document, this.renderers.group.template);
+    const elem = this.ctx.asElement(this.renderers.group.template);
+    elem.classList.add(cssClass(`renderer-${this.renderers.groupId}`), cssClass('group'));
     elem.dataset.renderer = this.renderers.groupId;
     elem.dataset.group = 'g';
 
@@ -75,17 +78,22 @@ export default class RenderColumn implements IColumn {
     if (this.renderers.summaryTemplate)  {
       return <HTMLElement>this.renderers.summaryTemplate.cloneNode(true);
     }
-    const elem = asElement(this.ctx.document, this.renderers.summary.template);
+    const elem = this.ctx.asElement(this.renderers.summary.template);
+    elem.classList.add(cssClass('summary'), cssClass('th-summary'), cssClass(`renderer-${this.renderers.summaryId}`));
     elem.dataset.renderer = this.renderers.summaryId;
-    elem.classList.add('lu-summary');
+
     this.renderers.summaryTemplate = <HTMLElement>elem.cloneNode(true);
     return elem;
   }
 
   createHeader() {
-    const node = createHeader(this.c, this.ctx);
-    node.className = `lu-header`;
-    node.classList.toggle('frozen', this.frozen);
+    const node = createHeader(this.c, this.ctx, {
+      extraPrefix: 'th'
+    });
+    node.classList.add(cssClass('header'));
+    if (!this.flags.disableFrozenColumns) {
+      node.classList.toggle(engineCssClass('frozen'), this.frozen);
+    }
 
     if (this.renderers && this.renderers.summary) {
       const summary = this.summaryRenderer()!;
@@ -100,7 +108,7 @@ export default class RenderColumn implements IColumn {
     if (!this.renderers || !this.renderers.summary) {
       return;
     }
-    let summary = <HTMLElement>node.querySelector('.lu-summary')!;
+    let summary = <HTMLElement>node.querySelector(`.${cssClass('summary')}`)!;
     const oldRenderer = summary.dataset.renderer;
     const currentRenderer = this.renderers.summaryId;
     if (oldRenderer !== currentRenderer) {
@@ -119,9 +127,12 @@ export default class RenderColumn implements IColumn {
   }
 
   updateCell(node: HTMLElement, index: number): HTMLElement | void {
-    node.classList.toggle('frozen', this.frozen);
+    if (!this.flags.disableFrozenColumns) {
+      node.classList.toggle(engineCssClass('frozen'), this.frozen);
+    }
     const isGroup = this.ctx.isGroup(index);
     // assert that we have the template of the right mode
+    // FIXME
     const oldRenderer = node.dataset.renderer;
     const currentRenderer = isGroup ? this.renderers!.groupId : this.renderers!.singleId;
     const oldGroup = node.dataset.group;
@@ -134,21 +145,14 @@ export default class RenderColumn implements IColumn {
       this.renderers!.group.update(node, g, g.rows);
     } else {
       const r = this.ctx.getRow(index);
-      this.renderers!.single.update(node, r, r.relativeIndex, r.group);
+      this.renderers!.single.update(node, r, r.relativeIndex, r.group, r.meta);
     }
     return node;
   }
 
   renderCell(ctx: CanvasRenderingContext2D, index: number) {
     const r = this.ctx.getRow(index);
-    this.renderers!.single.render(ctx, r, r.relativeIndex, r.group);
+    const s = this.renderers!.single;
+    return s.render && s.render(ctx, r, r.relativeIndex, r.group, r.meta);
   }
-}
-
-function asElement(doc: Document, html: string): HTMLElement {
-  const helper = doc.createElement('div');
-  helper.innerHTML = html;
-  const s = <HTMLElement>helper.firstElementChild!;
-  helper.innerHTML = '';
-  return s;
 }

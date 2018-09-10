@@ -4,10 +4,18 @@ import {default as BoxPlotColumn} from '../model/BoxPlotColumn';
 import Column from '../model/Column';
 import {IBoxPlotColumn, INumberColumn, INumbersColumn, isBoxPlotColumn, isNumbersColumn} from '../model/INumberColumn';
 import NumberColumn from '../model/NumberColumn';
-import {BOX_PLOT, CANVAS_HEIGHT, DOT} from '../styles';
+import {BOX_PLOT, CANVAS_HEIGHT, DOT, cssClass} from '../styles';
 import {colorOf} from './impose';
 import {default as IRenderContext, ERenderMode, ICellRendererFactory, IImposer} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
+import {clear} from '../internal';
+
+const BOXPLOT = `<div title="">
+  <div class="${cssClass('boxplot-whisker')}">
+    <div class="${cssClass('boxplot-box')}"></div>
+    <div class="${cssClass('boxplot-median')}"></div>
+  </div>
+</div>`;
 
 /** @internal */
 export function computeLabel(v: IBoxPlotData) {
@@ -31,9 +39,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
     const sortedByMe = col.isSortedByMe().asc !== undefined;
     const width = context.colWidth(col);
     return {
-      template: `<div title="">
-                    <div><div></div><div></div></div>
-                 </div>`,
+      template: BOXPLOT,
       update: (n: HTMLElement, d: IDataRow) => {
         const data = col.getBoxPlotData(d);
         const missing = !data || renderMissingDOM(n, col, d);
@@ -76,15 +82,13 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
   createGroup(col: INumberColumn, _context: IRenderContext, _hist: IStatistics | ICategoricalStatistics | null, imposer?: IImposer) {
     const sort = (col instanceof NumberColumn && col.isGroupSortedByMe().asc !== undefined) ? col.getSortMethod() : '';
     return {
-      template: `<div title="">
-                    <div><div></div><div></div></div>
-                 </div>`,
+      template: BOXPLOT,
       update: (n: HTMLElement, _group: IGroup, rows: IDataRow[]) => {
         if (rows.every((row) => col.isMissing(row))) {
           renderMissingDOM(n, col, rows[0]); // doesn't matter since all
           return;
         }
-        n.classList.remove('lu-missing');
+        n.classList.remove(cssClass('missing'));
 
         let box: IBoxPlotData, label: IBoxPlotData;
 
@@ -102,15 +106,13 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
 
   createSummary(col: INumberColumn, _comtext: IRenderContext, _interactive: boolean, imposer?: IImposer) {
     return {
-      template: `<div title="">
-                    <div><div></div><div></div></div>
-                 </div>`,
+      template: BOXPLOT,
       update: (n: HTMLElement, hist: IStatistics | null) => {
         if (hist == null || hist.count === 0) {
-          n.classList.add('lu-missing');
+          n.classList.add(cssClass('missing'));
           return;
         }
-        n.classList.remove('lu-missing');
+        n.classList.remove(cssClass('missing'));
         const sort = (col instanceof NumberColumn && col.isGroupSortedByMe().asc !== undefined) ? col.getSortMethod() : '';
 
         renderDOMBoxPlot(n, hist, hist, sort, colorOf(col, null, imposer));
@@ -142,8 +144,8 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
 
   if (!data.outlier || data.outlier.length === 0) {
     whiskers.dataset.sort = sort;
-    if (n.children.length > 1) {
-      n.innerHTML = '';
+    if (n.childElementCount > 1) {
+      clear(n);
       n.appendChild(whiskers);
     }
     return;
@@ -154,6 +156,7 @@ function renderDOMBoxPlot(n: HTMLElement, data: IBoxPlotData, label: IBoxPlotDat
   outliers.slice(data.outlier.length).forEach((v) => v.remove());
   for (let i = outliers.length; i < data.outlier.length; ++i) {
     const p = n.ownerDocument.createElement('div');
+    p.classList.add(cssClass('boxplot-outlier'));
     outliers.push(p);
     n.appendChild(p);
   }

@@ -14,7 +14,7 @@ import {filterMissingNumberMarkup, updateFilterMissingNumberMarkup} from '../ui/
 import {colorOf} from './impose';
 import {default as IRenderContext, ERenderMode, ICellRendererFactory, IImposer} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {noop} from './utils';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class HistogramCellRenderer implements ICellRendererFactory {
@@ -33,8 +33,7 @@ export default class HistogramCellRenderer implements ICellRendererFactory {
           return;
         }
         render(n, createHist(hist, guessedBins, [row], col));
-      },
-      render: noop
+      }
     };
   }
 
@@ -70,7 +69,7 @@ function staticSummary(col: INumberColumn, template: string, render: (n: HTMLEle
         Array.from(node.querySelectorAll('span')).forEach((d: HTMLElement, i) => d.textContent = range[i]);
       }
 
-      node.classList.toggle('lu-missing', !hist);
+      node.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -82,10 +81,10 @@ function staticSummary(col: INumberColumn, template: string, render: (n: HTMLEle
 function interactiveSummary(col: IMapAbleColumn, context: IRenderContext, template: string, render: (n: HTMLElement, stats: {bins: number, max: number, hist: INumberBin[]}) => void) {
   const f = filter(col);
   template += `
-      <div data-handle="min-hint" style="width: ${f.percent(f.filterMin)}%"></div>
-      <div data-handle="max-hint" style="width: ${100 - f.percent(f.filterMax)}%"></div>
-      <div data-handle="min" data-value="${round(f.filterMin, 2)}" style="left: ${f.percent(f.filterMin)}%" title="min filter, drag or shift click to change"></div>
-      <div data-handle='max' data-value="${round(f.filterMax, 2)}" style="right: ${100 - f.percent(f.filterMax)}%" title="max filter, drag or shift click to change"></div>
+      <div class="${cssClass('histogram-min-hint')}" style="width: ${f.percent(f.filterMin)}%"></div>
+      <div class="${cssClass('histogram-max-hint')}" style="width: ${100 - f.percent(f.filterMax)}%"></div>
+      <div class="${cssClass('histogram-min')}" data-value="${round(f.filterMin, 2)}" style="left: ${f.percent(f.filterMin)}%" title="min filter, drag or shift click to change"></div>
+      <div class="${cssClass('histogram-max')}" data-value="${round(f.filterMax, 2)}" style="right: ${100 - f.percent(f.filterMax)}%" title="max filter, drag or shift click to change"></div>
       ${filterMissingNumberMarkup(f.filterMissing, 0, context.idPrefix)}
     `;
 
@@ -99,7 +98,7 @@ function interactiveSummary(col: IMapAbleColumn, context: IRenderContext, templa
       }
       updateFilter(hist ? hist.missing : 0, col);
 
-      node.classList.toggle('lu-missing', !hist);
+      node.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -109,10 +108,10 @@ function interactiveSummary(col: IMapAbleColumn, context: IRenderContext, templa
 }
 
 function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderContext) {
-  const min = <HTMLElement>node.querySelector('[data-handle=min]');
-  const max = <HTMLElement>node.querySelector('[data-handle=max]');
-  const minHint = <HTMLElement>node.querySelector('[data-handle=min-hint]');
-  const maxHint = <HTMLElement>node.querySelector('[data-handle=max-hint]');
+  const min = <HTMLElement>node.querySelector(`.${cssClass('histogram-min')}`);
+  const max = <HTMLElement>node.querySelector(`.${cssClass('histogram-max')}`);
+  const minHint = <HTMLElement>node.querySelector(`.${cssClass('histogram-min-hint')}`);
+  const maxHint = <HTMLElement>node.querySelector(`.${cssClass('histogram-max-hint')}`);
   const filterMissing = <HTMLInputElement>node.querySelector('input');
 
   const setFilter = () => {
@@ -127,7 +126,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
   };
 
   min.onclick = (evt) => {
-    if (!evt.shiftKey) {
+    if (!evt.shiftKey && !evt.ctrlKey) {
       return;
     }
     evt.preventDefault();
@@ -155,7 +154,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
   };
 
   max.onclick = (evt) => {
-    if (!evt.shiftKey) {
+    if (!evt.shiftKey && !evt.ctrlKey) {
       return;
     }
     evt.preventDefault();
@@ -185,9 +184,9 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
   filterMissing.onchange = () => setFilter();
 
   selectAll([min, max]).call(drag<HTMLElement, {}>()
-    .filter(() => d3event.button === 0 && !d3event.shiftKey)
+    .filter(() => d3event.button === 0 && !d3event.shiftKey && !d3event.ctrlKey)
     .on('start', function (this: HTMLElement) {
-      this.classList.add('lu-dragging');
+      this.classList.add(cssClass('hist-dragging'));
     })
     .on('drag', function (this: HTMLElement) {
       const evt = (<D3DragEvent<any, any, any>>d3event);
@@ -197,7 +196,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
       const domain = col.getMapping().domain;
       this.dataset.value = round(((percent / 100) * (domain[1] - domain[0]) + domain[0]), 2).toString();
 
-      if (this.dataset.handle === 'min') {
+      if (this.classList.contains(cssClass('histogram-min'))) {
         this.style.left = `${percent}%`;
         minHint.style.width = `${percent}%`;
         return;
@@ -206,7 +205,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
       maxHint.style.width = `${100 - percent}%`;
     })
     .on('end', function (this: HTMLElement) {
-      this.classList.remove('lu-dragging');
+      this.classList.remove(cssClass('hist-dragging'));
       setFilter();
     }));
 
@@ -243,7 +242,7 @@ export function getHistDOMRenderer(totalNumberOfRows: number, col: INumberColumn
   const guessedBins = getNumberOfBins(totalNumberOfRows);
   let bins = '';
   for (let i = 0; i < guessedBins; ++i) {
-    bins += `<div title="Bin ${i}: 0" data-x=""><div style="height: 0" ></div></div>`;
+    bins += `<div class="${cssClass('histogram-bin')}" title="Bin ${i}: 0" data-x=""><div style="height: 0" ></div></div>`;
   }
 
   const render = (n: HTMLElement, stats: {bins: number, max: number, hist: INumberBin[]}) => {
@@ -254,11 +253,11 @@ export function getHistDOMRenderer(totalNumberOfRows: number, col: INumberColumn
       nodes.splice(bins, nodes.length - bins).forEach((d) => d.remove());
     } else if (nodes.length < bins) {
       for (let i = nodes.length; i < bins; ++i) {
-        n.insertAdjacentHTML('afterbegin', `<div title="Bin ${i}: 0" data-x=""><div style="height: 0" ></div></div>`);
+        n.insertAdjacentHTML('afterbegin', `<div class="${cssClass('histogram-bin')}" title="Bin ${i}: 0" data-x=""><div style="height: 0" ></div></div>`);
       }
       nodes = Array.from(n.querySelectorAll('[data-x]'));
     }
-    n.classList.toggle('lu-dense', bins > DENSE_HISTOGRAM);
+    n.classList.toggle(cssClass('dense'), bins > DENSE_HISTOGRAM);
     nodes.forEach((d: HTMLElement, i) => {
       const {x0, x1, length} = hist[i];
       const inner = <HTMLElement>d.firstElementChild!;
@@ -269,7 +268,7 @@ export function getHistDOMRenderer(totalNumberOfRows: number, col: INumberColumn
     });
   };
   return {
-    template: `<div${guessedBins > DENSE_HISTOGRAM ? ' class="lu-dense' : ''}>${bins}`, // no closing div to be able to append things
+    template: `<div class="${cssClass('histogram')} ${guessedBins > DENSE_HISTOGRAM ? cssClass('dense'): ''}">${bins}`, // no closing div to be able to append things
     render,
     guessedBins
   };

@@ -3,7 +3,8 @@ import Column from '../model/Column';
 import RankColumn from '../model/RankColumn';
 import {ICellRendererFactory} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {noop, noRenderer, setText} from './utils';
+import {noRenderer, setText} from './utils';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class RankCellRenderer implements ICellRendererFactory {
@@ -15,12 +16,11 @@ export default class RankCellRenderer implements ICellRendererFactory {
 
   create(col: Column) {
     return {
-      template: `<div class="lu-right"> </div>`,
+      template: `<div class="${cssClass('right')}"> </div>`,
       update: (n: HTMLDivElement, d: IDataRow) => {
         renderMissingDOM(n, col, d);
         setText(n, col.getLabel(d));
-      },
-      render: noop
+      }
     };
   }
 

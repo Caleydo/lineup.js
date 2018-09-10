@@ -1,64 +1,68 @@
 @import '../vars';
 @import '../icons/index';
 
-.#{$lu_css_prefix}-row-body {
-  [data-renderer=aggregate] {
-    text-align: center;
-    position: relative;
-    overflow-x: unset;
+.#{$engine_css_prefix}-td.#{$lu_css_prefix}-renderer-aggregate {
+  text-align: center;
+  overflow-x: unset;
 
-    &::after {
-      content: '';
-      position: absolute;
-      pointer-events: none;
-      top: 0;
-      width: $lu_aggregate_square_bracket_width;
-      right: 0;
-      bottom: 0;
-      border-left: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
-    }
-  }
-
-  [data-meta~=first] [data-renderer=aggregate] {
-    cursor: pointer;
-
-    &::before {
-      @include lu_icons();
-
-      content: $lu_icon_caret_down;
-      padding-right: $lu_aggregate_square_bracket_width;
-    }
-
-    &::after {
-      border-top: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
-    }
-  }
-
-  [data-meta=last] [data-renderer=aggregate] {
-    &::after {
-      border-bottom: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
-    }
-  }
-
-  [data-meta='first last'] [data-renderer=aggregate],
-  [data-agg=group] [data-renderer=aggregate] {
-    padding-right: $lu_aggregate_square_bracket_width;
-    cursor: pointer;
-
-    &::after {
-      border-top: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
-      border-bottom: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
-    }
-  }
-
-  [data-agg=group] [data-renderer=aggregate]::before {
-    @include lu_icons();
-
-    content: $lu_icon_caret_right;
+  &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    top: -2px;  // FIXME right padding
+    width: $lu_aggregate_square_bracket_width;
+    right: 0;
+    bottom: 0;
+    border-left: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
+    box-sizing: border-box;
   }
 }
 
-.#{$lu_css_prefix}-summary[data-renderer=aggregate] {
+.#{$lu_css_prefix}-renderer-aggregate.#{$lu_css_prefix}-low::after {
+  border-left: none;
+}
+
+.#{$lu_css_prefix}-renderer-aggregate[data-meta~=first] {
+  cursor: pointer;
+
+  &::before {
+    @include lu_icons();
+
+    content: $lu_icon_caret_down;
+    padding-right: $lu_aggregate_square_bracket_width;
+  }
+
+  &::after {
+    top: 0;
+    border-top: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
+  }
+}
+
+.#{$lu_css_prefix}-renderer-aggregate[data-meta=last] {
+  &::after {
+    border-bottom: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
+  }
+}
+
+.#{$lu_css_prefix}-renderer-aggregate[data-meta='first last'],
+.#{$lu_css_prefix}-group.#{$lu_css_prefix}-renderer-aggregate {
+  padding-right: $lu_aggregate_square_bracket_width;
+  cursor: pointer;
+
+  &::after {
+    top: 0;
+    border-top: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
+    border-bottom: $lu_aggregate_square_bracket_stroke_width solid $lu_aggregate_square_bracket_stroke_color;
+  }
+}
+
+.#{$lu_css_prefix}-group.#{$lu_css_prefix}-renderer-aggregate::before {
+  @include lu_icons();
+
+  content: $lu_icon_caret_right;
+}
+
+.#{$lu_css_prefix}-summary.#{$lu_css_prefix}-renderer-aggregate {
   padding-right: $lu_aggregate_square_bracket_width;
   cursor: pointer;
   font-size: medium;

@@ -18,6 +18,8 @@ export interface IRankingHeaderContextContainer {
 
   readonly dialogManager: DialogManager;
 
+  asElement(html: string): HTMLElement;
+
   toolbar: { [key: string]: IToolbarAction | IToolbarDialogAddon };
 
   statsOf(col: (INumberColumn | ICategoricalColumn) & Column): ICategoricalStatistics | IStatistics | null;
