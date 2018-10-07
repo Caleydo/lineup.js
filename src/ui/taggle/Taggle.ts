@@ -6,6 +6,7 @@ import {ALineUp} from '../ALineUp';
 import SidePanel from '../panel/SidePanel';
 import spaceFillingRule from './spaceFillingRule';
 import TaggleRenderer from './TaggleRenderer';
+import LocalDataProvider from '../../provider/LocalDataProvider';
 
 export {ITaggleOptions} from '../../interfaces';
 
@@ -61,14 +62,24 @@ export default class Taggle extends ALineUp {
       this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
       const ruleInput = <HTMLInputElement>this.spaceFilling.querySelector('input.spaceFilling');
       ruleInput.onchange = () => {
-        const selected = this.spaceFilling!.classList.toggle('chosen');
-        //self.setTimeout(() => this.renderer.switchRule(selected ? spaceFilling : null));
-        this.renderer!.useTextureRenderer(selected);
-        if (selected) {
-          expandButton.style.display = '';
-        } else {
-          expandButton.style.display = 'none';
+        let useTextureRenderer = true;
+        if (data instanceof LocalDataProvider) {
+          const ldp = <LocalDataProvider>data;
+          if (this.node.offsetHeight > ldp.data.length) {
+            useTextureRenderer = false;
+          }
         }
+        const selected = this.spaceFilling!.classList.toggle('chosen');
+        if (useTextureRenderer) {
+          this.renderer!.useTextureRenderer(selected);
+          if (selected) {
+            expandButton.style.display = '';
+          } else {
+            expandButton.style.display = 'none';
+          }
+          return;
+        }
+        self.setTimeout(() => this.renderer!.switchRule(selected ? spaceFilling : null));
       };
       if (this.options.overviewMode) {
         ruleInput.checked = true;

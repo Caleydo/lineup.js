@@ -156,7 +156,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     }
   };
 
-  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}) {
+  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}, readonly  noEvents: boolean = false) {
     super(header, body, tableId, style, {mixins: [PrefetchMixin], batchSize: 10});
     Object.assign(this.roptions, roptions);
     body.classList.add('lu-row-body');
@@ -179,43 +179,45 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
 
     this.delayedUpdateAll = debounce(() => this.updateAll(), 50);
     this.delayedUpdateColumnWidths = debounce(() => this.updateColumnWidths(), 50);
-    ranking.on(`${Ranking.EVENT_ADD_COLUMN}.hist`, (col: Column, index: number) => {
-      this.columns.splice(index, 0, this.createCol(col, index));
-      this.reindex();
-      this.updateHist(col);
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_REMOVE_COLUMN}.body`, (col: Column, index: number) => {
-      EngineRanking.disableListener(col);
-      this.columns.splice(index, 1);
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_MOVE_COLUMN}.body`, (col: Column, index: number, old: number) => {
-      //delete first
-      const c = this.columns.splice(old, 1)[0];
-      console.assert(c.c === col);
-      // adapt target index based on previous index, i.e shift by one
-      this.columns.splice(old < index ? index - 1 : index, 0, c);
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_COLUMN_VISIBILITY_CHANGED}.body`, (col: Column, _oldValue: boolean, newValue: boolean) => {
-      if (newValue) {
-        // become visible
-        const index = ranking.children.indexOf(col);
+    if (!noEvents) {
+      ranking.on(`${Ranking.EVENT_ADD_COLUMN}.hist`, (col: Column, index: number) => {
         this.columns.splice(index, 0, this.createCol(col, index));
+        this.reindex();
         this.updateHist(col);
-      } else {
-        // hide
-        const index = this.columns.findIndex((d) => d.c === col);
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_REMOVE_COLUMN}.body`, (col: Column, index: number) => {
         EngineRanking.disableListener(col);
         this.columns.splice(index, 1);
-      }
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_ORDER_CHANGED}.body`, this.delayedUpdate);
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_MOVE_COLUMN}.body`, (col: Column, index: number, old: number) => {
+        //delete first
+        const c = this.columns.splice(old, 1)[0];
+        console.assert(c.c === col);
+        // adapt target index based on previous index, i.e shift by one
+        this.columns.splice(old < index ? index - 1 : index, 0, c);
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_COLUMN_VISIBILITY_CHANGED}.body`, (col: Column, _oldValue: boolean, newValue: boolean) => {
+        if (newValue) {
+          // become visible
+          const index = ranking.children.indexOf(col);
+          this.columns.splice(index, 0, this.createCol(col, index));
+          this.updateHist(col);
+        } else {
+          // hide
+          const index = this.columns.findIndex((d) => d.c === col);
+          EngineRanking.disableListener(col);
+          this.columns.splice(index, 1);
+        }
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_ORDER_CHANGED}.body`, this.delayedUpdate);
+    }
 
     this.selection = new SelectionManager(this.ctx, body);
     this.selection.on(SelectionManager.EVENT_SELECT_RANGE, (from: number, to: number, additional: boolean) => {

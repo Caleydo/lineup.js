@@ -31,6 +31,7 @@ export interface ITextureRenderer {
 
 export default class CanvasTextureRenderer implements ITextureRenderer {
   static readonly MAX_CANVAS_SIZE = 32767;
+  static readonly AGGRIGATED_ROW_HEIGHT = 45;
 
   readonly node: HTMLElement;
   readonly canvas: any;
@@ -45,7 +46,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private currentRankingWidths: number[] = [];
   private engineRenderer: EngineRenderer;
   private engineRankings: EngineRanking[][] = [];
-  private skipUpdateEvents: number = 0;
+  //private skipUpdateEvents: number = 0;
   private alreadyExpanded: boolean = false;
   private expandLaterRows: any[] = [];
   private readonly options: Readonly<ILineUpOptions>;
@@ -80,7 +81,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   update(rankings: EngineRanking[] = this.currentRankings, localData: IDataRow[][] = this.currentLocalData) {
     this.detailParts = [];
-    this.currentLocalData = localData;
+    rankings.forEach((r, i) => {
+      const rankingIndex = this.currentRankings.findIndex((v) => v === r);
+      this.currentLocalData[rankingIndex] = localData[i];
+    });
     this.currentNodeHeight = this.node.offsetHeight;
     let totalWidth = 0;
     rankings.forEach((r, i) => {
@@ -99,18 +103,20 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   private renderColumns (rankings: EngineRanking[], localData: IDataRow[][]) {
     rankings.forEach((r, i) => {
+      let notAggregatedCount = localData[i].length;
       let gIndex = 0;
       const aggregatedParts = <any>[];
       r.ranking.getGroups().forEach((g) => {
         if (this.engineRenderer.ctx.provider.isAggregated(r.ranking, g)) {
           aggregatedParts.push([gIndex, gIndex + g.order.length - 1]);
+          notAggregatedCount -= g.order.length;
         }
         gIndex += g.order.length;
       });
+      this.currentNodeHeight -= CanvasTextureRenderer.AGGRIGATED_ROW_HEIGHT * aggregatedParts.length;
 
       const rankingIndex = this.currentRankings.findIndex((v) => v === r);
       this.engineRankings[rankingIndex] = [];
-      //TODO: combine
       this.detailParts = [];
       let startIndex = -1;
       for (let j = 0; j < localData[i].length; j++) {
@@ -131,7 +137,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       aggregatedParts.forEach((g: any) => {
         for (let j = 0; j < this.detailParts.length; j++) {
           if (g[0] <= this.detailParts[j][0]) {
-            if (g[1] <= this.detailParts[j][0]) {
+            if (g[1] < this.detailParts[j][0]) {
               this.detailParts.splice(j, 0, g);
               aggregateIndices.push(j);
               return;
@@ -142,16 +148,18 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
               return;
             }
             this.detailParts.splice(j, 1);
+            j--;
+            continue;
           }
           if (g[0] > this.detailParts[j][1]) {
-            return;
+            continue;
           }
           if (g[1] < this.detailParts[j][1]) {
-              this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1], g, [g[1] + 1, this.detailParts[j][1]]);
-              aggregateIndices.push(j + 1);
-              return;
-            }
-            this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1]);
+            this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1], g, [g[1] + 1, this.detailParts[j][1]]);
+            aggregateIndices.push(j + 1);
+            return;
+          }
+          this.detailParts.splice(j, 1, [this.detailParts[j][0], g[0] - 1]);
         }
         this.detailParts.push(g);
         aggregateIndices.push(this.detailParts.length - 1);
@@ -208,7 +216,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         aggregateOffset += newOffset;
 
         if (!aggregated) {
-          const height = data.length / localData[i].length * this.currentNodeHeight;
+          const height = data.length / notAggregatedCount * this.currentNodeHeight;
           if (height >= 1) { //only render parts larger than 1px
             const textureDiv = this.node.ownerDocument.createElement('div');
             textureDiv.style.height = `${height}px`;
@@ -242,14 +250,14 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
             const engineRanking = table.pushTable((header, body, tableId, style) => new EngineRanking(r.ranking, header, body, tableId, style, this.engineRenderer.ctx, {
               animation: this.options.animated,
               customRowUpdate: this.options.customRowUpdate || (() => undefined),
-              levelOfDetail: this.options.levelOfDetail || (() => 'high'),
+              levelOfDetail: this.options.levelOfDetail || (() => 'high'),//
               flags: this.options.flags
-            }));
+            }, true));
 
             this.engineRenderer.render(engineRanking, <any>data);
             this.engineRankings[rankingIndex].push(engineRanking);
-            engineRanking.on(EngineRanking.EVENT_UPDATE_DATA, () => this.handleUpdateEvent(r));
-            this.skipUpdateEvents++;
+            //engineRanking.on(EngineRanking.EVENT_UPDATE_DATA, () => this.handleUpdateEvent(r));
+            //this.skipUpdateEvents++;
           };
           if (this.alreadyExpanded || aggregated) {
             expandLater();
@@ -480,6 +488,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   addRanking(ranking: EngineRanking) {
     this.currentRankings.push(ranking);
+    this.currentLocalData.push([]);
     const rankingDiv = this.node.ownerDocument.createElement('div');
     rankingDiv.classList.add('rankingContainer');
     rankingDiv.setAttribute('data-ranking', `${this.currentRankings.length-1}`);
@@ -496,6 +505,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     }
     this.currentRankings.splice(index, 1);
     this.engineRankings.splice(index, 1);
+    this.currentLocalData.splice(index, 1);
     d3.select(this.node).select(`[data-ranking="${index}"]`).remove();
   }
 
@@ -513,33 +523,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   s2d() {
     this.engineRenderer.ctx.provider.setDetail(this.engineRenderer.ctx.provider.getSelection());
-    //this.detailParts = [];
-    //let startIndex = -1;
-    //for (let i = 0; i < this.currentLocalData[0].length; i++) {
-    //  if (this.engineRenderer.ctx.provider.isSelected(this.currentLocalData[0][i].i)) {
-    //    if (startIndex === -1) {
-    //      startIndex = i;
-    //    }
-    //  } else if (startIndex !== -1) {
-    //    this.detailParts.push([startIndex, i-1]);
-    //    startIndex = -1;
-    //  }
-    //}
-    //if (startIndex !== -1) {
-    //  this.detailParts.push([startIndex, this.currentLocalData[0].length-1]);
-    //}
-    //this.renderColumns(this.currentRankings, this.currentLocalData);
   }
 
   d2s() {
     this.engineRenderer.ctx.provider.setSelection(this.engineRenderer.ctx.provider.getDetail());
-    //d3.select(this.node).selectAll('.engineRendererContainer').nodes().forEach((v: any, i: number) => {
-    //  const first = d3.select(v).select('.lu-row:first-child').node();
-    //  const last = d3.select(v).select('.lu-row:last-child').node();
-    //  if (typeof first !== 'undefined' && typeof last !== 'undefined') {
-    //    this.engineRankings[i].selection.select(i !== 0, <any>first, <any>last);
-    //  }
-    //});
   }
 
   drawSelection() {
@@ -563,13 +550,5 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       }
       ctx.save();
     });
-  }
-
-  private handleUpdateEvent (r: EngineRanking) {
-    if (this.skipUpdateEvents > 0) {
-      this.skipUpdateEvents--;
-    } else {
-      this.engineRenderer.update([r]);
-    }
   }
 }
