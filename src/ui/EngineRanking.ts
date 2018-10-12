@@ -299,7 +299,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     if (this.canvasPool.length > 0) {
       return this.canvasPool.pop()!;
     }
-    return this.body.ownerDocument.createElement('canvas');
+    const c = this.body.ownerDocument.createElement('canvas');
+    c.classList.add('lu-detail-canvas');
+    return c;
   }
 
   private rowFlags(row: HTMLElement) {
@@ -504,7 +506,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     }
     this.selection.updateState(node, i);
 
-    const canvas = <HTMLCanvasElement>Array.from(node.children).find((d) => d.nodeName.toLowerCase() === 'canvas');
+    const canvas = <HTMLCanvasElement>Array.from(node.children).find((d) => d.classList.contains('lu-detail-canvas'));
     if (lod === 'high' || meta || this.ctx.provider.isSelected(i)) {
       if (canvas) {
         this.canvasPool.push(canvas);
@@ -721,6 +723,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
       column: nonUniformContext(this.columns.map((w) => w.width), 100, COLUMN_PADDING)
     }, rowContext);
 
+    if (!this.bodyScroller) { // somehow not part of dom
+      return;
+    }
     return super.recreate(this.roptions.animation ? lineupAnimation(previous, previousData, this.data) : undefined);
   }
 
@@ -805,6 +810,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
       return false;
     }
     const scroller = this.bodyScroller;
+    if (!scroller) {
+      return false;
+    }
     const top = scroller.scrollTop;
     scroller.scrollTop = Math.min(pos, scroller.scrollHeight - scroller.clientHeight);
     this.onScrolledVertically(scroller.scrollTop, scroller.clientHeight, top < scroller.scrollTop);
@@ -876,7 +884,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
   }
 
   private static isCanvasRenderedRow(row: HTMLElement) {
-    return row.dataset.lod === 'low' && row.childElementCount === 1 && row.firstElementChild!.nodeName.toLowerCase() === 'canvas';
+    return row.dataset.lod === 'low' && row.childElementCount === 1 && row.firstElementChild!.classList.contains('lu-detail-canvas');
   }
 
   private static disableListener(c: Column) {
