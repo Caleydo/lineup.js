@@ -109,23 +109,25 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
   private readonly columns: RenderColumn[];
 
   private readonly canvasMouseHandler = {
-    timer: -1,
+    timer: new Set<number>(),
+    cleanUp: () => {
+      const c = this.canvasMouseHandler;
+      c.timer.forEach((timer) => {
+        self.clearTimeout(timer);
+      });
+      c.timer.clear();
+    },
     enter: (evt: MouseEvent) => {
       const c = this.canvasMouseHandler;
-      if (c.timer > 0) {
-        self.clearTimeout(c.timer);
-      }
+      c.cleanUp();
       const row = <HTMLElement>evt.currentTarget;
       row.addEventListener('mouseleave', c.leave, PASSIVE);
-      c.timer = self.setTimeout(() => this.updateHoveredRow(row, true), HOVER_DELAY_SHOW_DETAIL);
+      c.timer.add(self.setTimeout(() => this.updateHoveredRow(row, true), HOVER_DELAY_SHOW_DETAIL));
     },
     leave: (evt: MouseEvent) => {
       // on row to survive canvas removal
       const c = this.canvasMouseHandler;
-      if (c.timer > 0) {
-        self.clearTimeout(c.timer);
-        c.timer = -1;
-      }
+      c.cleanUp();
       const row = <HTMLElement>evt.currentTarget;
       if (!EngineRanking.isCanvasRenderedRow(row)) {
         self.setTimeout(() => this.updateHoveredRow(row, false));
@@ -773,6 +775,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
       column: nonUniformContext(this.columns.map((w) => w.width), 100, COLUMN_PADDING)
     }, rowContext);
 
+    if (!this.bodyScroller) { // somehow not part of dom
+      return;
+    }
     return super.recreate(this.roptions.animation ? lineupAnimation(previous, previousData, this.data) : undefined);
   }
 
@@ -857,6 +862,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
       return false;
     }
     const scroller = this.bodyScroller;
+    if (!scroller) {
+      return false;
+    }
     const top = scroller.scrollTop;
     scroller.scrollTop = Math.min(pos, scroller.scrollHeight - scroller.clientHeight);
     this.onScrolledVertically(scroller.scrollTop, scroller.clientHeight, top < scroller.scrollTop);
