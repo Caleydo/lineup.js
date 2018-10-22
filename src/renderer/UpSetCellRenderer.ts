@@ -1,7 +1,7 @@
 import {ICategory, IDataRow, IGroup} from '../model';
 import Column from '../model/Column';
 import {ISetColumn, isSetColumn} from '../model/ICategoricalColumn';
-import {CANVAS_HEIGHT, UPSET} from '../styles';
+import {CANVAS_HEIGHT, UPSET, cssClass} from '../styles';
 import {default as IRenderContext, ERenderMode, ICellRendererFactory} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
 import {noRenderer} from './utils';
@@ -28,14 +28,14 @@ export default class UpSetCellRenderer implements ICellRendererFactory {
     const categories = col.categories;
     let templateRows = '';
     for (const cat of categories) {
-      templateRows += `<div title="${cat.label}"></div>`;
+      templateRows += `<div class="${cssClass('upset-dot')}" title="${cat.label}"></div>`;
     }
     return {
       templateRow: templateRows,
       render: (n: HTMLElement, value: boolean[]) => {
         Array.from(n.children).slice(1).forEach((d, i) => {
           const v = value[i];
-          d.classList.toggle('enabled', v);
+          d.classList.toggle(cssClass('enabled'), v);
         });
 
         const line = <HTMLElement>n.firstElementChild;
@@ -59,7 +59,7 @@ export default class UpSetCellRenderer implements ICellRendererFactory {
     const cellDimension = width / col.dataLength!;
 
     return {
-      template: `<div><div></div>${templateRow}</div>`,
+      template: `<div><div class="${cssClass('upset-line')}"></div>${templateRow}</div>`,
       update: (n: HTMLElement, d: IDataRow) => {
         if (renderMissingDOM(n, col, d)) {
           return;
@@ -102,7 +102,7 @@ export default class UpSetCellRenderer implements ICellRendererFactory {
   createGroup(col: ISetColumn) {
     const {templateRow, render} = UpSetCellRenderer.createDOMContext(col);
     return {
-      template: `<div><div></div>${templateRow}</div>`,
+      template: `<div><div class="${cssClass('upset-line')}"></div>${templateRow}</div>`,
       update: (n: HTMLElement, _group: IGroup, rows: IDataRow[]) => {
         const value = union(col, rows);
         render(n, value);

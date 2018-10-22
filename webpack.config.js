@@ -1,7 +1,7 @@
 const resolve = require('path').resolve;
 const pkg = require('./package.json');
 const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const now = new Date();
@@ -50,8 +50,11 @@ module.exports = (env, options) => {
         __LICENSE__: JSON.stringify(pkg.license),
         __BUILD_ID__: JSON.stringify(buildId)
       }),
-      new ExtractTextPlugin({
-        filename: `[name].css`
+      new MiniCssExtractPlugin({
+        // Options similar to the same options in webpackOptions.output
+        // both options are optional
+        filename: '[name].css',
+        chunkFilename: '[id].css'
       }),
       new ForkTsCheckerWebpackPlugin({
         checkSyntacticErrors: true
@@ -61,10 +64,11 @@ module.exports = (env, options) => {
     module: {
       rules: [{
           test: /\.s?css$/,
-          use: ExtractTextPlugin.extract({
-            fallback: 'style-loader',
-            use: ['css-loader', 'sass-loader']
-          })
+          use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader',
+            'sass-loader'
+          ]
         },
         {
           test: /\.tsx?$/,
@@ -82,7 +86,7 @@ module.exports = (env, options) => {
             {
               loader: 'ts-loader',
               options: {
-                configFile: dev ? 'tsconfig_dev.json' : 'tsconfig.json',
+                configFile: dev ? 'tsconfig.dev.json' : 'tsconfig.json',
                 happyPackMode: true // IMPORTANT! use happyPackMode mode to speed-up  compilation and reduce errors reported to webpack
               }
             }

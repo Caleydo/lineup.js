@@ -1,7 +1,7 @@
 import {IDataRow, IGroup} from '../model';
 import Column from '../model/Column';
 import {ISetColumn, isSetColumn} from '../model/ICategoricalColumn';
-import {CANVAS_HEIGHT} from '../styles';
+import {CANVAS_HEIGHT, cssClass} from '../styles';
 import {default as IRenderContext, ICellRendererFactory} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
 import {union} from './UpSetCellRenderer';
@@ -19,7 +19,7 @@ export default class CategoricalHeatmapCellRenderer implements ICellRendererFact
     const categories = col.categories;
     let templateRows = '';
     for (const cat of categories) {
-      templateRows += `<div title="${cat.label}" style="background-color: ${cat.color}"></div>`;
+      templateRows += `<div class="${cssClass('heatmap-cell')}" title="${cat.label}" style="background-color: ${cat.color}"></div>`;
     }
     return {
       templateRow: templateRows,
@@ -39,7 +39,7 @@ export default class CategoricalHeatmapCellRenderer implements ICellRendererFact
     const cats = col.categories;
 
     return {
-      template: `<div>${templateRow}</div>`,
+      template: `<div class="${cssClass('heatmap')}">${templateRow}</div>`,
       update: (n: HTMLElement, d: IDataRow) => {
         if (renderMissingDOM(n, col, d)) {
           return;
@@ -71,7 +71,7 @@ export default class CategoricalHeatmapCellRenderer implements ICellRendererFact
   createGroup(col: ISetColumn) {
     const {templateRow, render} = CategoricalHeatmapCellRenderer.createDOMContext(col);
     return {
-      template: `<div>${templateRow}</div>`,
+      template: `<div class="${cssClass('heatmap')}">${templateRow}</div>`,
       update: (n: HTMLElement, _group: IGroup, rows: IDataRow[]) => {
         const value = union(col, rows);
         render(n, value);
@@ -81,10 +81,10 @@ export default class CategoricalHeatmapCellRenderer implements ICellRendererFact
 
   createSummary(col: ISetColumn) {
     const categories = col.categories;
-    let templateRows = '<div>';
+    let templateRows = `<div class="${cssClass('heatmap')}">`;
     const labels = wideEnough(col);
     for (const cat of categories) {
-      templateRows += `<div title="${cat.label}"${labels ? ` data-title="${cat.label}"` : ''} style="background-color: ${cat.color}"></div>`;
+      templateRows += `<div class="${cssClass('heatmap-cell')}" title="${cat.label}"${labels ? ` data-title="${cat.label}"` : ''} style="background-color: ${cat.color}"></div>`;
     }
     templateRows += '</div>';
     return {

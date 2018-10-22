@@ -1,21 +1,14 @@
 @import './vars';
 
-.lineup-engine,
-.#{$lu_css_prefix},
-.#{$lu_css_prefix}-header,
-.#{$lu_css_prefix}-side-panel,
-.#{$lu_css_prefix}-dialog {
-  [aria-hidden=true] {
-    display: none;
-  }
+.#{$lu_css_prefix}-aria,
+.#{$lu_css_prefix}-hidden {
+  display: none !important;
+}
 
-  [draggable] {
-    cursor: pointer;
-    cursor: -moz-grab;
-    cursor: -webkit-grab; // indicate grab able
-  }
-
-  @import './icons/icon_style';
+.#{$lu_css_prefix}-dragable {
+  cursor: pointer;
+  cursor: -moz-grab;
+  cursor: -webkit-grab; // indicate grab able
 }
 
 .#{$lu_css_prefix}-dragover {
@@ -26,13 +19,8 @@
     pointer-events: none !important;
   }
 
-  * {
+  > * {
     pointer-events: none !important;
-
-    &::before,
-    &::after {
-      pointer-events: none !important;
-    }
   }
 }
 
@@ -102,4 +90,15 @@
   right: 0;
   pointer-events: none;
   z-index: 1;
+}
+
+.#{$lu_css_prefix}-missing {
+  background-image: linear-gradient(180deg, $lu_missing_dash_color $lu_missing_dash_height, transparent $lu_missing_dash_height);
+  background-position: center center;
+  background-size: $lu_missing_dash_width $lu_missing_dash_height;
+  background-repeat: no-repeat;
+
+  > * {
+    display: none;
+  }
 }

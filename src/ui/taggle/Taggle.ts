@@ -7,6 +7,8 @@ import SidePanel from '../panel/SidePanel';
 import spaceFillingRule from './spaceFillingRule';
 import TaggleRenderer from './TaggleRenderer';
 import LocalDataProvider from '../../provider/LocalDataProvider';
+import {cssClass, engineCssClass} from '../../styles/index';
+import {GridStyleManager} from 'lineupengine';
 
 export {ITaggleOptions} from '../../interfaces';
 
@@ -31,10 +33,10 @@ export default class Taggle extends ALineUp {
       return;
     }
 
-    this.node.classList.add('lu-taggle', 'lu');
+    this.node.classList.add(cssClass(), cssClass('taggle'));
 
     this.renderer = new TaggleRenderer(data, this.node, this.options);
-    this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument, {
+    this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument!, {
       collapseable: this.options.sidePanelCollapsed ? 'collapsed' : true,
       hierarchy: this.options.hierarchyIndicator
     });
@@ -84,6 +86,25 @@ export default class Taggle extends ALineUp {
       if (this.options.overviewMode) {
         ruleInput.checked = true;
         this.spaceFilling.classList.toggle('chosen');
+      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')}"><label>
+            <input type="checkbox">
+            <span>Overview</span>
+            <div class="${cssClass('rule-violation')}"></div>
+          </label></div>`);
+      const spaceFilling = spaceFillingRule(this.options);
+      this.spaceFilling = <HTMLElement>this.panel.node.querySelector(`.${cssClass('rule-button-chooser')}`)!;
+      const input = <HTMLInputElement>this.spaceFilling.querySelector('input');
+      input.onchange = () => {
+        const selected = this.spaceFilling!.classList.toggle(cssClass('chosen'));
+        self.setTimeout(() => {
+          this.updateLodRules(selected);
+          this.renderer!.switchRule(selected ? spaceFilling : null);
+        });
+      };
+      if (this.options.overviewMode) {
+        input.checked = true;
+        this.spaceFilling.classList.toggle(cssClass('chosen'));
+        this.updateLodRules(true);
         this.renderer.switchRule(spaceFilling);
       } else {
         expandButton.style.display = 'none';
@@ -92,16 +113,23 @@ export default class Taggle extends ALineUp {
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
   }
 
+  private updateLodRules(overviewMode: boolean) {
+    if (!this.renderer) {
+      return;
+    }
+    updateLodRules(this.renderer.style, overviewMode, this.options);
+  }
+
   private setViolation(violation?: string) {
     violation = violation || '';
     if (this.spaceFilling) {
-      this.spaceFilling.classList.toggle('violated', Boolean(violation));
-      this.spaceFilling.lastElementChild!.innerHTML = violation.replace(/\n/g, '<br>');
+      this.spaceFilling.classList.toggle(cssClass('violated'), Boolean(violation));
+      this.spaceFilling.querySelector(`.${cssClass('rule-violation')}`)!.innerHTML = violation.replace(/\n/g, '<br>');
     }
   }
 
   destroy() {
-    this.node.classList.remove('lu-taggle', 'lu');
+    this.node.classList.remove(cssClass(), cssClass('taggle'));
     if (this.renderer) {
       this.renderer.destroy();
     }
@@ -140,4 +168,37 @@ export default class Taggle extends ALineUp {
     this.update();
     this.panel!.update(this.renderer.ctx);
   }
+}
+
+export function updateLodRules(style: GridStyleManager, overviewMode: boolean, options: Readonly<ITaggleOptions>) {
+  if (!overviewMode) {
+    style.deleteRule('taggle_lod_rule');
+    style.deleteRule('lineup_rowPadding1');
+    style.deleteRule('lineup_rowPadding2');
+    return;
+  }
+
+  style.updateRule('taggle_lod_rule', `
+  .${engineCssClass('tr')}.${cssClass('low')}[data-agg=detail]:hover`, {
+    /* show regular height for hovered rows in low + medium LOD */
+    height: `${options.rowHeight}px !important`
+  });
+
+  style.updateRule('lineup_rowPadding1', `
+  .${engineCssClass('tr')}.${cssClass('low')}`, {
+      marginTop: '0'
+    });
+
+  // no margin for hovered low level row otherwise everything will be shifted down and the hover is gone again
+  // .${engineCssClass('tr')}.${cssClass('low')}:hover,
+
+  // padding in general and for hovered low detail rows + their afterwards
+  style.updateRule('lineup_rowPadding2', `
+  .${engineCssClass('tr')}.${cssClass('low')}.${engineCssClass('highlighted')},
+  .${engineCssClass('tr')}.${cssClass('selected')},
+  .${engineCssClass('tr')}.${cssClass('low')}:hover + .${engineCssClass('tr')}.${cssClass('low')},
+  .${engineCssClass('tr')}.${cssClass('low')}.${engineCssClass('highlighted')} + .${engineCssClass('tr')}.${cssClass('low')},
+  .${engineCssClass('tr')}.${cssClass('selected')} + .${engineCssClass('tr')}.${cssClass('low')}`, {
+      marginTop: `${options.rowPadding}px !important`
+    });
 }

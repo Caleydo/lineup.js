@@ -4,7 +4,8 @@ import StringColumn from '../model/StringColumn';
 import {filterMissingMarkup, findFilterMissing} from '../ui/missing';
 import {default as IRenderContext, ICellRendererFactory} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {noop, setText, uniqueId} from './utils';
+import {setText, uniqueId} from './utils';
+import {cssClass} from '../styles';
 
 
 /**
@@ -22,7 +23,7 @@ export default class StringCellRenderer implements ICellRendererFactory {
   create(col: StringColumn) {
     const align = col.alignment || 'left';
     return {
-      template: `<div${align !== 'left' ? ` class="lu-${align}"` : ''}> </div>`,
+      template: `<div${align !== 'left' ? ` class="${cssClass(align)}"` : ''}> </div>`,
       update: (n: HTMLDivElement, d: IDataRow) => {
         renderMissingDOM(n, col, d);
         if (col.escape) {
@@ -30,8 +31,7 @@ export default class StringCellRenderer implements ICellRendererFactory {
         } else {
           n.innerHTML = col.getLabel(d);
         }
-      },
-      render: noop
+      }
     };
   }
 
@@ -128,7 +128,7 @@ export default class StringCellRenderer implements ICellRendererFactory {
     const id = uniqueId(context.idPrefix);
     return {
       template: `<form><input type="text" placeholder="Filter ${col.desc.label}..." autofocus value="${(bak instanceof RegExp) ? bak.source : bak}">
-          <div class="lu-checkbox"><input id="${id}" type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><label for="${id}">RegExp</label></div>
+          <div class="${cssClass('checkbox')}"><input id="${id}" type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><label for="${id}">RegExp</label></div>
           ${filterMissingMarkup(bakMissing, context.idPrefix)}</form>`,
       update: (node: HTMLElement) => {
         if (!update) {

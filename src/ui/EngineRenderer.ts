@@ -9,8 +9,7 @@ import {
 import Ranking from '../model/Ranking';
 import ADataProvider from '../provider/ADataProvider';
 import {
-  chooseGroupRenderer, chooseRenderer, chooseSummaryRenderer, IImposer, IRenderContext, possibleGroupRenderer,
-  possibleRenderer, possibleSummaryRenderer
+  chooseGroupRenderer, chooseRenderer, chooseSummaryRenderer, IImposer, IRenderContext, getPossibleRenderer
 } from '../renderer';
 import EngineRanking, {IEngineRankingContext} from './EngineRanking';
 import {IRankingHeaderContext, IRankingHeaderContextContainer} from './interfaces';
@@ -18,6 +17,8 @@ import SlopeGraph, {EMode} from './SlopeGraph';
 import DialogManager from './dialogs/DialogManager';
 import {default as CanvasTextureRenderer, ITextureRenderer} from './CanvasTextureRenderer';
 import * as d3 from 'd3-selection';
+import {cssClass} from '../styles/index';
+import domElementCache from './domElementCache';
 
 /**
  * emitted when the highlight changes
@@ -54,9 +55,10 @@ export default class EngineRenderer extends AEventDispatcher {
   constructor(protected data: ADataProvider, parent: HTMLElement, options: Readonly<ILineUpOptions>) {
     super();
     this.options = options;
-    this.node = parent.ownerDocument.createElement('main');
+    this.node = parent.ownerDocument!.createElement('main');
     this.node.id = this.idPrefix;
-    this.node.classList.toggle('lu-whole-hover', options.expandLineOnHover);
+    // FIXME inline
+    this.node.classList.toggle(cssClass('whole-hover'), options.expandLineOnHover);
     parent.appendChild(this.node);
 
     const statsOf = (col: Column) => {
@@ -66,16 +68,18 @@ export default class EngineRenderer extends AEventDispatcher {
       }
       return r;
     };
-    const dialogManager = new DialogManager(parent.ownerDocument);
+    const dialogManager = new DialogManager(parent.ownerDocument!);
+
     parent.appendChild(dialogManager.node);
     this.ctx = {
       idPrefix: this.idPrefix,
-      document: parent.ownerDocument,
+      document: parent.ownerDocument!,
       provider: data,
       dialogManager,
       toolbar: this.options.toolbar,
       option: findOption(Object.assign({useGridLayout: true}, this.options)),
       statsOf,
+      asElement: domElementCache(parent.ownerDocument!),
       renderer: (col: Column, imposer?: IImposer) => {
         const r = chooseRenderer(col, this.options.renderers);
         return r.create(col, this.ctx, statsOf(col), imposer);
@@ -105,45 +109,29 @@ export default class EngineRenderer extends AEventDispatcher {
           summaryTemplate: null
         };
       },
-      getPossibleRenderer: (col: Column) => ({
-        item: possibleRenderer(col, this.options.renderers),
-        group: possibleGroupRenderer(col, this.options.renderers),
-        summary: possibleSummaryRenderer(col, this.options.renderers)
-      }),
+      getPossibleRenderer: (col: Column) => getPossibleRenderer(col, this.options.renderers, this.options.canRender),
       colWidth: (col: Column) => !col.isVisible() ? 0 : col.getWidth()
     };
 
-    this.table = new MultiTableRowRenderer(this.node, `#${this.idPrefix}`);
+    this.table = new MultiTableRowRenderer(this.node, this.idPrefix);
 
     //apply rules
     {
       this.style.addRule('lineup_groupPadding', `
-       #${this.idPrefix} .lu-row[data-agg=group],
-       #${this.idPrefix} .lu-row[data-meta~=last] {
-        margin-bottom: ${options.groupPadding}px;
-       }`, false);
+       .${this.style.cssClasses.tr}[data-agg=group],
+       .${this.style.cssClasses.tr}[data-meta~=last]`, {
+          marginBottom: `${options.groupPadding}px`
+        });
+      this.style.addRule('lineup_rowPadding0', `
+        .${this.style.cssClasses.tr}`, {
+          marginTop: `${options.rowPadding}px`
+        });
 
-      this.style.addRule('lineup_rowPadding', `
-       #${this.idPrefix} .lu-row[data-lod] {
-         padding-top: 0;
-       }`, false);
-
-       // padding in general and for hovered low detail rows + their afterwards
-       this.style.addRule('lineup_rowPadding2', `
-        #${this.idPrefix} .lu-row,
-        #${this.idPrefix} .lu-row[data-lod]:hover,
-        #${this.idPrefix} .lu-row[data-lod].le-highlighted,
-        #${this.idPrefix} .lu-row[data-lod].lu-selected,
-        #${this.idPrefix} .lu-row[data-lod]:hover + .lu-row,
-        #${this.idPrefix} .lu-row[data-lod].le-highlighted + .lu-row,
-        #${this.idPrefix} .lu-row[data-lod].lu-selected + .lu-row {
-          padding-top: ${options.rowPadding}px;
-        }`, false);
-
+      // FIXME flat
       this.style.addRule('lineup_rotation', `
-       #${this.idPrefix}.lu-rotated-label .lu-label.lu-rotated {
-           transform: rotate(${-this.options.labelRotation}deg);
-       }`);
+       #${this.idPrefix}.lu-rotated-label .lu-label.lu-rotated`, {
+          transform: `rotate(${-this.options.labelRotation}deg)`
+        });
     }
 
     this.textureRenderer = new CanvasTextureRenderer(this.node, this, this.options);
@@ -309,8 +297,8 @@ export default class EngineRenderer extends AEventDispatcher {
     if (this.options.labelRotation === 0) {
       return;
     }
-    const l = this.node.querySelector('.lu-label.lu-rotated');
-    this.node.classList.toggle('lu-rotated-label', Boolean(l));
+    const l = this.node.querySelector(`.${cssClass('label')}.${cssClass('rotated')}`);
+    this.node.classList.toggle(cssClass('rotated-label'), Boolean(l));
   }
 
   private removeRanking(ranking: Ranking | null) {
@@ -335,7 +323,8 @@ export default class EngineRenderer extends AEventDispatcher {
   }
 
   update(rankings: EngineRanking[] = this.rankings) {
-    rankings = rankings.filter((d) => !d.hidden);
+    // visible and has parent = part of dom
+    rankings = rankings.filter((d) => !d.hidden && d.body.parentElement!);
     if (rankings.length === 0) {
       return;
     }

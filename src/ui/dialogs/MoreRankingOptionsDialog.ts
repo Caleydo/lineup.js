@@ -3,6 +3,8 @@ import {IRankingHeaderContext} from '../interfaces';
 import {dialogContext} from '../toolbar';
 import ADialog, {IDialogContext} from './ADialog';
 import RenameRankingDialog from './RenameRankingDialog';
+import {cssClass} from '../../styles';
+import {actionCSSClass} from '../header';
 
 /** @internal */
 export default class MoreRankingOptionsDialog extends ADialog {
@@ -12,7 +14,7 @@ export default class MoreRankingOptionsDialog extends ADialog {
   }
 
   private addIcon(node: HTMLElement, title: string, onClick: (evt: MouseEvent)=>void) {
-    node.insertAdjacentHTML('beforeend', `<i title="${title}" class="lu-action"><span>${title}</span> </i>`);
+    node.insertAdjacentHTML('beforeend', `<i title="${title}" class="${actionCSSClass(title)}"><span>${title}</span> </i>`);
     const i = <HTMLElement>node.lastElementChild;
     i.onclick = (evt) => {
       evt.stopPropagation();
@@ -21,12 +23,16 @@ export default class MoreRankingOptionsDialog extends ADialog {
   }
 
   protected build(node: HTMLElement) {
-    node.classList.add('lu-more-options');
+    node.classList.add(cssClass('more-options'));
     this.addIcon(node, 'Rename', (evt) => {
+      evt.stopPropagation();
+      evt.preventDefault();
       const dialog = new RenameRankingDialog(this.ranking, dialogContext(this.ctx, this.level + 1, <any>evt));
       dialog.open();
     });
-    this.addIcon(node, 'Remove', () => {
+    this.addIcon(node, 'Remove', (evt) => {
+      evt.stopPropagation();
+      evt.preventDefault();
       this.destroy();
       this.ctx.provider.removeRanking(this.ranking);
     });

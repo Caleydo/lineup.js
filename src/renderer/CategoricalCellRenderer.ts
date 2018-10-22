@@ -5,7 +5,7 @@ import CategoricalColumn from '../model/CategoricalColumn';
 import Column from '../model/Column';
 import {isCategoryIncluded} from '../model/ICategoricalColumn';
 import OrdinalColumn from '../model/OrdinalColumn';
-import {CANVAS_HEIGHT} from '../styles';
+import {CANVAS_HEIGHT, cssClass} from '../styles';
 import {filterMissingNumberMarkup, updateFilterMissingNumberMarkup} from '../ui/missing';
 import {default as IRenderContext, ICellRendererFactory} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
@@ -24,7 +24,7 @@ export default class CategoricalCellRenderer implements ICellRendererFactory {
     const width = context.colWidth(col);
     return {
       template: `<div>
-        <div></div><div></div>
+        <div class="${cssClass('cat-color')}"></div><div class="${cssClass('cat-label')}"></div>
       </div>`,
       update: (n: HTMLElement, d: IDataRow) => {
         renderMissingDOM(n, col, d);
@@ -66,7 +66,7 @@ function staticSummary(col: ICategoricalColumn, interactive: boolean) {
   return {
     template: `${template}</div>`,
     update: (n: HTMLElement, hist: ICategoricalStatistics | null) => {
-      n.classList.toggle('lu-missing', !hist);
+      n.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -86,7 +86,7 @@ function interactiveSummary(col: CategoricalColumn | OrdinalColumn, interactive:
       }
       filterUpdate(hist ? hist.missing : 0, col);
 
-      n.classList.toggle('lu-missing', !hist);
+      n.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -96,10 +96,10 @@ function interactiveSummary(col: CategoricalColumn | OrdinalColumn, interactive:
 }
 
 function hist(col: ICategoricalColumn, showLabels: boolean) {
-  const bins = col.categories.map((c) => `<div title="${c.label}: 0" data-cat="${c.name}" ${showLabels ? `data-title="${c.label}"` : ''}><div style="height: 0; background-color: ${c.color}"></div></div>`).join('');
+  const bins = col.categories.map((c) => `<div class="${cssClass('histogram-bin')}" title="${c.label}: 0" data-cat="${c.name}" ${showLabels ? `data-title="${c.label}"` : ''}><div style="height: 0; background-color: ${c.color}"></div></div>`).join('');
 
   return {
-    template: `<div${col.dataLength! > DENSE_HISTOGRAM ? 'class="lu-dense"' : ''}>${bins}`, // no closing div to be able to append things
+    template: `<div class="${cssClass('histogram')} ${col.dataLength! > DENSE_HISTOGRAM ? cssClass('dense'): ''}">${bins}`, // no closing div to be able to append things
     update: (n: HTMLElement, maxBin: number, hist: ICategoricalBin[]) => {
       forEach(n, '[data-cat]', (d: HTMLElement, i) => {
         const {y} = hist[i];

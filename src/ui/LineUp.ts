@@ -5,6 +5,7 @@ import DataProvider from '../provider/ADataProvider';
 import {ALineUp} from './ALineUp';
 import EngineRenderer from './EngineRenderer';
 import SidePanel from './panel/SidePanel';
+import {cssClass} from '../styles';
 
 export {ILineUpOptions} from '../interfaces';
 
@@ -25,11 +26,12 @@ export default class LineUp extends ALineUp {
       return;
     }
 
-    this.node.classList.add('lu');
+    this.node.classList.add(cssClass());
+
 
     this.renderer = new EngineRenderer(data, this.node, this.options);
     if (this.options.sidePanel) {
-      this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument, {
+      this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument!, {
         collapseable: this.options.sidePanelCollapsed ? 'collapsed' : true,
         hierarchy: this.options.hierarchyIndicator
       });
@@ -42,7 +44,7 @@ export default class LineUp extends ALineUp {
   }
 
   destroy() {
-    this.node.classList.remove('lu');
+    this.node.classList.remove(cssClass());
     if (this.renderer) {
       this.renderer.destroy();
     }

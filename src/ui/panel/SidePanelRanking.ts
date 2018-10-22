@@ -7,6 +7,9 @@ import {ISidePanelOptions} from './SidePanel';
 import SidePanelEntryVis from './SidePanelEntryVis';
 import {dialogContext} from '../toolbar';
 import MoreRankingOptionsDialog from '../dialogs/MoreRankingOptionsDialog';
+import {aria, cssClass} from '../../styles';
+import {clear} from '../../internal';
+import {actionCSSClass} from '../header';
 
 
 export default class SidePanelRanking {
@@ -22,9 +25,14 @@ export default class SidePanelRanking {
     this.header = document.createElement('div');
     this.dropdown = document.createElement('div');
 
-    this.dropdown.innerHTML = this.header.innerHTML = `<span>${ranking.getLabel()}</span><i class="lu-action" title="More &hellip;"><span aria-hidden="true">More &hellip;"></span></i>`;
+    this.node.classList.add(cssClass('side-panel-ranking'));
+    this.header.classList.add(cssClass('side-panel-ranking-header'), cssClass('side-panel-ranking-label'));
+    this.dropdown.classList.add(cssClass('side-panel-ranking-label'));
+
+    this.dropdown.innerHTML = this.header.innerHTML = `<span>${ranking.getLabel()}</span><i class="${actionCSSClass('more')}" title="More &hellip;">${aria('More &hellip;')}</i>`;
     (<HTMLElement>this.header.lastElementChild!).onclick = (<HTMLElement>this.dropdown.lastElementChild!).onclick = (evt) => {
       evt.stopPropagation();
+      evt.preventDefault();
       const dialog = new MoreRankingOptionsDialog(ranking, dialogContext(ctx, 1, <any>evt), ctx);
       dialog.open();
     };
@@ -35,15 +43,13 @@ export default class SidePanelRanking {
   }
 
   private init() {
-    this.node.innerHTML = `
-      <div><main></main></div>
-    `;
+    this.node.innerHTML = `<main class="${cssClass('side-panel-ranking-main')}"></main>`;
     if (this.hierarchy) {
       this.node.insertBefore(this.hierarchy.node, this.node.firstChild);
     }
 
     if (this.hierarchy) {
-      this.ranking.on(suffix('.panel', Ranking.EVENT_GROUP_CRITERIA_CHANGED, Ranking.EVENT_SORT_CRITERIA_CHANGED), () => {
+      this.ranking.on(suffix('.panel', Ranking.EVENT_GROUP_CRITERIA_CHANGED, Ranking.EVENT_SORT_CRITERIA_CHANGED, Ranking.EVENT_GROUP_SORT_CRITERIA_CHANGED), () => {
         this.updateHierarchy();
       });
     }
@@ -57,13 +63,13 @@ export default class SidePanelRanking {
   }
 
   get active() {
-    return this.node.classList.contains('lu-active');
+    return this.node.classList.contains(cssClass('active'));
   }
 
   set active(value: boolean) {
-    this.node.classList.toggle('lu-active', value);
-    this.header.classList.toggle('lu-active', value);
-    this.dropdown.classList.toggle('lu-active', value);
+    this.node.classList.toggle(cssClass('active'), value);
+    this.header.classList.toggle(cssClass('active'), value);
+    this.dropdown.classList.toggle(cssClass('active'), value);
     if (value) {
       return;
     }
@@ -92,7 +98,7 @@ export default class SidePanelRanking {
     const columns = this.ranking.flatColumns.filter((d) => !isSupportType(d));
 
     if (columns.length === 0) {
-      node.innerHTML = '';
+      clear(node);
       this.entries.forEach((d) => d.destroy());
       this.entries.clear();
       return;
@@ -113,7 +119,7 @@ export default class SidePanelRanking {
         return;
       }
 
-      const entry = new SidePanelEntryVis(col, this.ctx, node.ownerDocument);
+      const entry = new SidePanelEntryVis(col, this.ctx, node.ownerDocument!);
       node.appendChild(entry.node);
       this.entries.set(col.id, entry);
     });
@@ -124,7 +130,7 @@ export default class SidePanelRanking {
   destroy() {
     this.header.remove();
     this.node.remove();
-    this.ranking.on(suffix('.panel', Ranking.EVENT_GROUP_CRITERIA_CHANGED, Ranking.EVENT_SORT_CRITERIA_CHANGED, Ranking.EVENT_ADD_COLUMN, Ranking.EVENT_MOVE_COLUMN, Ranking.EVENT_REMOVE_COLUMN, Ranking.EVENT_LABEL_CHANGED), null);
+    this.ranking.on(suffix('.panel', Ranking.EVENT_GROUP_CRITERIA_CHANGED, Ranking.EVENT_SORT_CRITERIA_CHANGED, Ranking.EVENT_GROUP_SORT_CRITERIA_CHANGED, Ranking.EVENT_ADD_COLUMN, Ranking.EVENT_MOVE_COLUMN, Ranking.EVENT_REMOVE_COLUMN, Ranking.EVENT_LABEL_CHANGED), null);
 
     this.entries.forEach((d) => d.destroy());
     this.entries.clear();

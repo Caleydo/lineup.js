@@ -3,6 +3,8 @@ import AEventDispatcher from '../internal/AEventDispatcher';
 import Column from '../model/Column';
 import DataProvider from '../provider/ADataProvider';
 import {IEventListener} from '../internal/AEventDispatcher';
+import {clear} from '../internal';
+
 import {getUnsupportedBrowserError, SUPPORTED_FIREFOX_VERSION, SUPPORTED_CHROME_VERSION, SUPPORTED_EDGE_VERSION} from '../browser';
 
 /**
@@ -60,7 +62,7 @@ export abstract class ALineUp extends AEventDispatcher implements ILineUpLike {
 
   destroy() {
     // just clear since we hand in the node itself
-    this.node.innerHTML = '';
+    clear(this.node);
   }
 
   dump() {

@@ -7,6 +7,7 @@ import {filterMissingNumberMarkup} from '../ui/missing';
 import {interactiveHist} from './CategoricalCellRenderer';
 import {default as IRenderContext, ERenderMode, ICellRendererFactory} from './interfaces';
 import {forEachChild, noRenderer, adaptTextColorToBgColor} from './utils';
+import {cssClass} from '../styles';
 
 /** @internal */
 export default class CategoricalStackedDistributionlCellRenderer implements ICellRendererFactory {
@@ -42,7 +43,7 @@ function staticSummary(col: ICategoricalColumn) {
   return {
     template: `${template}</div>`,
     update: (n: HTMLElement, hist: ICategoricalStatistics | null) => {
-      n.classList.toggle('lu-missing', !hist);
+      n.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -62,7 +63,7 @@ function interactiveSummary(col: CategoricalColumn | OrdinalColumn, interactive:
       }
       filterUpdate(hist ? hist.missing : 0, col);
 
-      n.classList.toggle('lu-missing', !hist);
+      n.classList.toggle(cssClass('missing'), !hist);
       if (!hist) {
         return;
       }
@@ -73,7 +74,7 @@ function interactiveSummary(col: CategoricalColumn | OrdinalColumn, interactive:
 
 function stackedBar(col: ICategoricalColumn) {
   const cats = col.categories;
-  const bins = cats.map((c) => `<div style="background-color: ${c.color}; color: ${adaptTextColorToBgColor(c.color)}" title="${c.label}: 0" data-cat="${c.name}"><span>${c.label}</span></div>`).join('');
+  const bins = cats.map((c) => `<div class="${cssClass('distribution-bar')}" style="background-color: ${c.color}; color: ${adaptTextColorToBgColor(c.color)}" title="${c.label}: 0" data-cat="${c.name}"><span>${c.label}</span></div>`).join('');
 
   return {
     template: `<div>${bins}<div title="Missing Values"></div>`, // no closing div to be able to append things

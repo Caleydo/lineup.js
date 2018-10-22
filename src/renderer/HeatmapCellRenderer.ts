@@ -1,7 +1,7 @@
 import {IDataRow, isMissingValue} from '../model';
 import Column from '../model/Column';
 import {DEFAULT_FORMATTER, INumbersColumn, isNumbersColumn} from '../model/INumberColumn';
-import {CANVAS_HEIGHT} from '../styles';
+import {CANVAS_HEIGHT, cssClass} from '../styles';
 import {ANumbersCellRenderer} from './ANumbersCellRenderer';
 import {toHeatMapColor} from './BrightnessCellRenderer';
 import IRenderContext, {ICellRendererFactory, IImposer} from './interfaces';
@@ -30,7 +30,6 @@ export default class HeatmapCellRenderer implements ICellRendererFactory {
           renderMissingValue(ctx, cellDimension, height, x, 0);
           return;
         }
-        ctx.beginPath();
         ctx.fillStyle = toHeatMapColor(d, item, col, imposer);
         ctx.fillRect(x, 0, cellDimension, height);
       });
@@ -91,7 +90,7 @@ export default class HeatmapCellRenderer implements ICellRendererFactory {
     while (labels.length > 0 && !wideEnough(col, labels.length)) {
       labels = labels.filter((_, i) => i % 2 === 0); // even
     }
-    let templateRows = '<div>';
+    let templateRows = `<div class="${cssClass('heatmap')}">`;
     for (const label of labels) {
       templateRows += `<div title="${label}" data-title="${label}"></div>`;
     }
