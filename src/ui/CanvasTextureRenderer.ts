@@ -31,7 +31,10 @@ export interface ITextureRenderer {
 
 export default class CanvasTextureRenderer implements ITextureRenderer {
   static readonly MAX_CANVAS_SIZE = 32767;
-  static readonly AGGRIGATED_ROW_HEIGHT = 45;
+  static readonly AGGREGATED_ROW_HEIGHT = 45;
+  static readonly RENDER_ROW_PADDING = 10;
+  static readonly EXPANDED_ROW_CLASS = 'expand';
+  static readonly SELECTION_DRAW_WIDTH = 2;
 
   readonly node: HTMLElement;
   readonly canvas: any;
@@ -46,7 +49,6 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private currentRankingWidths: number[] = [];
   private engineRenderer: EngineRenderer;
   private engineRankings: EngineRanking[][] = [];
-  //private skipUpdateEvents: number = 0;
   private alreadyExpanded: boolean = false;
   private expandLaterRows: any[] = [];
   private readonly options: Readonly<ILineUpOptions>;
@@ -96,13 +98,14 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     if (totalWidth > this.node.clientWidth) {
         this.currentNodeHeight -= 20;
     }
-    this.alreadyExpanded = this.node.classList.contains('expand');
+    this.alreadyExpanded = this.node.classList.contains(CanvasTextureRenderer.EXPANDED_ROW_CLASS);
 
     this.renderColumns(rankings, localData);
   }
 
   private renderColumns (rankings: EngineRanking[], localData: IDataRow[][]) {
     rankings.forEach((r, i) => {
+      //first find the aggregated parts
       let notAggregatedCount = localData[i].length;
       let gIndex = 0;
       const aggregatedParts = <any>[];
@@ -113,8 +116,9 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         }
         gIndex += g.order.length;
       });
-      this.currentNodeHeight -= CanvasTextureRenderer.AGGRIGATED_ROW_HEIGHT * aggregatedParts.length;
+      this.currentNodeHeight -= CanvasTextureRenderer.AGGREGATED_ROW_HEIGHT * aggregatedParts.length;
 
+      //then find the parts to show details
       const rankingIndex = this.currentRankings.findIndex((v) => v === r);
       this.engineRankings[rankingIndex] = [];
       this.detailParts = [];
@@ -133,6 +137,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         this.detailParts.push([startIndex, localData[i].length-1]);
       }
 
+      //combine aggregated parts with detail parts
       const aggregateIndices = <any>[];
       aggregatedParts.forEach((g: any) => {
         for (let j = 0; j < this.detailParts.length; j++) {
@@ -232,15 +237,14 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         if (expandable) {
           const expandLater = () => {
             const engineRendererDiv = this.node.ownerDocument.createElement('article');
-            //const id = `renderRow_${di}`;
             engineRendererDiv.classList.add('engineRendererContainer');
             if (aggregated) {
               engineRendererDiv.classList.add('always');
             }
             if (aggregated) {
-              engineRendererDiv.style.height = `${45}px`;
+              engineRendererDiv.style.height = `${CanvasTextureRenderer.AGGREGATED_ROW_HEIGHT}px`;
             } else {
-              engineRendererDiv.style.height = `${(this.options.rowHeight + this.options.rowPadding) * data.length + 10}px`;
+              engineRendererDiv.style.height = `${(this.options.rowHeight + this.options.rowPadding) * data.length + CanvasTextureRenderer.RENDER_ROW_PADDING}px`;
             }
             engineRendererDiv.style.width = `${this.currentRankingWidths[i]}px`;
 
@@ -256,8 +260,6 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
             this.engineRenderer.render(engineRanking, <any>data);
             this.engineRankings[rankingIndex].push(engineRanking);
-            //engineRanking.on(EngineRanking.EVENT_UPDATE_DATA, () => this.handleUpdateEvent(r));
-            //this.skipUpdateEvents++;
           };
           if (this.alreadyExpanded || aggregated) {
             expandLater();
@@ -426,7 +428,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   expandTextureRenderer(use: boolean) {
-    d3.select(this.node).classed('expand', use);
+    d3.select(this.node).classed(CanvasTextureRenderer.EXPANDED_ROW_CLASS, use);
     if (!this.alreadyExpanded) {
       this.expandLaterRows.forEach((r) => r());
       this.alreadyExpanded = true;
@@ -546,7 +548,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         } else {
           ctx.fillStyle = '#ffffff';
         }
-        ctx.fillRect(2, i, 2, 1);
+        ctx.fillRect(CanvasTextureRenderer.SELECTION_DRAW_WIDTH, i, CanvasTextureRenderer.SELECTION_DRAW_WIDTH, 1);
       }
       ctx.save();
     });
