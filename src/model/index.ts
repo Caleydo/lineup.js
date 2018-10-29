@@ -32,6 +32,9 @@ import StringsColumn from './StringsColumn';
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import ImpositionBoxPlotColumn from './ImpositionBoxPlotColumn';
 import OverviewDetailColumn from './OverviewDetailColumn';
+import LinkColumn from './LinkColumn';
+import LinkMapColumn from './LinkMapColumn';
+import LinksColumn from './LinksColumn';
 
 export {isSupportType, Category, SupportType, SortByDefault, Categories, toolbar, dialogAddons} from './annotations';
 export {isMissingValue, isUnknown, FIRST_IS_NAN, FIRST_IS_MISSING, missingGroup} from './missing';
@@ -99,6 +102,11 @@ export {default as StringMapColumn} from './StringMapColumn';
 export * from './StringsColumn';
 export {default as StringsColumn} from './StringsColumn';
 export {default as ValueColumn, IValueColumnDesc} from './ValueColumn';
+export {default as LinkColumn, ILinkDesc, ILinkColumnDesc, ILink} from './LinkColumn';
+export * from './LinkMapColumn';
+export {default as LinkMapColumn} from './LinkMapColumn';
+export * from './LinksColumn';
+export {default as LinksColumn} from './LinksColumn';
 
 /**
  * defines a new column type
@@ -163,6 +171,9 @@ export function models() {
     stack: StackColumn,
     string: StringColumn,
     stringMap: StringMapColumn,
-    strings: StringsColumn
+    strings: StringsColumn,
+    link: LinkColumn,
+    linkMap: LinkMapColumn,
+    links: LinksColumn
   };
 }

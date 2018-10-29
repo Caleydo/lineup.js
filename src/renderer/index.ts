@@ -42,6 +42,9 @@ export {
   ICellRendererFactory
 } from './interfaces';
 
+export {colorOf} from './impose';
+export {renderMissingDOM, renderMissingCanvas} from './missing';
+
 
 const defaultCellRenderer = new DefaultCellRenderer();
 /**
