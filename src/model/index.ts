@@ -92,7 +92,7 @@ export {default as Ranking, ISortCriteria} from './Ranking';
 export {default as ReduceColumn, createReduceDesc, IReduceDesc, IReduceColumnDesc} from './ReduceColumn';
 export {default as ScriptColumn, createScriptDesc, IScriptDesc, IScriptColumnDesc} from './ScriptColumn';
 export {default as SelectionColumn, createSelectionDesc, ISelectionColumnDesc} from './SelectionColumn';
-export {default as DeteilColumn, createDetailDesc, IDetailColumnDesc} from './OverviewDetailColumn';
+export {default as DetailColumn, createDetailDesc, IDetailColumnDesc} from './OverviewDetailColumn';
 export * from './SetColumn';
 export {default as SetColumn} from './SetColumn';
 export {default as StackColumn, createStackDesc} from './StackColumn';
