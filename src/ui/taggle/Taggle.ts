@@ -42,50 +42,50 @@ export default class Taggle extends ALineUp {
     });
     this.renderer.pushUpdateAble((ctx) => this.panel!.update(ctx));
     this.node.insertBefore(this.panel.node, this.node.firstChild);
-    {
-      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-expand-button-chooser"><label>
+
+    this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-expand-button-chooser"><label>
             <input class="expand" type="checkbox">
             <span>Expand</span>
           </label></div>`);
-      const expandButton = <HTMLElement>this.node.querySelector('.lu-expand-button-chooser')!;
-      const expandInput = <HTMLInputElement>expandButton.querySelector('input.expand');
-      expandInput.onchange = () => {
-        const selected = expandInput.checked;
-        this.renderer!.expandTextureRenderer(selected);
-      };
-      expandButton.onclick = () => {
-        expandInput.checked = !expandInput.checked;
-      };
-      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
+    const expandButton = <HTMLElement>this.node.querySelector('.lu-expand-button-chooser')!;
+    const expandInput = <HTMLInputElement>expandButton.querySelector('input.expand');
+    expandInput.onchange = () => {
+      const selected = expandInput.checked;
+      this.renderer!.expandTextureRenderer(selected);
+    };
+    expandButton.onclick = () => {
+      expandInput.checked = !expandInput.checked;
+    };
+    this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
             <input class="spaceFilling" type="checkbox">
             <span>Overview</span>
           </label></div>`);
-      const spaceFilling = spaceFillingRule(this.options);
-      this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
-      const ruleInput = <HTMLInputElement>this.spaceFilling.querySelector('input.spaceFilling');
-      ruleInput.onchange = () => {
-        let useTextureRenderer = true;
-        if (data instanceof LocalDataProvider) {
-          const ldp = <LocalDataProvider>data;
-          if (this.node.offsetHeight > ldp.data.length) {
-            useTextureRenderer = false;
-          }
+    const spaceFilling = spaceFillingRule(this.options);
+    this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
+    const ruleInput = <HTMLInputElement>this.spaceFilling.querySelector('input.spaceFilling');
+    ruleInput.onchange = () => {
+      let useTextureRenderer = true;
+      if (data instanceof LocalDataProvider) {
+        const ldp = <LocalDataProvider>data;
+        if (this.node.offsetHeight > ldp.data.length) {
+          useTextureRenderer = false;
         }
-        const selected = this.spaceFilling!.classList.toggle('chosen');
-        if (useTextureRenderer) {
-          this.renderer!.useTextureRenderer(selected);
-          if (selected) {
-            expandButton.style.display = '';
-          } else {
-            expandButton.style.display = 'none';
-          }
-          return;
+      }
+      const selected = this.spaceFilling!.classList.toggle('chosen');
+      if (useTextureRenderer) {
+        this.renderer!.useTextureRenderer(selected);
+        if (selected) {
+          expandButton.style.display = '';
+        } else {
+          expandButton.style.display = 'none';
         }
-        self.setTimeout(() => this.renderer!.switchRule(selected ? spaceFilling : null));
-      };
-      if (this.options.overviewMode) {
-        ruleInput.checked = true;
-        this.spaceFilling.classList.toggle('chosen');
+        return;
+      }
+      self.setTimeout(() => this.renderer!.switchRule(selected ? spaceFilling : null));
+    };
+    if (this.options.overviewMode) {
+      ruleInput.checked = true;
+      this.spaceFilling.classList.toggle('chosen');
       this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')}"><label>
             <input type="checkbox">
             <span>Overview</span>
@@ -180,9 +180,9 @@ export function updateLodRules(style: GridStyleManager, overviewMode: boolean, o
 
   style.updateRule('taggle_lod_rule', `
   .${engineCssClass('tr')}.${cssClass('low')}[data-agg=detail]:hover`, {
-    /* show regular height for hovered rows in low + medium LOD */
-    height: `${options.rowHeight}px !important`
-  });
+      /* show regular height for hovered rows in low + medium LOD */
+      height: `${options.rowHeight}px !important`
+    });
 
   style.updateRule('lineup_rowPadding1', `
   .${engineCssClass('tr')}.${cssClass('low')}`, {
