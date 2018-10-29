@@ -7,11 +7,11 @@ import NumbersColumn from '../model/NumbersColumn';
 import CategoricalColumn from '../model/CategoricalColumn';
 import CategoricalsColumn from '../model/CategoricalsColumn';
 import CompositeColumn from '../model/CompositeColumn';
-import * as d3 from 'd3-selection';
-import * as drag from 'd3-drag';
+import {select as d3Select, mouse as d3Mouse, event as d3Event} from 'd3-selection';
+import {drag as d3Drag} from 'd3-drag';
 import {ILineUpOptions} from '../interfaces';
 import EngineRenderer from './EngineRenderer';
-import {MultiTableRowRenderer} from 'lineupengine';
+import { MultiTableRowRenderer, GridStyleManager } from 'lineupengine';
 import SelectionColumn from '../model/SelectionColumn';
 import OverviewDetailColumn from '../model/OverviewDetailColumn';
 import Ranking from '../model/Ranking';
@@ -59,7 +59,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     this.node.id = 'lu-texture-container';
     parent.appendChild(this.node);
     this.canvas = parent.ownerDocument.createElement('canvas');
-    this.headerNode = <HTMLElement>d3.select(parent).select('header').node();
+    this.headerNode = <HTMLElement>d3Select(parent).select('header').node();
     this.engineRenderer = engineRenderer;
     this.options = options;
     this.renderedColumns = [];
@@ -195,7 +195,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         }
       }
       let curIndex = 0;
-      const rankingDiv = <any>d3.select(this.node).select(`[data-ranking="${rankingIndex}"]`)!.node();
+      const rankingDiv = <any>d3Select(this.node).select(`[data-ranking="${rankingIndex}"]`)!.node();
       if (!rankingDiv) {
         return;
       }
@@ -251,7 +251,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
             rowDiv.appendChild(engineRendererDiv);
 
             const table = new MultiTableRowRenderer(engineRendererDiv, `#${this.idPrefix}`);
-            const engineRanking = table.pushTable((header, body, tableId, style) => new EngineRanking(r.ranking, header, body, tableId, style, this.engineRenderer.ctx, {
+            const engineRanking = table.pushTable((header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager) => new EngineRanking(r.ranking, header, body, tableId, style, this.engineRenderer.ctx, {
               animation: this.options.animated,
               customRowUpdate: this.options.customRowUpdate || (() => undefined),
               levelOfDetail: this.options.levelOfDetail || (() => 'high'),//
@@ -272,11 +272,11 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
           return;
         }
         const that = this;
-        d3.select(rowDiv)
-          .call(<any>drag.drag()
-            .on('start', (_, __, element) => { that.dragStarted(element[0]); })
-            .on('drag', (_ , __, element) => { that.dragged(element[0]); })
-            .on('end', (_, __, element) => { that.dragEnd(element[0]); }));
+        d3Select(rowDiv)
+          .call((<any>d3Drag())
+            .on('start', (_: any, __: any, element: HTMLElement[]) => { that.dragStarted(element[0]); })
+            .on('drag', (_: any, __: any, element: HTMLElement[]) => { that.dragged(element[0]); })
+            .on('end', (_: any, __: any, element: HTMLElement[]) => { that.dragEnd(element[0]); }));
       });
     });
     this.drawSelection();
@@ -285,7 +285,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private createColumn(column: Column, grouped: any[], container: HTMLElement, partOfComposite: boolean, expandable: boolean) {
     if (this.renderedColumns.includes(column.id)) {
       if (partOfComposite) {
-        const $container = d3.select(container);
+        const $container = d3Select(container);
         const $col = $container.select(`.columnContainer[data-columnid="${column.id}"]`).node();
         if ($col !== null) {
           $container.append(() => $col); //reorder the column
@@ -428,7 +428,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   expandTextureRenderer(use: boolean) {
-    d3.select(this.node).classed(CanvasTextureRenderer.EXPANDED_ROW_CLASS, use);
+    d3Select(this.node).classed(CanvasTextureRenderer.EXPANDED_ROW_CLASS, use);
     if (!this.alreadyExpanded) {
       this.expandLaterRows.forEach((r) => r());
       this.alreadyExpanded = true;
@@ -436,7 +436,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   private dragStarted(element: any) {
-    this.dragStartPosition = d3.mouse(element);
+    this.dragStartPosition = d3Mouse(element);
     this.dragOverlay = element.ownerDocument.createElement('div');
     this.dragOverlay.id = 'lu-drag-overlay';
     this.dragOverlay.style.width = `${element.scrollWidth}px`;
@@ -444,7 +444,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   private dragged(element: any) {
-    const currentPosition = d3.mouse(element);
+    const currentPosition = d3Mouse(element);
     if (this.dragStartPosition[1] < currentPosition[1]) {
       this.dragOverlay.style.top = `${this.dragStartPosition[1]}px`;
       this.dragOverlay.style.height = `${currentPosition[1]-this.dragStartPosition[1]}px`;
@@ -456,10 +456,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
   private dragEnd(element: any) {
     this.dragOverlay.remove();
-    const currentPosition = d3.mouse(element);
+    const currentPosition = d3Mouse(element);
     if(currentPosition[1] === this.dragStartPosition[1]) {
-      if (!d3.event.sourceEvent.ctrlKey) {
-        if (d3.event.sourceEvent.altKey) {
+      if (!d3Event.sourceEvent.ctrlKey) {
+        if (d3Event.sourceEvent.altKey) {
           this.engineRenderer.ctx.provider.setDetail([]);
         } else {
           this.engineRenderer.ctx.provider.setSelection([]);
@@ -477,11 +477,11 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       return;
     }
     const ranking = element.parentElement.getAttribute('data-ranking');
-    const indices : number[] = d3.event.sourceEvent.ctrlKey ? (d3.event.sourceEvent.altKey ? this.engineRenderer.ctx.provider.getDetail() : this.engineRenderer.ctx.provider.getSelection()) :[];
+    const indices : number[] = d3Event.sourceEvent.ctrlKey ? (d3Event.sourceEvent.altKey ? this.engineRenderer.ctx.provider.getDetail() : this.engineRenderer.ctx.provider.getSelection()) :[];
     this.currentLocalData[ranking].slice(fromIndex, toIndex).forEach((d) => {
       indices.push(d.i);
     });
-    if (d3.event.sourceEvent.altKey) {
+    if (d3Event.sourceEvent.altKey) {
       this.engineRenderer.ctx.provider.setDetail(indices);
     } else {
       this.engineRenderer.ctx.provider.setSelection(indices);
@@ -508,7 +508,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     this.currentRankings.splice(index, 1);
     this.engineRankings.splice(index, 1);
     this.currentLocalData.splice(index, 1);
-    d3.select(this.node).select(`[data-ranking="${index}"]`).remove();
+    d3Select(this.node).select(`[data-ranking="${index}"]`).remove();
   }
 
   destroy() {
@@ -532,7 +532,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   }
 
   drawSelection() {
-    d3.select(this.node).selectAll('.selectionColumn').nodes().forEach((v: any) => {
+    d3Select(this.node).selectAll('.selectionColumn').nodes().forEach((v: any) => {
       let parent = v.parentElement;
       while (!parent.classList.contains('rowContainer')) {
         parent = parent.parentElement;
