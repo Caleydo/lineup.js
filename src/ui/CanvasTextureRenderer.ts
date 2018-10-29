@@ -55,10 +55,10 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private readonly idPrefix = 'testprefix';
 
   constructor(parent: Element, engineRenderer: EngineRenderer, options: Readonly<ILineUpOptions>) {
-    this.node = parent.ownerDocument.createElement('main');
+    this.node = parent.ownerDocument!.createElement('main');
     this.node.id = 'lu-texture-container';
     parent.appendChild(this.node);
-    this.canvas = parent.ownerDocument.createElement('canvas');
+    this.canvas = parent.ownerDocument!.createElement('canvas');
     this.headerNode = <HTMLElement>d3Select(parent).select('header').node();
     this.engineRenderer = engineRenderer;
     this.options = options;
@@ -211,7 +211,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         }
         const data = grouped.slice(curIndex - aggregateOffset, v - aggregateOffset - newOffset);
 
-        const rowDiv = this.node.ownerDocument.createElement('div');
+        const rowDiv = this.node.ownerDocument!.createElement('div');
         rowDiv.setAttribute('data-from', `${curIndex}`);
         rowDiv.setAttribute('data-to', `${v-1}`);
         rowDiv.classList.add('rowContainer');
@@ -223,7 +223,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         if (!aggregated) {
           const height = data.length / notAggregatedCount * this.currentNodeHeight;
           if (height >= 1) { //only render parts larger than 1px
-            const textureDiv = this.node.ownerDocument.createElement('div');
+            const textureDiv = this.node.ownerDocument!.createElement('div');
             textureDiv.style.height = `${height}px`;
             textureDiv.classList.add('textureContainer');
             if (!expandable) {
@@ -236,7 +236,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
         }
         if (expandable) {
           const expandLater = () => {
-            const engineRendererDiv = this.node.ownerDocument.createElement('article');
+            const engineRendererDiv = this.node.ownerDocument!.createElement('article');
             engineRendererDiv.classList.add('engineRendererContainer');
             if (aggregated) {
               engineRendererDiv.classList.add('always');
@@ -296,7 +296,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       }
     }
 
-    const columnContainer = this.node.ownerDocument.createElement('div');
+    const columnContainer = this.node.ownerDocument!.createElement('div');
     columnContainer.style.width = `${column.getWidth()}px`;
     columnContainer.setAttribute('data-columnid', column.id);
     columnContainer.classList.add('columnContainer');
@@ -340,7 +340,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       (<CompositeColumn>column).children.forEach((c) => this.createColumn(c, grouped, container, true, expandable));
       return;
     } else {
-      newElements.push(this.node.ownerDocument.createElement('canvas'));
+      newElements.push(this.node.ownerDocument!.createElement('canvas'));
     }
 
     newElements.forEach((newElement: any) => columnContainer.appendChild(newElement));
@@ -402,7 +402,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       if(height > 0) {
         width = chunk[0].length;
       }
-      const canvas = this.node.ownerDocument.createElement('canvas');
+      const canvas = this.node.ownerDocument!.createElement('canvas');
       canvas.setAttribute('height', `${height}`);
       canvas.setAttribute('width', `${width}`);
       canvas.style.flexGrow = `${height}`;
@@ -491,7 +491,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   addRanking(ranking: EngineRanking) {
     this.currentRankings.push(ranking);
     this.currentLocalData.push([]);
-    const rankingDiv = this.node.ownerDocument.createElement('div');
+    const rankingDiv = this.node.ownerDocument!.createElement('div');
     rankingDiv.classList.add('rankingContainer');
     rankingDiv.setAttribute('data-ranking', `${this.currentRankings.length-1}`);
     this.node.appendChild(rankingDiv);
