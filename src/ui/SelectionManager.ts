@@ -96,7 +96,7 @@ export default class SelectionManager extends AEventDispatcher {
     return super.on(type, listener);
   }
 
-  select(additional: boolean, startNode?: HTMLElement, endNode?: HTMLElement) {
+  private select(additional: boolean, startNode?: HTMLElement, endNode?: HTMLElement) {
     if (!startNode || !endNode || startNode === endNode) {
       return; // no single
     }
