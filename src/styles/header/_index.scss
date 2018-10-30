@@ -10,17 +10,17 @@
   justify-content: flex-start;
   background: white;
 
+  > i {
+    padding-top: 2px;
+    margin-left: 6px;
+    cursor: default;
+    color: $lu_toolbar_color_base;
 
-    > i {
-      padding-top: 2px;
-      margin-left: 6px;
-      cursor: default;
-      color: $lu_toolbar_color_base;
-
-      &:hover {
-        color: $lu_toolbar_color_hover;
-      }
+    &:hover {
+      color: $lu_toolbar_color_hover;
     }
+  }
+
   &.#{$lu_css_prefix}-dragging {
     opacity: 0.5;
   }
