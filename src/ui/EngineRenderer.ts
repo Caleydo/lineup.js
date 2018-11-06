@@ -471,12 +471,12 @@ export default class EngineRenderer extends AEventDispatcher {
     d3.select(this.node).select('main').style('display', 'none');
   }
 
-  s2d() {
-    this.textureRenderer.s2d();
+  convertSelectionToDetail() {
+    this.textureRenderer.convertSelectionToDetail();
   }
 
-  d2s() {
-    this.textureRenderer.d2s();
+  convertDetailToSelection() {
+    this.textureRenderer.convertDetailToSelection();
   }
 }
 

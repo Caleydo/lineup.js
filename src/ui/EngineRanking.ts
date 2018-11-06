@@ -163,7 +163,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     }
   };
 
-  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}, readonly  noEvents: boolean = false) {
+  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}, readonly  addEventListener: boolean = true) {
     super(header, body, tableId, style, {mixins: [PrefetchMixin], batchSize: 20});
     Object.assign(this.roptions, roptions);
     body.dataset.ranking = ranking.id;
@@ -185,7 +185,9 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
 
     this.delayedUpdateAll = debounce(() => this.updateAll(), 50);
     this.delayedUpdateColumnWidths = debounce(() => this.updateColumnWidths(), 50);
-    if (!noEvents) {
+    //this flag is needed for the CanvasTextureRenderer, since there are multiple EngineRankings used for the same Ranking
+    //this avoids overriding the event listener of the original EngineRanking from the EngineRenderer
+    if (addEventListener) {
       ranking.on(`${Ranking.EVENT_ADD_COLUMN}.hist`, (col: Column, index: number) => {
         this.columns.splice(index, 0, this.createCol(col, index));
         this.reindex();

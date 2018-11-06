@@ -25,8 +25,8 @@ export interface ITextureRenderer {
   updateSelection(dataIndices: number[]): void;
   addRanking(ranking: EngineRanking): void;
   removeRanking(ranking: Ranking | null): void;
-  s2d(): void;
-  d2s(): void;
+  convertSelectionToDetail(): void;
+  convertDetailToSelection(): void;
 }
 
 export default class CanvasTextureRenderer implements ITextureRenderer {
@@ -35,6 +35,9 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   static readonly RENDER_ROW_PADDING = 10;
   static readonly EXPANDED_ROW_CLASS = 'expand';
   static readonly SELECTION_DRAW_WIDTH = 2;
+  static readonly SELECTION_DRAW_COLOR = '#ffa809';
+  static readonly SELECTION_DRAW_BACKGROUN_COLOR = '#ffffff';
+  static readonly SCROLLBAR_HEIGHT = 20;
 
   readonly node: HTMLElement;
   readonly canvas: any;
@@ -52,7 +55,6 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
   private alreadyExpanded: boolean = false;
   private expandLaterRows: any[] = [];
   private readonly options: Readonly<ILineUpOptions>;
-  private readonly idPrefix = 'testprefix';
 
   constructor(parent: Element, engineRenderer: EngineRenderer, options: Readonly<ILineUpOptions>) {
     this.node = parent.ownerDocument!.createElement('main');
@@ -96,7 +98,7 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
       totalWidth += rankingWidth;
     });
     if (totalWidth > this.node.clientWidth) {
-        this.currentNodeHeight -= 20;
+        this.currentNodeHeight -= CanvasTextureRenderer.SCROLLBAR_HEIGHT;
     }
     this.alreadyExpanded = this.node.classList.contains(CanvasTextureRenderer.EXPANDED_ROW_CLASS);
 
@@ -250,13 +252,13 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
             rowDiv.appendChild(engineRendererDiv);
 
-            const table = new MultiTableRowRenderer(engineRendererDiv, `#${this.idPrefix}`);
+            const table = new MultiTableRowRenderer(engineRendererDiv, `#${this.engineRenderer.idPrefix}`);
             const engineRanking = table.pushTable((header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager) => new EngineRanking(r.ranking, header, body, tableId, style, this.engineRenderer.ctx, {
               animation: this.options.animated,
               customRowUpdate: this.options.customRowUpdate || (() => undefined),
               levelOfDetail: this.options.levelOfDetail || (() => 'high'),//
               flags: this.options.flags
-            }, true));
+            }, false));
 
             this.engineRenderer.render(engineRanking, <any>data);
             this.engineRankings[rankingIndex].push(engineRanking);
@@ -523,11 +525,11 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
     this.node.style.display = 'none';
   }
 
-  s2d() {
+  convertSelectionToDetail() {
     this.engineRenderer.ctx.provider.setDetail(this.engineRenderer.ctx.provider.getSelection());
   }
 
-  d2s() {
+  convertDetailToSelection() {
     this.engineRenderer.ctx.provider.setSelection(this.engineRenderer.ctx.provider.getDetail());
   }
 
@@ -544,9 +546,9 @@ export default class CanvasTextureRenderer implements ITextureRenderer {
 
       for (let i = fromIndex; i <= toIndex; i++) {
         if (this.engineRenderer.ctx.provider.isSelected(this.currentLocalData[0][i].i)) {
-          ctx.fillStyle = '#ffa809';
+          ctx.fillStyle = CanvasTextureRenderer.SELECTION_DRAW_COLOR;
         } else {
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = CanvasTextureRenderer.SELECTION_DRAW_BACKGROUN_COLOR;
         }
         ctx.fillRect(CanvasTextureRenderer.SELECTION_DRAW_WIDTH, i, CanvasTextureRenderer.SELECTION_DRAW_WIDTH, 1);
       }

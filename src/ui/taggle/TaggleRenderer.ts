@@ -189,11 +189,11 @@ export default class TaggleRenderer extends AEventDispatcher {
     this.renderer.enableHighlightListening(enable);
   }
 
-  d2s() {
-    this.renderer.d2s();
+  convertDetailToSelection() {
+    this.renderer.convertDetailToSelection();
   }
 
-  s2d() {
-    this.renderer.s2d();
+  convertSelectionToDetail() {
+    this.renderer.convertSelectionToDetail();
   }
 }

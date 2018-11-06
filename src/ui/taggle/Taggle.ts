@@ -81,34 +81,18 @@ export default class Taggle extends ALineUp {
         }
         return;
       }
-      self.setTimeout(() => this.renderer!.switchRule(selected ? spaceFilling : null));
+      self.setTimeout(() => {
+        this.updateLodRules(selected);
+        this.renderer!.switchRule(selected ? spaceFilling : null);
+      });
     };
     if (this.options.overviewMode) {
       ruleInput.checked = true;
       this.spaceFilling.classList.toggle('chosen');
-      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')}"><label>
-            <input type="checkbox">
-            <span>Overview</span>
-            <div class="${cssClass('rule-violation')}"></div>
-          </label></div>`);
-      const spaceFilling = spaceFillingRule(this.options);
-      this.spaceFilling = <HTMLElement>this.panel.node.querySelector(`.${cssClass('rule-button-chooser')}`)!;
-      const input = <HTMLInputElement>this.spaceFilling.querySelector('input');
-      input.onchange = () => {
-        const selected = this.spaceFilling!.classList.toggle(cssClass('chosen'));
-        self.setTimeout(() => {
-          this.updateLodRules(selected);
-          this.renderer!.switchRule(selected ? spaceFilling : null);
-        });
-      };
-      if (this.options.overviewMode) {
-        input.checked = true;
-        this.spaceFilling.classList.toggle(cssClass('chosen'));
-        this.updateLodRules(true);
-        this.renderer.switchRule(spaceFilling);
-      } else {
-        expandButton.style.display = 'none';
-      }
+      this.updateLodRules(true);
+      this.renderer.switchRule(spaceFilling);
+    } else {
+      expandButton.style.display = 'none';
     }
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
   }
@@ -122,7 +106,7 @@ export default class Taggle extends ALineUp {
 
   private setViolation(violation?: string) {
     violation = violation || '';
-    if (this.spaceFilling) {
+    if (this.options.overviewMode && this.spaceFilling) {
       this.spaceFilling.classList.toggle(cssClass('violated'), Boolean(violation));
       this.spaceFilling.querySelector(`.${cssClass('rule-violation')}`)!.innerHTML = violation.replace(/\n/g, '<br>');
     }

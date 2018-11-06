@@ -94,5 +94,6 @@ export default class OverviewDetailColumn extends ValueColumn<boolean> {
 
   group(row: IDataRow) {
     const isSelected = this.getValue(row);
-    return isSelected ? OverviewDetailColumn.DETAILED_GROUP : OverviewDetailColumn.NOT_DETAILED_GROUP;  }
+    return isSelected ? OverviewDetailColumn.DETAILED_GROUP : OverviewDetailColumn.NOT_DETAILED_GROUP;
+  }
 }

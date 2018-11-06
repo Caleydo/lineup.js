@@ -172,6 +172,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
    */
   private readonly selection = new OrderedSet<number>();
 
+  /**
+   * indices of rows that currently have the detail marking
+   * @type {OrderedSet<number>}
+   */
   private readonly detail = new OrderedSet<number>();
 
   //ranking.id@group.name
@@ -768,6 +772,11 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return this.selection.has(index);
   }
 
+  /**
+   * has the given row the detail marking
+   * @param index
+   * @returns {boolean}
+   */
   isDetail(index: number) {
     return this.detail.has(index);
   }
@@ -787,6 +796,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  /**
+   * also set the detail marking for the given row
+   * @param {number} index
+   */
   addDetail(index: number) {
     if (this.detail.has(index)) {
       return; //no change
@@ -827,6 +840,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  /**
+   * also set the detail marking for the given rows
+   * @param indices
+   */
   addDetailAll(indices: number[]) {
     if (indices.every((i) => this.detail.has(i))) {
       return; //no change
@@ -860,6 +877,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.selectAll(indices);
   }
 
+  /**
+   * set the detail marking to the given rows
+   * @param indices
+   */
   setDetail(indices: number[]) {
     if (indices.length === 0) {
       return this.clearDetail();
@@ -894,6 +915,12 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return true;
   }
 
+  /**
+   * toggles the detail marking of the given data index
+   * @param index
+   * @param additional just this element or all
+   * @returns {boolean} whether the index currently has the detail marking
+   */
   toggleDetail(index: number, additional = false) {
     if (this.isDetail(index)) {
       if (additional) {
@@ -923,6 +950,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  /**
+   * remove detail marking for given row
+   * @param index
+   */
   removeDetail(index: number) {
     if (!this.detail.has(index)) {
       return; //no change
@@ -932,7 +963,7 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
   }
 
   /**
-   * also select all the given rows
+   * remove detail markings for given rows
    * @param indices
    */
   deselectAll(indices: number[]) {
@@ -945,6 +976,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, this.getSelection());
   }
 
+  /**
+   *
+   * @param {number[]} indices
+   */
   removeDetailAll(indices: number[]) {
     if (indices.every((i) => !this.detail.has(i))) {
       return; //no change
@@ -966,6 +1001,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return this.view(this.getSelection());
   }
 
+  /**
+   * returns a promise containing the rows with the detail marking
+   * @returns {Promise<any[]>}
+   */
   detailRows(): Promise<any[]> | any[] {
     if (this.detail.size === 0) {
       return [];
@@ -981,6 +1020,10 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     return Array.from(this.selection);
   }
 
+  /**
+   * returns indices of detail markings
+   * @returns {Array}
+   */
   getDetail() {
     return Array.from(this.detail);
   }
@@ -996,6 +1039,9 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
     this.fire(ADataProvider.EVENT_SELECTION_CHANGED, [], false);
   }
 
+  /**
+   * clears all detail markings
+   */
   clearDetail() {
     if (this.detail.size === 0) {
       return; //no change
