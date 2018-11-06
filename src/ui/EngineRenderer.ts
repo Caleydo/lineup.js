@@ -15,6 +15,8 @@ import EngineRanking, {IEngineRankingContext} from './EngineRanking';
 import {IRankingHeaderContext, IRankingHeaderContextContainer} from './interfaces';
 import SlopeGraph, {EMode} from './SlopeGraph';
 import DialogManager from './dialogs/DialogManager';
+import {default as CanvasTextureRenderer, ITextureRenderer} from './CanvasTextureRenderer';
+import * as d3 from 'd3-selection';
 import {cssClass} from '../styles/index';
 import domElementCache from './domElementCache';
 
@@ -45,6 +47,10 @@ export default class EngineRenderer extends AEventDispatcher {
   readonly idPrefix = `lu${Math.random().toString(36).slice(-8).substr(0, 3)}`; //generate a random string with length3;
 
   private enabledHighlightListening: boolean = false;
+  public useTextureRenderer: boolean = false;
+  private textureRenderer: ITextureRenderer;
+  private groupPadding: any = null;
+  private heightsFor: any = null;
 
   constructor(protected data: ADataProvider, parent: HTMLElement, options: Readonly<ILineUpOptions>) {
     super();
@@ -128,6 +134,8 @@ export default class EngineRenderer extends AEventDispatcher {
         });
     }
 
+    this.textureRenderer = new CanvasTextureRenderer(this.node, this, this.options);
+
     this.initProvider(data);
   }
 
@@ -177,6 +185,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   private takeDownProvider() {
     this.data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, null);
+    this.data.on(`${ADataProvider.EVENT_DETAIL_CHANGED}.body`, null);
     this.data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, null);
     this.data.on(`${ADataProvider.EVENT_REMOVE_RANKING}.body`, null);
     this.data.on(`${ADataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, null);
@@ -190,6 +199,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   private initProvider(data: ADataProvider) {
     data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, () => this.updateSelection(data.getSelection()));
+    data.on(`${ADataProvider.EVENT_DETAIL_CHANGED}.body`, () => this.updateDetail(data.getDetail()));
     data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, (ranking: Ranking) => {
       this.addRanking(ranking);
     });
@@ -209,8 +219,14 @@ export default class EngineRenderer extends AEventDispatcher {
   private updateSelection(dataIndices: number[]) {
     const s = new Set(dataIndices);
     this.rankings.forEach((r) => r.updateSelection(s));
-
+    this.textureRenderer.updateSelection(dataIndices);
     this.slopeGraphs.forEach((r) => r.updateSelection(s));
+  }
+
+  private updateDetail(dataIndices: number[]) {
+    const s = new Set(dataIndices);
+    this.rankings.forEach((r) => r.updateDetail(s));
+    this.textureRenderer.update();
   }
 
   private updateHist(ranking?: EngineRanking, col?: Column) {
@@ -269,7 +285,12 @@ export default class EngineRenderer extends AEventDispatcher {
     ranking.on(suffix('.renderer', Ranking.EVENT_ORDER_CHANGED), () => this.updateHist(r));
 
     this.rankings.push(r);
+    this.textureRenderer.addRanking(r);
     this.update([r]);
+  }
+
+  expandTextureRenderer(use: boolean) {
+    this.textureRenderer.expandTextureRenderer(use);
   }
 
   private updateRotatedHeaderState() {
@@ -298,6 +319,7 @@ export default class EngineRenderer extends AEventDispatcher {
     if (slope) {
       this.table.remove(slope);
     }
+    this.textureRenderer.removeRanking(ranking);
   }
 
   update(rankings: EngineRanking[] = this.rankings) {
@@ -320,9 +342,9 @@ export default class EngineRenderer extends AEventDispatcher {
 
     const round2 = (v: number) => round(v, 2);
     const rowPadding = round2(this.zoomFactor * this.options.rowPadding!);
-    const groupPadding = round2(this.zoomFactor * this.options.groupPadding!);
+    this.groupPadding = round2(this.zoomFactor * this.options.groupPadding!);
 
-    const heightsFor = (ranking: Ranking, data: (IGroupItem | IGroupData)[]) => {
+    this.heightsFor = (ranking: Ranking, data: (IGroupItem | IGroupData)[]) => {
       if (this.options.dynamicHeight) {
         const impl = this.options.dynamicHeight(data, ranking);
         const f = (v: number | any, d: any) => typeof v === 'number' ? v : v(d);
@@ -343,25 +365,38 @@ export default class EngineRenderer extends AEventDispatcher {
       };
     };
 
-    rankings.forEach((r, i) => {
-      const grouped = r.groupData(localData[i]);
+    if (this.useTextureRenderer) {
+      this.hide();
+      this.textureRenderer.show();
+      this.textureRenderer.update(rankings, localData);
 
-      const {height, defaultHeight, padding} = heightsFor(r.ranking, grouped);
+    } else {
+      this.textureRenderer.hide();
+      this.show();
 
-      const rowContext = nonUniformContext(grouped.map(height), defaultHeight, (index) => {
-        const pad = (typeof padding === 'number' ? padding : padding(grouped[index] || null));
-        if (index >= 0 && grouped[index] && (isGroup(grouped[index]) || (<IGroupItem>grouped[index]).meta === 'last' || (<IGroupItem>grouped[index]).meta === 'first last')) {
-          return groupPadding + pad;
-        }
-        return pad;
+      rankings.forEach((r, i) => {
+        this.render(r, r.groupData(localData[i]));
       });
-      r.render(grouped, rowContext);
-    });
+    }
 
     this.updateSlopeGraphs(rankings);
 
     this.updateRotatedHeaderState();
     this.table.widthChanged();
+  }
+
+  render(r: EngineRanking, grouped: (IGroupData | IGroupItem)[]) {
+    const {height, defaultHeight, padding} = this.heightsFor(r.ranking, grouped);
+
+    const that = this;
+    const rowContext = nonUniformContext(grouped.map(height), defaultHeight, (index) => {
+      const pad = (typeof padding === 'number' ? padding : padding(grouped[index] || null));
+      if (index >= 0 && grouped[index] && (isGroup(grouped[index]) || (<IGroupItem>grouped[index]).meta === 'last' || (<IGroupItem>grouped[index]).meta === 'first last')) {
+        return that.groupPadding + pad;
+      }
+      return pad;
+    });
+    r.render(grouped, rowContext);
   }
 
   private updateSlopeGraphs(rankings: EngineRanking[] = this.rankings) {
@@ -424,7 +459,24 @@ export default class EngineRenderer extends AEventDispatcher {
   destroy() {
     this.takeDownProvider();
     this.table.destroy();
+    this.textureRenderer.destroy();
     this.node.remove();
+  }
+
+  show() {
+    d3.select(this.node).select('main').style('display', null);
+  }
+
+  hide() {
+    d3.select(this.node).select('main').style('display', 'none');
+  }
+
+  convertSelectionToDetail() {
+    this.textureRenderer.convertSelectionToDetail();
+  }
+
+  convertDetailToSelection() {
+    this.textureRenderer.convertDetailToSelection();
   }
 }
 

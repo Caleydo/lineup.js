@@ -31,6 +31,7 @@ import StringMapColumn from './StringMapColumn';
 import StringsColumn from './StringsColumn';
 import ValueColumn, {IValueColumnDesc} from './ValueColumn';
 import ImpositionBoxPlotColumn from './ImpositionBoxPlotColumn';
+import OverviewDetailColumn from './OverviewDetailColumn';
 import LinkColumn from './LinkColumn';
 import LinkMapColumn from './LinkMapColumn';
 import LinksColumn from './LinksColumn';
@@ -91,6 +92,7 @@ export {default as Ranking, ISortCriteria} from './Ranking';
 export {default as ReduceColumn, createReduceDesc, IReduceDesc, IReduceColumnDesc} from './ReduceColumn';
 export {default as ScriptColumn, createScriptDesc, IScriptDesc, IScriptColumnDesc} from './ScriptColumn';
 export {default as SelectionColumn, createSelectionDesc, ISelectionColumnDesc} from './SelectionColumn';
+export {default as DetailColumn, createDetailDesc, IDetailColumnDesc} from './OverviewDetailColumn';
 export * from './SetColumn';
 export {default as SetColumn} from './SetColumn';
 export {default as StackColumn, createStackDesc} from './StackColumn';
@@ -150,6 +152,7 @@ export function models() {
     date: DateColumn,
     dateMap: DatesMapColumn,
     dates: DatesColumn,
+    detail: OverviewDetailColumn,
     group: GroupColumn,
     hierarchy: HierarchyColumn,
     imposition: ImpositionCompositeColumn,

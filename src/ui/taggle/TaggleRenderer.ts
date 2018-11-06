@@ -145,6 +145,15 @@ export default class TaggleRenderer extends AEventDispatcher {
     this.update();
   }
 
+  useTextureRenderer(use: boolean) {
+    this.renderer.useTextureRenderer = use;
+    this.update();
+  }
+
+  expandTextureRenderer(use: boolean) {
+    this.renderer.expandTextureRenderer(use);
+  }
+
   destroy() {
     this.renderer.destroy();
     window.removeEventListener('resize', this.resizeListener);
@@ -178,5 +187,13 @@ export default class TaggleRenderer extends AEventDispatcher {
 
   enableHighlightListening(enable: boolean) {
     this.renderer.enableHighlightListening(enable);
+  }
+
+  convertDetailToSelection() {
+    this.renderer.convertDetailToSelection();
+  }
+
+  convertSelectionToDetail() {
+    this.renderer.convertSelectionToDetail();
   }
 }

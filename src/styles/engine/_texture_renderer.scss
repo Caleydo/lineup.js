@@ -1,0 +1,76 @@
+@import '../vars';
+
+##{$lu-css_prefix}-texture-container {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  overflow-y: auto;
+  overflow-x: auto;
+
+  .rankingContainer {
+    display: flex;
+    flex-direction: column;
+
+    .rowContainer {
+      position: relative;
+
+      .textureContainer {
+        display: flex;
+
+        .columnContainer {
+          flex: 0 0 auto;
+          margin-right: 5px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+
+          &.partOfComposite {
+            margin-right: 6px;
+          }
+
+          canvas {
+            width: 100%;
+            height: 100%;
+          }
+        }
+      }
+
+      .engineRendererContainer {
+        > header {
+          display: none;
+        }
+
+        > main {
+          overflow: hidden;
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  &:not(.expand) {
+    .engineRendererContainer:not(.always) {
+      display: none;
+    }
+  }
+
+  .rowContainer.expanded {
+    .engineRendererContainer:not(.always) {
+      display: block;
+    }
+  }
+
+  &.expand,
+  .rowContainer.expanded {
+    .textureContainer:not(.always) {
+      display: none;
+    }
+  }
+
+  #lu-drag-overlay {
+    position: absolute;
+    background-color: #c1c1c1;
+    opacity: 0.4;
+    left: 0;
+  }
+}

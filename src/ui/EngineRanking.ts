@@ -163,7 +163,7 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
     }
   };
 
-  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}) {
+  constructor(public readonly ranking: Ranking, header: HTMLElement, body: HTMLElement, tableId: string, style: GridStyleManager, private readonly ctx: IEngineRankingContext, roptions: Partial<IEngineRankingOptions> = {}, readonly  addEventListener: boolean = true) {
     super(header, body, tableId, style, {mixins: [PrefetchMixin], batchSize: 20});
     Object.assign(this.roptions, roptions);
     body.dataset.ranking = ranking.id;
@@ -185,43 +185,47 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
 
     this.delayedUpdateAll = debounce(() => this.updateAll(), 50);
     this.delayedUpdateColumnWidths = debounce(() => this.updateColumnWidths(), 50);
-    ranking.on(`${Ranking.EVENT_ADD_COLUMN}.hist`, (col: Column, index: number) => {
-      this.columns.splice(index, 0, this.createCol(col, index));
-      this.reindex();
-      this.updateHist(col);
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_REMOVE_COLUMN}.body`, (col: Column, index: number) => {
-      EngineRanking.disableListener(col);
-      this.columns.splice(index, 1);
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_MOVE_COLUMN}.body`, (col: Column, index: number, old: number) => {
-      //delete first
-      const c = this.columns.splice(old, 1)[0];
-      console.assert(c.c === col);
-      // adapt target index based on previous index, i.e shift by one
-      this.columns.splice(old < index ? index - 1 : index, 0, c);
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_COLUMN_VISIBILITY_CHANGED}.body`, (col: Column, _oldValue: boolean, newValue: boolean) => {
-      if (newValue) {
-        // become visible
-        const index = ranking.children.indexOf(col);
+    //this flag is needed for the CanvasTextureRenderer, since there are multiple EngineRankings used for the same Ranking
+    //this avoids overriding the event listener of the original EngineRanking from the EngineRenderer
+    if (addEventListener) {
+      ranking.on(`${Ranking.EVENT_ADD_COLUMN}.hist`, (col: Column, index: number) => {
         this.columns.splice(index, 0, this.createCol(col, index));
+        this.reindex();
         this.updateHist(col);
-      } else {
-        // hide
-        const index = this.columns.findIndex((d) => d.c === col);
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_REMOVE_COLUMN}.body`, (col: Column, index: number) => {
         EngineRanking.disableListener(col);
         this.columns.splice(index, 1);
-      }
-      this.reindex();
-      this.delayedUpdateAll();
-    });
-    ranking.on(`${Ranking.EVENT_ORDER_CHANGED}.body`, this.delayedUpdate);
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_MOVE_COLUMN}.body`, (col: Column, index: number, old: number) => {
+        //delete first
+        const c = this.columns.splice(old, 1)[0];
+        console.assert(c.c === col);
+        // adapt target index based on previous index, i.e shift by one
+        this.columns.splice(old < index ? index - 1 : index, 0, c);
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_COLUMN_VISIBILITY_CHANGED}.body`, (col: Column, _oldValue: boolean, newValue: boolean) => {
+        if (newValue) {
+          // become visible
+          const index = ranking.children.indexOf(col);
+          this.columns.splice(index, 0, this.createCol(col, index));
+          this.updateHist(col);
+        } else {
+          // hide
+          const index = this.columns.findIndex((d) => d.c === col);
+          EngineRanking.disableListener(col);
+          this.columns.splice(index, 1);
+        }
+        this.reindex();
+        this.delayedUpdateAll();
+      });
+      ranking.on(`${Ranking.EVENT_ORDER_CHANGED}.body`, this.delayedUpdate);
+    }
 
     this.selection = new SelectionManager(this.ctx, body);
     this.selection.on(SelectionManager.EVENT_SELECT_RANGE, (from: number, to: number, additional: boolean) => {
@@ -660,6 +664,22 @@ export default class EngineRanking extends ACellTableSection<RenderColumn> imple
       } else {
         // fast pass for item
         this.selection.update(node, selectedDataIndices);
+      }
+    }, true);
+  }
+
+  updateDetail(detailDataIndices: { has(i: number): boolean }) {
+    super.forEachRow((node: HTMLElement, rowIndex: number) => {
+      if (this.renderCtx.isGroup(rowIndex)) {
+        this.updateRow(node, rowIndex);
+        return;
+      }
+
+      const dataIndex = parseInt(node.dataset.i!, 10);
+      if (detailDataIndices.has(dataIndex)) {
+        node.classList.add('lu-detail');
+      } else {
+        node.classList.remove('lu-detail');
       }
     }, true);
   }

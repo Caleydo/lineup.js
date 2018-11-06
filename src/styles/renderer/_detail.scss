@@ -1,0 +1,25 @@
+@import '../vars';
+@import '../icons/index';
+
+.#{$lu_css_prefix}-row [data-renderer=detail] {
+  text-align: center;
+
+  &::before {
+    @include lu_icons();
+
+    display: inline;
+    content: $lu_icon_square_o;
+  }
+}
+
+.#{$lu_css_prefix}-selected [data-renderer=detail]::before,
+.selected [data-renderer=detail]::before,
+.#{$lu_css_prefix}-group-selected[data-renderer=detail]::before {
+  content: $lu_icon_check_square_o;
+  padding-left: 2px;
+}
+
+.#{$lu_css_prefix}-summary[data-renderer=detail] {
+  cursor: pointer;
+  font-size: medium;
+}

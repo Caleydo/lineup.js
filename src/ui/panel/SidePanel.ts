@@ -9,6 +9,7 @@ import {
   createGroupDesc,
   createAggregateDesc,
   createSelectionDesc,
+  createDetailDesc,
   IColumnDesc
 } from '../../model';
 import {categoryOfDesc} from '../../model/annotations';
@@ -57,6 +58,7 @@ export default class SidePanel {
       createImpositionDesc(),
       createRankDesc(),
       createSelectionDesc(),
+      createDetailDesc(),
       createGroupDesc(),
       createAggregateDesc(),
     ],

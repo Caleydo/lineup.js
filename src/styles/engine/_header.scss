@@ -38,20 +38,20 @@
   margin-right: $lu-engine_grip_gap;
   font-weight: 500;
 
-    &.has-marker {
-      margin-right: 18px;
-    }
+  &.has-marker {
+    margin-right: 18px;
+  }
 
-    > i {
-      position: absolute;
-      right: 6px;
-      cursor: default;
-      color: $lu_toolbar_color_base;
+  > i {
+    position: absolute;
+    right: 6px;
+    cursor: default;
+    color: $lu_toolbar_color_base;
 
-      &:hover {
-        color: $lu_toolbar_color_hover;
-      }
+    &:hover {
+      color: $lu_toolbar_color_hover;
     }
+  }
 }
 
 .#{$lu_css_prefix}-th-summary {
@@ -62,7 +62,8 @@
   }
 
   &[data-renderer=aggregate],
-  &[data-renderer=selection] {
+  &[data-renderer=selection],
+  &[data-renderer=detail] {
     display: block; // have just a before element
   }
 }

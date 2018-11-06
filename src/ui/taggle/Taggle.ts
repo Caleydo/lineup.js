@@ -6,6 +6,7 @@ import {ALineUp} from '../ALineUp';
 import SidePanel from '../panel/SidePanel';
 import spaceFillingRule from './spaceFillingRule';
 import TaggleRenderer from './TaggleRenderer';
+import LocalDataProvider from '../../provider/LocalDataProvider';
 import {cssClass, engineCssClass} from '../../styles/index';
 import {GridStyleManager} from 'lineupengine';
 
@@ -41,28 +42,57 @@ export default class Taggle extends ALineUp {
     });
     this.renderer.pushUpdateAble((ctx) => this.panel!.update(ctx));
     this.node.insertBefore(this.panel.node, this.node.firstChild);
-    {
-      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')}"><label>
-            <input type="checkbox">
-            <span>Overview</span>
-            <div class="${cssClass('rule-violation')}"></div>
+
+    this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-expand-button-chooser"><label>
+            <input class="expand" type="checkbox">
+            <span>Expand</span>
           </label></div>`);
-      const spaceFilling = spaceFillingRule(this.options);
-      this.spaceFilling = <HTMLElement>this.panel.node.querySelector(`.${cssClass('rule-button-chooser')}`)!;
-      const input = <HTMLInputElement>this.spaceFilling.querySelector('input');
-      input.onchange = () => {
-        const selected = this.spaceFilling!.classList.toggle(cssClass('chosen'));
-        self.setTimeout(() => {
-          this.updateLodRules(selected);
-          this.renderer!.switchRule(selected ? spaceFilling : null);
-        });
-      };
-      if (this.options.overviewMode) {
-        input.checked = true;
-        this.spaceFilling.classList.toggle(cssClass('chosen'));
-        this.updateLodRules(true);
-        this.renderer.switchRule(spaceFilling);
+    const expandButton = <HTMLElement>this.node.querySelector('.lu-expand-button-chooser')!;
+    const expandInput = <HTMLInputElement>expandButton.querySelector('input.expand');
+    expandInput.onchange = () => {
+      const selected = expandInput.checked;
+      this.renderer!.expandTextureRenderer(selected);
+    };
+    expandButton.onclick = () => {
+      expandInput.checked = !expandInput.checked;
+    };
+    this.panel.node.insertAdjacentHTML('afterbegin', `<div class="lu-rule-button-chooser"><label>
+            <input class="spaceFilling" type="checkbox">
+            <span>Overview</span>
+          </label></div>`);
+    const spaceFilling = spaceFillingRule(this.options);
+    this.spaceFilling = <HTMLElement>this.node.querySelector('.lu-rule-button-chooser')!;
+    const ruleInput = <HTMLInputElement>this.spaceFilling.querySelector('input.spaceFilling');
+    ruleInput.onchange = () => {
+      let useTextureRenderer = true;
+      if (data instanceof LocalDataProvider) {
+        const ldp = <LocalDataProvider>data;
+        if (this.node.offsetHeight > ldp.data.length) {
+          useTextureRenderer = false;
+        }
       }
+      const selected = this.spaceFilling!.classList.toggle('chosen');
+      if (useTextureRenderer) {
+        this.renderer!.useTextureRenderer(selected);
+        if (selected) {
+          expandButton.style.display = '';
+        } else {
+          expandButton.style.display = 'none';
+        }
+        return;
+      }
+      self.setTimeout(() => {
+        this.updateLodRules(selected);
+        this.renderer!.switchRule(selected ? spaceFilling : null);
+      });
+    };
+    if (this.options.overviewMode) {
+      ruleInput.checked = true;
+      this.spaceFilling.classList.toggle('chosen');
+      this.updateLodRules(true);
+      this.renderer.switchRule(spaceFilling);
+    } else {
+      expandButton.style.display = 'none';
     }
     this.forward(this.renderer, `${ALineUp.EVENT_HIGHLIGHT_CHANGED}.main`);
   }
@@ -76,7 +106,7 @@ export default class Taggle extends ALineUp {
 
   private setViolation(violation?: string) {
     violation = violation || '';
-    if (this.spaceFilling) {
+    if (this.options.overviewMode && this.spaceFilling) {
       this.spaceFilling.classList.toggle(cssClass('violated'), Boolean(violation));
       this.spaceFilling.querySelector(`.${cssClass('rule-violation')}`)!.innerHTML = violation.replace(/\n/g, '<br>');
     }
@@ -134,9 +164,9 @@ export function updateLodRules(style: GridStyleManager, overviewMode: boolean, o
 
   style.updateRule('taggle_lod_rule', `
   .${engineCssClass('tr')}.${cssClass('low')}[data-agg=detail]:hover`, {
-    /* show regular height for hovered rows in low + medium LOD */
-    height: `${options.rowHeight}px !important`
-  });
+      /* show regular height for hovered rows in low + medium LOD */
+      height: `${options.rowHeight}px !important`
+    });
 
   style.updateRule('lineup_rowPadding1', `
   .${engineCssClass('tr')}.${cssClass('low')}`, {
