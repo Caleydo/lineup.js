@@ -20,7 +20,7 @@ import {IEventListener} from '../internal/AEventDispatcher';
 export {IExportOptions} from './utils';
 
 export interface IStatsBuilder {
-  stats(col: INumberColumn): Promise<IStatistics> | IStatistics;
+  stats(col: INumberColumn, numbrerOfBins?: number): Promise<IStatistics> | IStatistics;
 
   hist(col: ICategoricalColumn): Promise<ICategoricalStatistics> | ICategoricalStatistics;
 }
@@ -732,7 +732,7 @@ abstract class ADataProvider extends AEventDispatcher implements IDataProvider {
    * @param indices
    * @returns {{stats: (function(INumberColumn): *), hist: (function(ICategoricalColumn): *)}}
    */
-  abstract stats(indices: number[]): IStatsBuilder;
+  abstract stats(indices?: number[]): IStatsBuilder;
 
   /**
    * is the given row selected
