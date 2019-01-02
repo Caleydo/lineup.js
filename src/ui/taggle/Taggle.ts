@@ -1,15 +1,13 @@
+import {GridStyleManager} from 'lineupengine';
 import {defaultOptions} from '../../config';
-import {ITaggleOptions} from '../../interfaces';
-import merge from '../../internal/merge';
-import DataProvider from '../../provider/ADataProvider';
+import {ITaggleOptions} from '../../config';
+import {merge} from '../../internal';
+import {DataProvider} from '../../provider';
+import {cssClass, engineCssClass} from '../../styles';
 import {ALineUp} from '../ALineUp';
 import SidePanel from '../panel/SidePanel';
-import spaceFillingRule from './spaceFillingRule';
+import {spaceFillingRule} from './rules';
 import TaggleRenderer from './TaggleRenderer';
-import {cssClass, engineCssClass} from '../../styles/index';
-import {GridStyleManager} from 'lineupengine';
-
-export {ITaggleOptions} from '../../interfaces';
 
 export default class Taggle extends ALineUp {
   private readonly spaceFilling: HTMLElement | null;
@@ -21,7 +19,8 @@ export default class Taggle extends ALineUp {
 
   constructor(node: HTMLElement, data: DataProvider, options: Partial<ITaggleOptions> = {}) {
     super(node, data, options && options.ignoreUnsupportedBrowser === true);
-    merge(this.options, options, {
+    merge(this.options, options);
+    merge(this.options, {
       violationChanged: (_rule: any, violation?: string) => this.setViolation(violation)
     });
 
@@ -37,12 +36,12 @@ export default class Taggle extends ALineUp {
     this.renderer = new TaggleRenderer(data, this.node, this.options);
     this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument!, {
       collapseable: this.options.sidePanelCollapsed ? 'collapsed' : true,
-      hierarchy: this.options.hierarchyIndicator
+      hierarchy: this.options.hierarchyIndicator && this.options.flags.advancedRankingFeatures
     });
     this.renderer.pushUpdateAble((ctx) => this.panel!.update(ctx));
     this.node.insertBefore(this.panel.node, this.node.firstChild);
     {
-      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')}"><label>
+      this.panel.node.insertAdjacentHTML('afterbegin', `<div class="${cssClass('rule-button-chooser')} ${cssClass('feature-advanced')} ${cssClass('feature-ui')}"><label>
             <input type="checkbox">
             <span>Overview</span>
             <div class="${cssClass('rule-violation')}"></div>

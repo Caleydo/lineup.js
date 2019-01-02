@@ -1,7 +1,6 @@
-import {round, similar} from '../../internal/math';
+import {round, similar, dragHandle, IDragHandleOptions} from '../../internal';
 import ADialog, {IDialogContext} from './ADialog';
 import {cssClass} from '../../styles';
-import {dragHandle, IDragHandleOptions} from '../../internal/drag';
 
 function clamp(v: number) {
   return Math.max(Math.min(v, 100), 0);
@@ -51,8 +50,8 @@ export default class MappingLineDialog extends ADialog {
     if (!this.node.checkValidity()) {
       return false;
     }
-    const domain = this.adapter.normalizeRaw(parseFloat(this.findInput('input[type=number]').value));
-    const range = parseFloat(this.findInput('input[type=number]:last-of-type').value) * 100;
+    const domain = this.adapter.normalizeRaw(this.findInput('input[type=number]').valueAsNumber);
+    const range = this.findInput('input[type=number]:last-of-type').valueAsNumber * 100;
     this.line.update(domain, range);
     return true;
   }
@@ -73,7 +72,7 @@ export class MappingLine {
     this.node = <SVGGElement>g.lastElementChild!;
 
     // freeze 0 and 100 domain = raw domain ones
-    this.node.classList.toggle('lu-frozen', similar(0, domain) || similar(domain, 100));
+    this.node.classList.toggle(cssClass('frozen'), similar(0, domain) || similar(domain, 100));
     {
       let beforeDomain: number;
       let beforeRange: number;

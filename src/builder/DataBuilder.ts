@@ -1,13 +1,12 @@
-import {IColumnDesc} from '../model';
-import Column from '../model/Column';
-import {deriveColors, deriveColumnDescriptions, IDataProviderOptions, ILocalDataProviderOptions} from '../provider';
-import ADataProvider from '../provider/ADataProvider';
-import LocalDataProvider from '../provider/LocalDataProvider';
-import LineUp from '../ui/LineUp';
-import Taggle from '../ui/taggle/Taggle';
+import {Column, IColumnDesc} from '../model';
+import {DataProvider, LocalDataProvider, deriveColors, deriveColumnDescriptions, IDataProviderOptions, ILocalDataProviderOptions, IAggregationStrategy} from '../provider';
+import {LineUp, Taggle} from '../ui';
 import ColumnBuilder from './column/ColumnBuilder';
 import LineUpBuilder from './LineUpBuilder';
 import RankingBuilder from './RankingBuilder';
+
+export * from './column';
+export * from './RankingBuilder';
 
 /**
  * builder for a LocalDataProvider along with LineUp configuration options
@@ -18,18 +17,33 @@ export default class DataBuilder extends LineUpBuilder {
     columnTypes: {}
   };
 
-  private readonly rankBuilders: ((data: ADataProvider) => void)[] = [];
+  private readonly rankBuilders: ((data: DataProvider) => void)[] = [];
   private _deriveColors: boolean = false;
 
   constructor(private readonly data: object[]) {
     super();
   }
 
+  scheduledTaskExecutor() {
+    this.providerOptions.taskExecutor = 'scheduled';
+    return this;
+  }
+
+  showTopN(n: number) {
+    this.providerOptions.showTopN = n;
+    return this;
+  }
+
+  aggregationStrategy(strategy: IAggregationStrategy) {
+    this.providerOptions.aggregationStrategy = strategy;
+    return this;
+  }
+
   /**
    * allow just a single selection
    */
   singleSelection() {
-    this.providerOptions.multiSelection = false;
+    this.providerOptions.singleSelection = true;
     return this;
   }
 
@@ -42,32 +56,14 @@ export default class DataBuilder extends LineUpBuilder {
   }
 
   /**
-   * no limits for the number of sorting and grouping criteria
-   */
-  noCriteriaLimits() {
-    this.providerOptions.maxGroupColumns = Infinity;
-    this.providerOptions.maxNestedSortingCriteria = Infinity;
-    return this;
-  }
-
-  /**
-   * limit the number of sort and grouping criterias i.e the nesting level
-   * @param {number} sortingCritera
-   * @param {number} groupingCriteria
-   * @returns {this}
-   */
-  limitCriteria(sortingCritera: number, groupingCriteria: number) {
-    this.providerOptions.maxGroupColumns = sortingCritera;
-    this.providerOptions.maxNestedSortingCriteria = groupingCriteria;
-    return this;
-  }
-
-  /**
    * triggers to derive the column descriptions for the given data
    * @param {string} columns optional enforced order of columns
    */
-  deriveColumns(...columns: string[]) {
-    this.columns.push(...deriveColumnDescriptions(this.data, {columns}));
+  deriveColumns(...columns: (string | string[])[]) {
+    const cols = (<string[]>[]).concat(...columns);
+    for (const c of deriveColumnDescriptions(this.data, {columns: cols})) {
+      this.columns.push(c);
+    }
     return this;
   }
 
@@ -118,9 +114,9 @@ export default class DataBuilder extends LineUpBuilder {
 
   /**
    * add another ranking to this data provider
-   * @param {((data: ADataProvider) => void) | RankingBuilder} builder ranking builder
+   * @param {((data: DataProvider) => void) | RankingBuilder} builder ranking builder
    */
-  ranking(builder: ((data: ADataProvider) => void) | RankingBuilder) {
+  ranking(builder: ((data: DataProvider) => void) | RankingBuilder) {
     this.rankBuilders.push(builder instanceof RankingBuilder ? builder.build.bind(builder) : builder);
     return this;
   }
@@ -130,7 +126,20 @@ export default class DataBuilder extends LineUpBuilder {
    * @returns {LocalDataProvider}
    */
   buildData() {
-    const columns = this.columns.map((d) => typeof d === 'function' ? d(this.data) : d);
+    // last come survived separted by label to be able to override columns
+    const columns: IColumnDesc[] = [];
+    const contained = new Set<string>();
+    for (const col of this.columns) {
+      const c = typeof col === 'function' ? col(this.data) : col;
+      const key = `${c.type}@${c.label}`;
+      if (!contained.has(key)) {
+        columns.push(c);
+        contained.add(key);
+        continue;
+      }
+      const oldPos = columns.findIndex((d) => key === `${d.type}@${d.label}`);
+      columns.splice(oldPos, 1, c); // replace with new one
+    }
     if (this._deriveColors) {
       deriveColors(columns);
     }
@@ -169,4 +178,35 @@ export default class DataBuilder extends LineUpBuilder {
  */
 export function builder(arr: object[]) {
   return new DataBuilder(arr);
+}
+
+
+/**
+ * build a new Taggle instance in the given node for the given data
+ * @param {HTMLElement} node DOM node to attach to
+ * @param {any[]} data data to visualize
+ * @param {string[]} columns optional enforced column order
+ * @returns {Taggle}
+ */
+export function asTaggle(node: HTMLElement, data: any[], ...columns: string[]): Taggle {
+  return builder(data)
+    .deriveColumns(columns)
+    .deriveColors()
+    .defaultRanking()
+    .buildTaggle(node);
+}
+
+/**
+ * build a new LineUp instance in the given node for the given data
+ * @param {HTMLElement} node DOM node to attach to
+ * @param {any[]} data data to visualize
+ * @param {string[]} columns optional enforced column order
+ * @returns {LineUp}
+ */
+export function asLineUp(node: HTMLElement, data: any[], ...columns: string[]): LineUp {
+  return builder(data)
+    .deriveColumns(columns)
+    .deriveColors()
+    .defaultRanking()
+    .build(node);
 }

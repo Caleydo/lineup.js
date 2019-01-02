@@ -1,8 +1,8 @@
-import Column from '../../model/Column';
+import {Column} from '../../model';
 import ADialog, {IDialogContext} from './ADialog';
 import {uniqueId, forEach} from './utils';
-import {getToolbarDialogAddons, IToolbarDialogAddon} from '../toolbar';
-import {IRankingHeaderContext} from '../interfaces';
+import {getToolbarDialogAddons} from '../toolbar';
+import {IRankingHeaderContext, IToolbarDialogAddon} from '../interfaces';
 import {cssClass} from '../../styles';
 
 /** @internal */
@@ -37,8 +37,8 @@ function sortOrder(node: HTMLElement, column: Column, idPrefix: string) {
   const id = uniqueId(idPrefix);
   node.insertAdjacentHTML('afterbegin', `
         <strong>Group By</strong>
-        <div class="${cssClass('checkbox')}"><input id="${id}B" type="radio" name="grouped" value="true" ${enabled ? 'checked' : ''} ><label for="${id}B">Enabled</label></div>
-        <div class="${cssClass('checkbox')}"><input id="${id}N" type="radio" name="grouped" value="false" ${!enabled ? 'checked' : ''} ><label for="${id}N">Disabled</label></div>
+        <label class="${cssClass('checkbox')}"><input type="radio" name="grouped" value="true" ${enabled ? 'checked' : ''} ><span>Enabled</span></label>
+        <label class="${cssClass('checkbox')}"><input type="radio" name="grouped" value="false" ${!enabled ? 'checked' : ''} ><span>Disabled</span></label>
         <strong>Group Priority</strong>
         <input type="number" id="${id}P" step="1" min="1" max="${current.length + 1}" value="${order + 1}">
     `);

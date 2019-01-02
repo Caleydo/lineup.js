@@ -1,9 +1,6 @@
-import {IColumnMetaData} from '../../model';
-import Column from '../../model/Column';
+import {Column, IColumnMetaData} from '../../model';
 import ADialog, {IDialogContext} from './ADialog';
-import {cssClass} from '../../styles/index';
-import {uniqueId} from '../../renderer/utils';
-import {schemeCategory10} from 'd3-scale-chromatic';
+import {cssClass} from '../../styles';
 
 /** @internal */
 export default class RenameDialog extends ADialog {
@@ -19,26 +16,21 @@ export default class RenameDialog extends ADialog {
 
   protected build(node: HTMLElement) {
     node.classList.add(cssClass('dialog-rename'));
-    const id = uniqueId('col');
     node.insertAdjacentHTML('beforeend', `
-      <datalist id="${id}L"><option value="${Column.DEFAULT_COLOR}"></option>${schemeCategory10.slice(1).map((d) => `<option>${d}</option>`).join('')}</datalist>
       <input type="text" value="${this.column.label}" required autofocus placeholder="name">
-      <input type="color" value="${this.column.color}" required placeholder="color" list="${id}L">
-      <textarea rows="5" placeholder="description">${this.column.description}</textarea>`);
+      <textarea class="${cssClass('textarea')}" rows="5" placeholder="description">${this.column.description}</textarea>`);
   }
 
   protected reset() {
     this.findInput('input[type="text"]').value = this.before.label;
-    this.findInput('input[type="color"]').value = this.before.color || Column.DEFAULT_COLOR;
     this.node.querySelector('textarea')!.value = this.before.description;
     this.column.setMetaData(this.before);
   }
 
   protected submit() {
     const newValue = this.findInput('input[type="text"]').value;
-    const newColor = this.findInput('input[type="color"]').value;
     const newDescription = this.node.querySelector('textarea')!.value;
-    this.column.setMetaData({label: newValue, color: newColor, description: newDescription});
+    this.column.setMetaData({label: newValue, description: newDescription});
     return true;
   }
 }

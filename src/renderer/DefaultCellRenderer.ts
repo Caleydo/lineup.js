@@ -1,11 +1,11 @@
-import {IDataRow} from '../model';
-import Column from '../model/Column';
+import {Column, IDataRow} from '../model';
 import {ERenderMode, ICellRendererFactory, IGroupCellRenderer, ISummaryRenderer, ICellRenderer} from './interfaces';
 import {renderMissingDOM} from './missing';
 import {noRenderer, setText} from './utils';
 
 /**
  * default renderer instance rendering the value as a text
+ * @internal
  */
 export class DefaultCellRenderer implements ICellRendererFactory {
   title = 'String';

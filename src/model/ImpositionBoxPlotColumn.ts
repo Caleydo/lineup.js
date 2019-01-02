@@ -1,15 +1,15 @@
 import {IBoxPlotData} from '../internal';
-import {suffix, IEventListener} from '../internal/AEventDispatcher';
+import {suffix, ISequence, IEventListener} from '../internal';
 import {toolbar, SortByDefault, dialogAddons} from './annotations';
-import BoxPlotColumn, {mappingChanged} from './BoxPlotColumn';
-import Column, {IColumnDesc, widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import BoxPlotColumn from './BoxPlotColumn';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged, dirtyCaches} from './Column';
 import CompositeColumn, {addColumn, filterChanged, moveColumn, removeColumn} from './CompositeColumn';
-import {IDataRow, IGroupData} from './interfaces';
-import {ESortMethod, IBoxPlotColumn, INumberFilter, isBoxPlotColumn, noNumberFilter} from './INumberColumn';
-import {IMappingFunction, ScaleMappingFunction, isMapAbleColumn} from './MappingFunction';
+import {IDataRow, IGroup, IColumnDesc, DEFAULT_COLOR} from './interfaces';
+import {ESortMethod, IBoxPlotColumn, INumberFilter, isBoxPlotColumn, IMappingFunction, IColorMappingFunction, isMapAbleColumn} from './INumberColumn';
+import {ScaleMappingFunction} from './MappingFunction';
 import NumbersColumn from './NumbersColumn';
-import {colorMappingChanged} from './NumberColumn';
-import {DEFAULT_COLOR_FUNCTION, IColorMappingFunction} from './ColorMappingFunction';
+import {DEFAULT_COLOR_FUNCTION} from './ColorMappingFunction';
+import {DEFAULT_FORMATTER, noNumberFilter} from './internalNumber';
 
 
 /**
@@ -20,6 +20,21 @@ import {DEFAULT_COLOR_FUNCTION, IColorMappingFunction} from './ColorMappingFunct
 export function createImpositionBoxPlotDesc(label: string = 'Imposition') {
   return {type: 'impositions', label};
 }
+
+/**
+ * emitted when the mapping property changes
+ * @asMemberOf ImpositionBoxPlotColumn
+ * @event
+ */
+declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+
+/**
+ * emitted when the color mapping property changes
+ * @asMemberOf ImpositionBoxPlotColumn
+ * @event
+ */
+declare function colorMappingChanged(previous: IColorMappingFunction, current: IColorMappingFunction): void;
+
 
 /**
  * implementation of a combine column, standard operations how to select
@@ -36,6 +51,7 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
 
     this.setDefaultRenderer('boxplot');
     this.setDefaultGroupRenderer('boxplot');
+    this.setDefaultSummaryRenderer('boxplot');
   }
 
   get label() {
@@ -68,9 +84,9 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
 
   getColor(row: IDataRow) {
     const c = this._children;
-    switch(c.length) {
+    switch (c.length) {
       case 0:
-        return this.color;
+        return DEFAULT_COLOR;
       case 1:
         return c[0].getColor(row);
       default:
@@ -94,12 +110,19 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(type, listener);
+  }
+
+  getNumberFormat() {
+    const w = this.wrapper;
+    return w ? w.getNumberFormat() : DEFAULT_FORMATTER;
   }
 
   getValue(row: IDataRow) {
@@ -117,15 +140,24 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
     return w ? w.getRawNumber(row) : NaN;
   }
 
+  iterNumber(row: IDataRow) {
+    return [this.getNumber(row)];
+  }
+
+  iterRawNumber(row: IDataRow) {
+    return [this.getRawNumber(row)];
+  }
+
   getExportValue(row: IDataRow, format: 'text' | 'json'): any {
     if (format === 'json') {
-      if (this.isMissing(row)) {
+      const value = this.getRawNumber(row);
+      if (isNaN(value)) {
         return null;
       }
       return {
         label: this.getLabel(row),
         color: this.getColor(row),
-        value: this.getRawNumber(row)
+        value
       };
     }
     return super.getExportValue(row, format);
@@ -161,11 +193,6 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
     return w ? w.setSortMethod(value) : undefined;
   }
 
-  isMissing(row: IDataRow) {
-    const w = this.wrapper;
-    return w ? w.isMissing(row) : true;
-  }
-
   setMapping(mapping: IMappingFunction): void {
     const w = this.wrapper;
     return w ? w.setMapping(mapping) : undefined;
@@ -196,16 +223,24 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
     return w ? w.getRange() : ['0', '1'];
   }
 
-  compare(a: IDataRow, b: IDataRow) {
-    return BoxPlotColumn.prototype.compare.call(this, a, b);
+  toCompareValue(row: IDataRow) {
+    return BoxPlotColumn.prototype.toCompareValue.call(this, row);
+  }
+
+  toCompareValueType() {
+    return BoxPlotColumn.prototype.toCompareValueType.call(this);
   }
 
   group(row: IDataRow) {
     return BoxPlotColumn.prototype.group.call(this, row);
   }
 
-  groupCompare(a: IGroupData, b: IGroupData) {
-    return BoxPlotColumn.prototype.groupCompare.call(this, a, b);
+  toCompareGroupValue(rows: ISequence<IDataRow>, group: IGroup) {
+    return BoxPlotColumn.prototype.toCompareGroupValue.call(this, rows, group);
+  }
+
+  toCompareGroupValueType() {
+    return BoxPlotColumn.prototype.toCompareGroupValueType.call(this);
   }
 
   insert(col: Column, index: number): Column | null {
@@ -222,8 +257,7 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
   protected insertImpl(col: Column, index: number) {
     if (isBoxPlotColumn(col)) {
       this.forward(col, ...suffix('.impose', BoxPlotColumn.EVENT_MAPPING_CHANGED, BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED));
-    }
-    if (isMapAbleColumn(col)) {
+    } else if (isMapAbleColumn(col)) {
       this.forward(col, ...suffix('.impose', BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED));
     }
     return super.insertImpl(col, index);
@@ -232,8 +266,7 @@ export default class ImpositionBoxPlotColumn extends CompositeColumn implements 
   protected removeImpl(child: Column, index: number) {
     if (isBoxPlotColumn(child)) {
       this.unforward(child, ...suffix('.impose', BoxPlotColumn.EVENT_MAPPING_CHANGED, BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED));
-    }
-    if (isMapAbleColumn(child)) {
+    } else if (isMapAbleColumn(child)) {
       this.unforward(child, ...suffix('.impose', BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED));
     }
     return super.removeImpl(child, index);

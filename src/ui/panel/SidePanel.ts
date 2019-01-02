@@ -1,36 +1,18 @@
-import {suffix} from '../../internal/AEventDispatcher';
-import {
-  createImpositionDesc,
-  createNestedDesc,
-  createReduceDesc,
-  createScriptDesc,
-  createStackDesc,
-  createRankDesc,
-  createGroupDesc,
-  createAggregateDesc,
-  createSelectionDesc,
-  IColumnDesc
-} from '../../model';
-import {categoryOfDesc} from '../../model/annotations';
-import Ranking from '../../model/Ranking';
-import DataProvider, {IDataProvider} from '../../provider/ADataProvider';
+import {suffix} from '../../internal';
+import {categoryOfDesc, IColumnCategory, createAggregateDesc, createGroupDesc, createImpositionDesc, createNestedDesc, createRankDesc, createReduceDesc, createScriptDesc, createSelectionDesc, createStackDesc, IColumnDesc, Ranking} from '../../model';
+import {DataProvider, IDataProvider} from '../../provider';
+import {aria, cssClass} from '../../styles';
+import ChooseRankingDialog from '../dialogs/ChooseRankingDialog';
 import {IRankingHeaderContext} from '../interfaces';
+import {dialogContext} from '../dialogs';
 import SearchBox, {IGroupSearchItem, ISearchBoxOptions} from './SearchBox';
 import SidePanelRanking from './SidePanelRanking';
-import {dialogContext} from '../toolbar';
-import ChooseRankingDialog from '../dialogs/ChooseRankingDialog';
-import {aria, cssClass} from '../../styles';
+import {format} from 'd3-format';
 
-
-interface IColumnDescCategory {
-  label: string;
-  name: string;
-  order: number;
-}
 
 interface IColumnWrapper {
   desc: IColumnDesc;
-  category: IColumnDescCategory;
+  category: IColumnCategory;
   id: string;
   text: string;
 }
@@ -64,10 +46,16 @@ export default class SidePanel {
     hierarchy: true,
     placeholder: 'Add Column...',
     formatItem: (item: IColumnWrapper | IGroupSearchItem<IColumnWrapper>, node: HTMLElement) => {
-      node.dataset.typeCat = isWrapper(item) ? item.category.name : (<IColumnWrapper>item.children[0]).category.name;
+      const w: IColumnWrapper = isWrapper(item) ? item : (<IColumnWrapper>item.children[0]);
+      node.dataset.typeCat = w.category.name;
       node.classList.add(cssClass('typed-icon'));
       if (isWrapper(item)) {
-        node.dataset.type = item.desc.type;
+        node.dataset.type = w.desc.type;
+      }
+      if (node.parentElement) {
+        node.parentElement.classList.add(cssClass('feature-model'));
+        node.parentElement.classList.toggle(cssClass('feature-advanced'), w.category.featureLevel === 'advanced');
+        node.parentElement.classList.toggle(cssClass('feature-basic'), w.category.featureLevel === 'basic');
       }
       return item.text;
     },
@@ -127,7 +115,7 @@ export default class SidePanel {
       return;
     }
     this.chooser = this.node.ownerDocument!.createElement('header');
-    this.chooser.innerHTML = '<form></form>';
+    this.chooser.appendChild(this.chooser.ownerDocument!.createElement('form'));
     this.chooser.classList.add(cssClass('side-panel-chooser'));
     this.chooser.firstElementChild!.appendChild(this.search.node);
     this.search.on(SearchBox.EVENT_SELECT, (panel: IColumnWrapper) => {
@@ -154,11 +142,11 @@ export default class SidePanel {
     this.data = data;
 
     const wrapDesc = (desc: IColumnDesc) => ({
-        desc,
-        category: categoryOfDesc(desc, data.columnTypes),
-        id: `${desc.type}@${desc.label}`,
-        text: desc.label
-      });
+      desc,
+      category: categoryOfDesc(desc, data.columnTypes),
+      id: `${desc.type}@${desc.label}`,
+      text: desc.label
+    });
     this.descs.splice(0, this.descs.length, ...data.getColumns().concat(this.options.additionalDescs).map(wrapDesc));
 
     data.on(`${DataProvider.EVENT_ADD_DESC}.panel`, (desc) => {
@@ -292,8 +280,9 @@ export default class SidePanel {
     const stats = <HTMLElement>this.node.querySelector(`.${cssClass('stats')}`);
     const s = this.data.getSelection();
     const r = this.data.getFirstRanking();
+    const f = format(',d');
     const visible = r ? r.getGroups().reduce((a, b) => a + b.order.length, 0) : 0;
-    stats.innerHTML = `Showing <strong>${visible}</strong> of ${this.data.getTotalNumberOfRows()} items${s.length > 0 ? `; <span>${s.length} selected</span>` : ''}`;
+    stats.innerHTML = `Showing <strong>${f(visible)}</strong> of ${f(this.data.getTotalNumberOfRows())} items${s.length > 0 ? `; <span>${f(s.length)} selected</span>` : ''}`;
   }
 
   destroy() {
@@ -307,8 +296,8 @@ export default class SidePanel {
       DataProvider.EVENT_ADD_DESC), null);
   }
 
-  private static groupByType(entries: IColumnWrapper[]): { text: string, children: IColumnWrapper[] }[] {
-    const map = new Map<IColumnDescCategory, IColumnWrapper[]>();
+  private static groupByType(entries: IColumnWrapper[]): {text: string, children: IColumnWrapper[]}[] {
+    const map = new Map<IColumnCategory, IColumnWrapper[]>();
     entries.forEach((entry) => {
       if (!map.has(entry.category)) {
         map.set(entry.category, [entry]);

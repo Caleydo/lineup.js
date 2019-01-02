@@ -1,13 +1,10 @@
-import {round} from '../../internal';
-import {
-  IMapAbleColumn, IMappingFunction, isMissingValue, ScaleMappingFunction,
-  ScriptMappingFunction,
-  isMapAbleColumn
-} from '../../model';
+import {ISequence, round} from '../../internal';
+import {IMapAbleColumn, IMappingFunction, isMissingValue, isMapAbleColumn} from '../../model';
 import {IRankingHeaderContext} from '../interfaces';
 import ADialog, {IDialogContext} from './ADialog';
 import {IMappingAdapter, MappingLine} from './MappingLineDialog';
 import {cssClass} from '../../styles';
+import {ScaleMappingFunction, ScriptMappingFunction} from '../../model/MappingFunction';
 
 /** @internal */
 export default class MappingDialog extends ADialog {
@@ -17,9 +14,8 @@ export default class MappingDialog extends ADialog {
   private readonly mappingLines: MappingLine[] = [];
   private rawDomain: [number, number];
 
-  private readonly data: Promise<number[]>;
+  private readonly data: Promise<ISequence<number>>;
   private readonly idPrefix: string;
-  private loadedData: number[] | null = null;
 
   private readonly mappingAdapter: IMappingAdapter = {
     destroyed: (self: MappingLine) => {
@@ -97,7 +93,7 @@ export default class MappingDialog extends ADialog {
         <strong style="text-align: center; margin-top: 0">Output Normalized Domain (0 - 1)</strong>
         <div class="${cssClass('dialog-mapper-script')}">
           <strong>Custom Normalization Script</strong>
-          <textarea></textarea>
+          <textarea class="${cssClass('textarea')}"></textarea>
         </div>`);
 
     const g = <SVGGElement>node.querySelector(`.${cssClass('dialog-mapper-details')} > g`);
@@ -152,7 +148,7 @@ export default class MappingDialog extends ADialog {
 
     {
       this.forEach(`.${cssClass('dialog-mapper-details')} input[type=number]`, (d: HTMLInputElement, i) => d.onchange = () => {
-        const v = parseFloat(d.value);
+        const v = d.valueAsNumber;
         if (v === this.rawDomain[i]) {
           d.setCustomValidity('');
           return;
@@ -165,19 +161,13 @@ export default class MappingDialog extends ADialog {
         d.setCustomValidity('');
         this.rawDomain[i] = v;
         this.scale.domain = this.rawDomain.slice();
-
-        if (!this.loadedData) {
-          return;
-        }
         this.applyMapping(this.scale);
         this.updateLines();
       });
     }
 
     this.data.then((values) => {
-      this.loadedData = values;
-
-      Array.from(values).forEach((v) => {
+      values.forEach((v) => {
         if (!isMissingValue(v)) {
           g.insertAdjacentHTML('afterbegin', `<line data-v="${v}" x1="${round(this.normalizeRaw(v), 2)}" x2="${round(this.scale.apply(v) * 100, 2)}" y2="60"></line>`);
         }
@@ -190,10 +180,12 @@ export default class MappingDialog extends ADialog {
     if (!(this.scale instanceof ScaleMappingFunction)) {
       return;
     }
-    const g = <SVGGElement>this.node.querySelector('.lu-details > g');
+    const g = <SVGGElement>this.node.querySelector(`.${cssClass('dialog-mapper-details')} > g`);
     const domain = this.scale.domain;
     const range = this.scale.range;
-    this.mappingLines.push(...domain.map((d, i) => new MappingLine(g, this.normalizeRaw(d), range[i] * 100, this.mappingAdapter)));
+    for (let i = 0; i < domain.length; ++i) {
+      this.mappingLines.push(new MappingLine(g, this.normalizeRaw(domain[i]), range[i] * 100, this.mappingAdapter));
+    }
   }
 
   private update() {

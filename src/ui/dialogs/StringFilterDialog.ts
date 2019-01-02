@@ -1,8 +1,9 @@
-import StringColumn from '../../model/StringColumn';
+import {StringColumn} from '../../model';
 import {filterMissingMarkup, findFilterMissing} from '../missing';
 import ADialog, {IDialogContext} from './ADialog';
-import {updateFilterState, uniqueId} from './utils';
+import {updateFilterState} from './utils';
 import {cssClass} from '../../styles';
+
 
 /** @internal */
 export default class StringFilterDialog extends ADialog {
@@ -20,7 +21,7 @@ export default class StringFilterDialog extends ADialog {
 
   reset() {
     this.findInput('input[type="text"]').value = '';
-    this.forEach('input[type=checkbox', (n: HTMLInputElement) => n.checked = false);
+    this.forEach('input[type=checkbox]', (n: HTMLInputElement) => n.checked = false);
     this.updateFilter(null);
   }
 
@@ -42,10 +43,9 @@ export default class StringFilterDialog extends ADialog {
     if (bakMissing) {
       bak = '';
     }
-    const id = uniqueId(this.dialog.idPrefix);
     node.insertAdjacentHTML('beforeend', `<input type="text" placeholder="Filter ${this.column.desc.label}..." autofocus value="${(bak instanceof RegExp) ? bak.source : bak}" style="width: 100%">
-    <span class="${cssClass('checkbox')}"><input id="${id}" type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><label for="${id}">RegExp</label></span>
-    ${filterMissingMarkup(bakMissing, this.dialog.idPrefix)}`);
+    <label class="${cssClass('checkbox')}"><input type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><span>RegExp</span></label>
+    ${filterMissingMarkup(bakMissing)}`);
 
     const filterMissing = findFilterMissing(node);
     const input = <HTMLInputElement>node.querySelector('input[type="text"]');

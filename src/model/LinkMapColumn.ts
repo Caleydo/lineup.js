@@ -1,16 +1,23 @@
 import {toolbar} from './annotations';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged, dirtyCaches} from './Column';
 import ValueColumn, {dataLoaded} from './ValueColumn';
 import {IDataRow} from './interfaces';
 import {patternFunction} from './internal';
 import MapColumn, {IMapColumnDesc} from './MapColumn';
-import LinkColumn, {ILinkDesc, patternChanged} from './LinkColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
+import LinkColumn, {ILinkDesc} from './LinkColumn';
+import {IEventListener} from '../internal';
 import {EAlignment} from './StringColumn';
 import {IKeyValue} from './IArrayColumn';
 import {ILink} from './LinkColumn';
 
 export declare type ILinkMapColumnDesc = ILinkDesc & IMapColumnDesc<string>;
+
+/**
+ * emitted when the pattern property changes
+ * @asMemberOf LinkMapColumn
+ * @event
+ */
+declare function patternChanged(previous: string, current: string): void;
 
 /**
  * a string column with optional alignment
@@ -55,16 +62,19 @@ export default class LinkMapColumn extends MapColumn<string> {
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
 
   getValue(row: IDataRow) {
-    return this.getLinkMap(row).map(({key, value}) => ({
+    const r = this.getLinkMap(row);
+    return r.every((d) => d.value == null) ? null : r.map(({key, value}) => ({
       key,
       value: value ? value.href : ''
     }));
@@ -78,7 +88,7 @@ export default class LinkMapColumn extends MapColumn<string> {
   }
 
   getLinkMap(row: IDataRow): IKeyValue<ILink>[] {
-    return super.getValue(row).map(({key, value}) => ({
+    return super.getMap(row).map(({key, value}) => ({
       key,
       value: this.transformValue(value, row, key)
     }));

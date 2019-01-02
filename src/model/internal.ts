@@ -1,10 +1,10 @@
-import {LazyBoxPlotData} from '../internal';
-import {IOrderedGroup} from './Group';
-import {IDataRow, IGroup, IGroupParent} from './interfaces';
+import {schemeCategory10, schemeSet3} from 'd3-scale-chromatic';
+import Column, {defaultGroup, IGroup, IGroupParent, IndicesArray, IOrderedGroup, ECompareValueType} from '.';
+import {OrderedSet} from '../internal';
+import {DEFAULT_COLOR} from './interfaces';
+
+
 /** @internal */
-import {default as INumberColumn, INumberFilter, numberCompare} from './INumberColumn';
-
-
 export function patternFunction(pattern: string, ...args: string[]) {
   return new Function('value', ...args, `
   const escapedValue = encodeURIComponent(String(value));
@@ -12,40 +12,36 @@ export function patternFunction(pattern: string, ...args: string[]) {
  `);
 }
 
-/** @internal */
-export function isDummyNumberFilter(filter: INumberFilter) {
-  return !filter.filterMissing && !isFinite(filter.min) && !isFinite(filter.max);
-}
-
-/** @internal */
-export function restoreFilter(v: INumberFilter): INumberFilter {
-  return {
-    min: v.min != null && isFinite(v.min) ? v.min : -Infinity,
-    max: v.max != null && isFinite(v.max) ? v.max : +Infinity,
-    filterMissing: v.filterMissing
-  };
-}
-
 
 /** @internal */
 export function joinGroups(groups: IGroup[]): IGroup {
-  console.assert(groups.length > 0);
-  if (groups.length === 1) {
+  if (groups.length === 0) {
+    return defaultGroup;
+  }
+  if (groups.length === 1 && !groups[0].parent) {
     return groups[0];
   }
   // create a chain
-  const parents: IGroupParent[] = groups.map((g) => Object.assign({subGroups: []}, g));
+  const parents: IGroupParent[] = [];
+  for (const group of groups) {
+    const gparents: IGroupParent[] = [];
+    let g = group;
+    while (g.parent) {
+      // add all parents of this groups
+      gparents.unshift(g.parent);
+      g = g.parent;
+    }
+    parents.push(...gparents);
+    parents.push(Object.assign({subGroups: []}, group));
+  }
   parents.slice(1).forEach((g, i) => {
     g.parent = parents[i];
-    parents[i].subGroups.push(g);
+    g.name = `${parents[i].name} ∩ ${g.name}`;
+    g.color = g.color !== DEFAULT_COLOR ? g.color : g.parent.color;
+    parents[i].subGroups = [g];
   });
-  const g = {
-    name: parents.map((d) => d.name).join(' ∩ '),
-    color: parents[0].color,
-    parent: parents[parents.length - 1]
-  };
-  g.parent.subGroups.push(g);
-  return g;
+
+  return parents[parents.length - 1];
 }
 
 /** @internal */
@@ -60,12 +56,12 @@ export function unifyParents<T extends IOrderedGroup>(groups: T[]) {
   }
   const lookup = new Map<string, IGroupParent>();
 
-  const resolve = (g: IGroupParent): { g: IGroupParent, id: string } => {
+  const resolve = (g: IGroupParent): {g: IGroupParent, id: string} => {
     let id = g.name;
     if (g.parent) {
       const parent = resolve(g.parent);
       g.parent = parent.g;
-      id = `${parent.id}.$[id}`;
+      id = `${parent.id}.${id}`;
     }
     // ensure there is only one instance per id (i.e. share common parents
     if (lookup.has(id)) {
@@ -87,10 +83,29 @@ export function unifyParents<T extends IOrderedGroup>(groups: T[]) {
   });
 }
 
+/** @internal */
+export function groupRoots(groups: IOrderedGroup[]) {
+  const roots = new OrderedSet<IOrderedGroup | Readonly<IGroupParent>>();
+  for (const group of groups) {
+    let root: IOrderedGroup | Readonly<IGroupParent> = group;
+    while (root.parent) {
+      root = root.parent;
+    }
+    roots.add(root);
+  }
+  return Array.from(roots);
+}
+
+/** @internal */
+export function isOrderedGroup(g: IOrderedGroup | Readonly<IGroupParent>): g is IOrderedGroup {
+  return (<IOrderedGroup>g).order != null;
+}
+
 // based on https://github.com/d3/d3-scale-chromatic#d3-scale-chromatic
-const schemeCategory10 = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
-const set3 = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd', '#ccebc5', '#ffed6f'];
-const colors = schemeCategory10.concat(set3);
+const colors = schemeCategory10.concat(schemeSet3);
+
+/** @internal */
+export const MAX_COLORS = colors.length;
 
 /** @internal */
 export function colorPool() {
@@ -99,24 +114,118 @@ export function colorPool() {
 }
 
 
-/** @internal */
-export function medianIndex(rows: IDataRow[], col: INumberColumn): number {
-  //return the median row
-  const data = rows.map((r, i) => ({i, v: col.getNumber(r), m: col.isMissing(r)}));
-  const sorted = data.filter((r) => !r.m).sort((a, b) => numberCompare(a.v, b.v));
-  const index = sorted[Math.floor(sorted.length / 2.0)];
-  if (index === undefined) {
-    return 0; //error case
+/**
+ * @internal
+ */
+export function mapIndices<T>(arr: IndicesArray, callback: (value: number, i: number) => T): T[] {
+  const r: T[] = [];
+  for (let i = 0; i < arr.length; ++i) {
+    r.push(callback(arr[i], i));
   }
-  return index.i;
+  return r;
 }
 
-/** @internal */
-export function groupCompare(a: IDataRow[], b: IDataRow[], col: INumberColumn, sortMethod: keyof LazyBoxPlotData) {
-  const va = new LazyBoxPlotData(a.map((row) => col.getNumber(row)));
-  const vb = new LazyBoxPlotData(b.map((row) => col.getNumber(row)));
+/**
+ * @internal
+ */
+export function everyIndices(arr: IndicesArray, callback: (value: number, i: number) => boolean): boolean {
+  for (let i = 0; i < arr.length; ++i) {
+    if (!callback(arr[i], i)) {
+      return false;
+    }
+  }
+  return true;
+}
 
-  return numberCompare(<number>va[sortMethod], <number>vb[sortMethod]);
+/**
+ * @internal
+ */
+export function filterIndices(arr: IndicesArray, callback: (value: number, i: number) => boolean): number[] {
+  const r: number[] = [];
+  for (let i = 0; i < arr.length; ++i) {
+    if (callback(arr[i], i)) {
+      r.push(arr[i]);
+    }
+  }
+  return r;
 }
 
 
+/**
+ * @internal
+ */
+export function forEachIndices(arr: IndicesArray, callback: (value: number, i: number) => void) {
+  for (let i = 0; i < arr.length; ++i) {
+    callback(arr[i], i);
+  }
+}
+
+/**
+ * @internal
+ */
+export function chooseUIntByDataLength(dataLength?: number | null) {
+  if (dataLength == null || typeof dataLength !== 'number' && !isNaN(dataLength)) {
+    return ECompareValueType.UINT32; // worst case
+  }
+  if (length <= 255) {
+    return ECompareValueType.UINT8;
+  }
+  if (length <= 65535) {
+    return ECompareValueType.UINT16;
+  }
+  return ECompareValueType.UINT32;
+}
+
+
+// side effect
+const cache = new Map<string, string[]>();
+
+
+export function getAllToolbarActions(col: Column) {
+  if (cache.has(col.desc.type)) {
+    return cache.get(col.desc.type)!;
+  }
+  const actions = new OrderedSet<string>();
+
+  // walk up the prototype chain
+  let obj = <any>col;
+  const toolbarIcon = Symbol.for('toolbarIcon');
+  do {
+    const m = <string[]>Reflect.getOwnMetadata(toolbarIcon, obj.constructor);
+    if (m) {
+      for (const mi of m) {
+        actions.add(mi);
+      }
+    }
+    obj = Object.getPrototypeOf(obj);
+  } while (obj);
+  const arr = Array.from(actions);
+  cache.set(col.desc.type, arr);
+  return arr;
+}
+
+
+export function getAllToolbarDialogAddons(col: Column, key: string) {
+  const cacheKey = `${col.desc.type}@${key}`;
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)!;
+  }
+  const actions = new OrderedSet<string>();
+
+  // walk up the prototype chain
+  let obj = <any>col;
+  const symbol = Symbol.for(`toolbarDialogAddon${key}`);
+  do {
+    const m = <string[]>Reflect.getOwnMetadata(symbol, obj.constructor);
+    if (m) {
+      for (const mi of m) {
+        actions.add(mi);
+      }
+    }
+    obj = Object.getPrototypeOf(obj);
+  } while (obj);
+  cache.set(cacheKey, Array.from(actions));
+  const arr = Array.from(actions);
+  cache.set(cacheKey, arr);
+  return arr;
+}

@@ -1,19 +1,19 @@
-import {DENSE_HISTOGRAM} from '../config';
-import {computeStats, getNumberOfBins, INumberBin, IStatistics, round} from '../internal/math';
-import {IDataRow, IGroup, isMissingValue} from '../model';
-import Column from '../model/Column';
-import {
-  DEFAULT_FORMATTER, INumberColumn, INumbersColumn, isNumberColumn,
-  isNumbersColumn
-} from '../model/INumberColumn';
-import {IMapAbleColumn, isMapAbleColumn} from '../model/MappingFunction';
+import {DENSE_HISTOGRAM} from '../constants';
+import {dragHandle, IDragHandleOptions, normalizedStatsBuilder, INumberBin, IStatistics, round, getNumberOfBins} from '../internal';
+import {Column, IDataRow, IOrderedGroup, INumberColumn, INumbersColumn, isNumberColumn, isNumbersColumn, IMapAbleColumn, isMapAbleColumn} from '../model';
 import InputNumberDialog from '../ui/dialogs/InputNumberDialog';
 import {filterMissingNumberMarkup, updateFilterMissingNumberMarkup} from '../ui/missing';
 import {colorOf} from './impose';
-import {default as IRenderContext, ERenderMode, ICellRendererFactory, IImposer} from './interfaces';
+import {IRenderContext, ERenderMode, ICellRendererFactory, IImposer} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {cssClass} from '../styles';
-import {dragHandle, IDragHandleOptions} from '../internal/drag';
+import {cssClass, FILTERED_OPACITY} from '../styles';
+import {color} from 'd3-color';
+
+interface IHistData {
+  maxBin: number;
+  hist: ReadonlyArray<INumberBin>;
+  global?: IStatistics | null;
+}
 
 /** @internal */
 export default class HistogramCellRenderer implements ICellRendererFactory {
@@ -23,95 +23,122 @@ export default class HistogramCellRenderer implements ICellRendererFactory {
     return (isNumberColumn(col) && mode !== ERenderMode.CELL) || (isNumbersColumn(col) && mode === ERenderMode.CELL);
   }
 
-  create(col: INumbersColumn, context: IRenderContext, hist: IStatistics | null, imposer?: IImposer) {
-    const {template, render, guessedBins} = getHistDOMRenderer(context.totalNumberOfRows, col, imposer);
+  create(col: INumbersColumn, _context: IRenderContext, imposer?: IImposer) {
+    const {template, render, guessedBins} = getHistDOMRenderer(col, imposer);
     return {
       template: `${template}</div>`,
       update: (n: HTMLElement, row: IDataRow) => {
         if (renderMissingDOM(n, col, row)) {
           return;
         }
-        render(n, createHist(hist, guessedBins, [row], col));
+        const b = normalizedStatsBuilder(guessedBins);
+        for (const n of col.getNumbers(row)) {
+          b.push(n);
+        }
+        const hist = b.build();
+        render(n, {global: null, hist: hist.hist, maxBin: hist.maxBin});
       }
     };
   }
 
-  createGroup(col: INumberColumn, context: IRenderContext, hist: IStatistics | null, imposer?: IImposer) {
-    const {template, render, guessedBins} = getHistDOMRenderer(context.totalNumberOfRows, col, imposer);
+  createGroup(col: INumberColumn, context: IRenderContext, imposer?: IImposer) {
+    const {template, render} = getHistDOMRenderer(col, imposer);
     return {
       template: `${template}</div>`,
-      update: (n: HTMLElement, _group: IGroup, rows: IDataRow[]) => {
-        render(n, createHist(hist, guessedBins, rows, col));
+      update: (n: HTMLElement, group: IOrderedGroup) => {
+        return context.tasks.groupNumberStats(col, group).then((r) => {
+          if (typeof r === 'symbol') {
+            return;
+          }
+          const {summary, group} = r;
+
+          render(n, {global: summary, hist: group.hist, maxBin: group.maxBin});
+        });
       }
     };
   }
 
   createSummary(col: INumberColumn, context: IRenderContext, interactive: boolean, imposer?: IImposer) {
-    const r = getHistDOMRenderer(context.totalNumberOfRows, col, imposer);
+    const r = getHistDOMRenderer(col, imposer);
 
     const staticHist = !interactive || !isMapAbleColumn(col);
-    return staticHist ? staticSummary(col, r.template, r.render) : interactiveSummary(<IMapAbleColumn>col, context, r.template, r.render);
+    return staticHist ? staticSummary(col, context, r.template, r.render) : interactiveSummary(<IMapAbleColumn>col, context, r.template, r.render);
   }
 }
 
 
-function staticSummary(col: INumberColumn, template: string, render: (n: HTMLElement, stats: {bins: number, max: number, hist: INumberBin[]}) => void) {
+function staticSummary(col: INumberColumn, context: IRenderContext, template: string, render: (n: HTMLElement, stats: IHistData) => void) {
   if (isMapAbleColumn(col)) {
     const range = col.getRange();
     template += `<span class="${cssClass('mapping-hint')}">${range[0]}</span><span class="${cssClass('mapping-hint')}">${range[1]}</span>`;
   }
   return {
     template: `${template}</div>`,
-    update: (node: HTMLElement, hist: IStatistics | null) => {
+    update: (node: HTMLElement) => {
       if (isMapAbleColumn(col)) {
         const range = col.getRange();
-        Array.from(node.querySelectorAll('span')).forEach((d: HTMLElement, i) => d.textContent = range[i]);
+        Array.from(node.getElementsByTagName('span')).forEach((d: HTMLElement, i) => d.textContent = range[i]);
       }
 
-      node.classList.toggle(cssClass('missing'), !hist);
-      if (!hist) {
-        return;
-      }
-      render(node, {bins: hist.hist.length, max: hist.maxBin, hist: hist.hist});
+      return context.tasks.summaryNumberStats(col).then((r) => {
+        if (typeof r === 'symbol') {
+          return;
+        }
+        const {summary} = r;
+
+        node.classList.toggle(cssClass('missing'), !summary);
+        if (!summary) {
+          return;
+        }
+        render(node, {maxBin: summary.maxBin, hist: summary.hist});
+      });
     }
   };
 }
 
-function interactiveSummary(col: IMapAbleColumn, context: IRenderContext, template: string, render: (n: HTMLElement, stats: {bins: number, max: number, hist: INumberBin[]}) => void) {
+function interactiveSummary(col: IMapAbleColumn, context: IRenderContext, template: string, render: (n: HTMLElement, stats: IHistData) => void) {
   const f = filter(col);
   template += `
       <div class="${cssClass('histogram-min-hint')}" style="width: ${f.percent(f.filterMin)}%"></div>
       <div class="${cssClass('histogram-max-hint')}" style="width: ${100 - f.percent(f.filterMax)}%"></div>
       <div class="${cssClass('histogram-min')}" data-value="${round(f.filterMin, 2)}" style="left: ${f.percent(f.filterMin)}%" title="min filter, drag or shift click to change"></div>
       <div class="${cssClass('histogram-max')}" data-value="${round(f.filterMax, 2)}" style="right: ${100 - f.percent(f.filterMax)}%" title="max filter, drag or shift click to change"></div>
-      ${filterMissingNumberMarkup(f.filterMissing, 0, context.idPrefix)}
+      ${filterMissingNumberMarkup(f.filterMissing, 0)}
     `;
 
   let updateFilter: (missing: number, col: IMapAbleColumn) => void;
 
   return {
     template: `${template}</div>`,
-    update: (node: HTMLElement, hist: IStatistics | null) => {
+    update: (node: HTMLElement) => {
       if (!updateFilter) {
         updateFilter = initFilter(node, col, context);
       }
-      updateFilter(hist ? hist.missing : 0, col);
+      return context.tasks.summaryNumberStats(col).then((r) => {
+        if (typeof r === 'symbol') {
+          return;
+        }
+        const {summary, data} = r;
 
-      node.classList.toggle(cssClass('missing'), !hist);
-      if (!hist) {
-        return;
-      }
-      render(node, {bins: hist.hist.length, max: hist.maxBin, hist: hist.hist});
+        updateFilter(data ? data.missing : (summary ? summary.missing : 0), col);
+
+        node.classList.add(cssClass('histogram-i'));
+        node.classList.toggle(cssClass('missing'), !summary);
+        if (!summary) {
+          return;
+        }
+        render(node, {maxBin: summary.maxBin, hist: summary.hist, global: data});
+      });
     }
   };
 }
 
 function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderContext) {
-  const min = <HTMLElement>node.querySelector(`.${cssClass('histogram-min')}`);
-  const max = <HTMLElement>node.querySelector(`.${cssClass('histogram-max')}`);
-  const minHint = <HTMLElement>node.querySelector(`.${cssClass('histogram-min-hint')}`);
-  const maxHint = <HTMLElement>node.querySelector(`.${cssClass('histogram-max-hint')}`);
-  const filterMissing = <HTMLInputElement>node.querySelector('input');
+  const min = <HTMLElement>node.getElementsByClassName(cssClass('histogram-min'))[0];
+  const max = <HTMLElement>node.getElementsByClassName(cssClass('histogram-max'))[0];
+  const minHint = <HTMLElement>node.getElementsByClassName(cssClass('histogram-min-hint'))[0];
+  const maxHint = <HTMLElement>node.getElementsByClassName(cssClass('histogram-max-hint'))[0];
+  const filterMissing = <HTMLInputElement>node.getElementsByTagName('input')[0];
 
   const setFilter = () => {
     const f = filter(col);
@@ -145,6 +172,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
       minHint.style.width = `${f.percent(newValue)}%`;
       min.dataset.value = round(newValue, 2).toString();
       min.style.left = `${f.percent(newValue)}%`;
+      min.classList.toggle(cssClass('swap-hint'), f.percent(newValue) > 15);
       setFilter();
     }, {
         value, min: f.domain[0], max: f.domain[1]
@@ -173,6 +201,7 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
       maxHint.style.width = `${100 - f.percent(newValue)}%`;
       max.dataset.value = round(newValue, 2).toString();
       max.style.right = `${100 - f.percent(newValue)}%`;
+      min.classList.toggle(cssClass('swap-hint'), f.percent(newValue) < 85);
       setFilter();
     }, {
         value, min: f.domain[0], max: f.domain[1]
@@ -195,10 +224,12 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
 
       if ((<HTMLElement>handle).classList.contains(cssClass('histogram-min'))) {
         handle.style.left = `${percent}%`;
+        handle.classList.toggle(cssClass('swap-hint'), percent > 15);
         minHint.style.width = `${percent}%`;
         return;
       }
       handle.style.right = `${100 - percent}%`;
+      handle.classList.toggle(cssClass('swap-hint'), percent < 85);
       maxHint.style.width = `${100 - percent}%`;
     },
     onEnd: (handle) => {
@@ -223,33 +254,30 @@ function initFilter(node: HTMLElement, col: IMapAbleColumn, context: IRenderCont
   };
 }
 
-function createHist(globalHist: IStatistics | null, guessedBins: number, rows: IDataRow[], col: INumberColumn) {
-  const bins = globalHist ? globalHist.hist.length : guessedBins;
-  let stats: IStatistics;
-  if (isNumbersColumn(col)) {
-    //multiple values
-    const values = (<number[]>[]).concat(...rows.map((r) => col.getNumbers(r)));
-    stats = computeStats(values, (v: number) => v, isMissingValue, [0, 1], bins);
-  } else {
-    stats = computeStats(rows, (r: IDataRow) => col.getNumber(r), (r: IDataRow) => col.isMissing(r), [0, 1], bins);
-  }
-
-  const max = Math.max(stats.maxBin, globalHist ? globalHist.maxBin : 0);
-  return {bins, max, hist: stats.hist};
+function filterColor(input: string) {
+  const c = color(input)!;
+  c.opacity = FILTERED_OPACITY;
+  return c.toString();
 }
 
-export function getHistDOMRenderer(totalNumberOfRows: number, col: INumberColumn, imposer?: IImposer) {
-  const guessedBins = getNumberOfBins(totalNumberOfRows);
+/** @internal */
+export function getHistDOMRenderer(col: INumberColumn, imposer?: IImposer) {
+  const ranking = col.findMyRanker();
+  const guessedBins = ranking ? getNumberOfBins(ranking.getOrderLength()) : 10;
   let bins = '';
   for (let i = 0; i < guessedBins; ++i) {
     bins += `<div class="${cssClass('histogram-bin')}" title="Bin ${i}: 0" data-x=""><div style="height: 0" ></div></div>`;
   }
 
-  const render = (n: HTMLElement, stats: {bins: number, max: number, hist: INumberBin[]}) => {
-    const {bins, max, hist} = stats;
+  const formatter = col.getNumberFormat();
+
+  const render = (n: HTMLElement, stats: IHistData) => {
+    const {maxBin, hist} = stats;
+    const bins = hist.length;
+    const unfiltered = <IStatistics>stats.global;
     //adapt the number of children
     let nodes = <HTMLElement[]>Array.from(n.querySelectorAll('[data-x]'));
-    if (nodes.length > bins) {
+    if (nodes.length > hist.length) {
       nodes.splice(bins, nodes.length - bins).forEach((d) => d.remove());
     } else if (nodes.length < bins) {
       for (let i = nodes.length; i < bins; ++i) {
@@ -259,16 +287,25 @@ export function getHistDOMRenderer(totalNumberOfRows: number, col: INumberColumn
     }
     n.classList.toggle(cssClass('dense'), bins > DENSE_HISTOGRAM);
     nodes.forEach((d: HTMLElement, i) => {
-      const {x0, x1, length} = hist[i];
+      const {x0, x1, count} = hist[i];
       const inner = <HTMLElement>d.firstElementChild!;
-      d.title = `${DEFAULT_FORMATTER(x0)} - ${DEFAULT_FORMATTER(x1)} (${length})`;
-      d.dataset.x = DEFAULT_FORMATTER(x0);
-      inner.style.height = `${Math.round(length * 100 / max)}%`;
-      inner.style.backgroundColor = colorOf(col, null, imposer, (x1 + x0) / 2);
+      const color = colorOf(col, null, imposer, (x1 + x0) / 2)!;
+      d.dataset.x = formatter(x0);
+      if (unfiltered) {
+        const gCount = unfiltered.hist[i].count;
+        d.title = `${formatter(x0)} - ${formatter(x1)} (${count} of ${gCount})`;
+        inner.style.height = `${round(gCount * 100 / unfiltered.maxBin, 2)}%`;
+        const relY = 100 - round(count * 100 / gCount, 2);
+        inner.style.background = relY === 0 ? color : (relY === 100 ? filterColor(color) : `linear-gradient(${filterColor(color)} ${relY}%, ${color} ${relY}%, ${color} 100%)`);
+      } else {
+        d.title = `${formatter(x0)} - ${formatter(x1)} (${count})`;
+        inner.style.height = `${round(count * 100 / maxBin, 2)}%`;
+        inner.style.backgroundColor = color;
+      }
     });
   };
   return {
-    template: `<div class="${cssClass('histogram')} ${guessedBins > DENSE_HISTOGRAM ? cssClass('dense'): ''}">${bins}`, // no closing div to be able to append things
+    template: `<div class="${cssClass('histogram')} ${guessedBins > DENSE_HISTOGRAM ? cssClass('dense') : ''}">${bins}`, // no closing div to be able to append things
     render,
     guessedBins
   };

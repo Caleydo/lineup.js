@@ -1,6 +1,5 @@
-import {IDynamicHeight, ITaggleOptions} from '../interfaces';
-import Column, {IGroupData, IGroupItem} from '../model';
-import Ranking from '../model/Ranking';
+import {IDynamicHeight, ITaggleOptions} from '../config';
+import Column, {IGroupData, IGroupItem, Ranking} from '../model';
 import {ICellRendererFactory, ERenderMode} from '../renderer';
 import {IToolbarAction, IToolbarDialogAddon} from '../ui';
 
@@ -10,7 +9,8 @@ import {IToolbarAction, IToolbarDialogAddon} from '../ui';
 export default class LineUpBuilder {
   protected readonly options: Partial<ITaggleOptions> = {
     renderers: {},
-    toolbar: {}
+    toolbar: {},
+    flags: {}
   };
 
   /**
@@ -161,6 +161,30 @@ export default class LineUpBuilder {
    */
   dynamicHeight(callback: (data: (IGroupItem | IGroupData)[], ranking: Ranking) => (IDynamicHeight | null)) {
     this.options.dynamicHeight = callback;
+    return this;
+  }
+
+  /**
+   * disables advanced ranking features (sort by, group by, sorting hierarchy, ...)
+   */
+  disableAdvancedRankingFeatures() {
+    this.options.flags!.advancedRankingFeatures = false;
+    return this;
+  }
+
+  /**
+   * disables advanced model features (add combine column, data mapping, edit pattern, ...)
+   */
+  disableAdvancedModelFeatures() {
+    this.options.flags!.advancedModelFeatures = false;
+    return this;
+  }
+
+  /**
+   * disables advanced ui features (change visualization, color mapping)
+   */
+  disableAdvancedUIFeatures() {
+    this.options.flags!.advancedUIFeatures = false;
     return this;
   }
 }

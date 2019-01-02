@@ -1,0 +1,6 @@
+@import '../vars';
+
+.#{$engine_css_prefix}-td.#{$lu_css_prefix}-renderer-date {
+  display: flex;
+  align-items: center;
+}

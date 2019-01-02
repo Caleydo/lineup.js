@@ -1,22 +1,17 @@
-import {nonUniformContext, MultiTableRowRenderer, GridStyleManager} from 'lineupengine';
-import {ILineUpOptions} from '../interfaces';
-import {findOption, ICategoricalStatistics, IStatistics, round} from '../internal';
-import AEventDispatcher, {suffix, IEventListener} from '../internal/AEventDispatcher';
-import {
-  Column, ICategoricalColumn, IDataRow, IGroupData, IGroupItem, isCategoricalColumn, isGroup,
-  isNumberColumn, INumberColumn
-} from '../model';
-import Ranking from '../model/Ranking';
-import ADataProvider from '../provider/ADataProvider';
-import {
-  chooseGroupRenderer, chooseRenderer, chooseSummaryRenderer, IImposer, IRenderContext, getPossibleRenderer
-} from '../renderer';
-import EngineRanking, {IEngineRankingContext} from './EngineRanking';
-import {IRankingHeaderContext, IRankingHeaderContextContainer} from './interfaces';
-import SlopeGraph, {EMode} from './SlopeGraph';
+import {GridStyleManager, MultiTableRowRenderer, nonUniformContext} from 'lineupengine';
+import {ILineUpFlags, ILineUpOptions} from '../config';
+import {AEventDispatcher, IEventListener, round, suffix} from '../internal';
+import {Column, IGroupData, IGroupItem, isGroup, Ranking, IGroup} from '../model';
+import {DataProvider} from '../provider';
+import {isSummaryGroup, groupEndLevel} from '../provider/internal';
+import {IImposer, IRenderContext} from '../renderer';
+import {chooseGroupRenderer, chooseRenderer, chooseSummaryRenderer, getPossibleRenderer} from '../renderer/renderers';
+import {cssClass} from '../styles';
 import DialogManager from './dialogs/DialogManager';
-import {cssClass} from '../styles/index';
 import domElementCache from './domElementCache';
+import EngineRanking, {IEngineRankingContext} from './EngineRanking';
+import {EMode, IRankingHeaderContext, IRankingHeaderContextContainer} from './interfaces';
+import SlopeGraph from './SlopeGraph';
 
 /**
  * emitted when the highlight changes
@@ -24,14 +19,12 @@ import domElementCache from './domElementCache';
  * @param dataIndex the highlghted data index or -1 for none
  * @event
  */
-export declare function highlightChanged(dataIndex: number): void;
+declare function highlightChanged(dataIndex: number): void;
 
 export default class EngineRenderer extends AEventDispatcher {
   static readonly EVENT_HIGHLIGHT_CHANGED = EngineRanking.EVENT_HIGHLIGHT_CHANGED;
 
   protected readonly options: Readonly<ILineUpOptions>;
-
-  private readonly histCache = new Map<string, IStatistics | ICategoricalStatistics | null | Promise<IStatistics | ICategoricalStatistics>>();
 
   readonly node: HTMLElement;
   private readonly table: MultiTableRowRenderer;
@@ -46,7 +39,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   private enabledHighlightListening: boolean = false;
 
-  constructor(protected data: ADataProvider, parent: HTMLElement, options: Readonly<ILineUpOptions>) {
+  constructor(protected data: DataProvider, parent: HTMLElement, options: Readonly<ILineUpOptions>) {
     super();
     this.options = options;
     this.node = parent.ownerDocument!.createElement('main');
@@ -55,13 +48,6 @@ export default class EngineRenderer extends AEventDispatcher {
     this.node.classList.toggle(cssClass('whole-hover'), options.expandLineOnHover);
     parent.appendChild(this.node);
 
-    const statsOf = (col: Column) => {
-      const r = this.histCache.get(col.id);
-      if (r == null || r instanceof Promise) {
-        return null;
-      }
-      return r;
-    };
     const dialogManager = new DialogManager(parent.ownerDocument!);
 
     parent.appendChild(dialogManager.node);
@@ -69,24 +55,23 @@ export default class EngineRenderer extends AEventDispatcher {
       idPrefix: this.idPrefix,
       document: parent.ownerDocument!,
       provider: data,
+      tasks: data.getTaskExecutor(),
       dialogManager,
       toolbar: this.options.toolbar,
-      option: findOption(Object.assign({useGridLayout: true}, this.options)),
-      statsOf,
+      flags: <ILineUpFlags>this.options.flags,
       asElement: domElementCache(parent.ownerDocument!),
       renderer: (col: Column, imposer?: IImposer) => {
         const r = chooseRenderer(col, this.options.renderers);
-        return r.create(col, this.ctx, statsOf(col), imposer);
+        return r.create!(col, this.ctx, imposer);
       },
       groupRenderer: (col: Column, imposer?: IImposer) => {
         const r = chooseGroupRenderer(col, this.options.renderers);
-        return r.createGroup(col, this.ctx, statsOf(col), imposer);
+        return r.createGroup!(col, this.ctx, imposer);
       },
       summaryRenderer: (col: Column, interactive: boolean, imposer?: IImposer) => {
         const r = chooseSummaryRenderer(col, this.options.renderers);
-        return r.createSummary(col, this.ctx, interactive, imposer);
+        return r.createSummary!(col, this.ctx, interactive, imposer);
       },
-      totalNumberOfRows: 0,
       createRenderer(col: Column, imposer?: IImposer) {
         const single = this.renderer(col, imposer);
         const group = this.groupRenderer(col, imposer);
@@ -111,21 +96,53 @@ export default class EngineRenderer extends AEventDispatcher {
 
     //apply rules
     {
-      this.style.addRule('lineup_groupPadding', `
-       .${this.style.cssClasses.tr}[data-agg=group],
-       .${this.style.cssClasses.tr}[data-meta~=last]`, {
-          marginBottom: `${options.groupPadding}px`
-        });
+
       this.style.addRule('lineup_rowPadding0', `
         .${this.style.cssClasses.tr}`, {
           marginTop: `${options.rowPadding}px`
         });
 
+      for (let level = 0; level < 4; ++level) {
+        this.style.addRule(`lineup_groupPadding${level}`, `
+        .${this.style.cssClasses.tr}[data-meta~=last${level === 0 ? '' : level}]`, {
+            marginBottom: `${options.groupPadding * (level + 1)}px`
+          });
+      }
+
+
+      this.style.addRule('lineup_rowPaddingAgg0', `
+        .${cssClass('agg-level')}::after`, {
+          top: `-${options.rowPadding}px`
+        });
+      for (let level = 1; level <= 4; ++level) {
+        this.style.addRule(`lineup_rowPaddingAgg${level}`, `
+        .${cssClass('agg-level')}[data-level='${level}']::after`, {
+            top: `-${options.rowPadding + options.groupPadding}px`
+          });
+      }
+
       // FIXME flat
       this.style.addRule('lineup_rotation', `
-       #${this.idPrefix}.lu-rotated-label .lu-label.lu-rotated`, {
+       #${this.idPrefix}.${cssClass('rotated-label')} .${cssClass('label')}.${cssClass('rotated')}`, {
           transform: `rotate(${-this.options.labelRotation}deg)`
         });
+
+      const toDisable: string[] = [];
+      if (!this.options.flags.advancedRankingFeatures) {
+        toDisable.push('ranking');
+      }
+      if (!this.options.flags.advancedModelFeatures) {
+        toDisable.push('model');
+      }
+      if (!this.options.flags.advancedUIFeatures) {
+        toDisable.push('ui');
+      }
+      if (toDisable.length > 0) {
+        this.style.addRule('lineup_feature_disable', `
+        ${toDisable.map((d) => `.${cssClass('feature')}-${d}.${cssClass('feature-advanced')}`).join(', ')}`, {
+            display: 'none !important'
+          });
+      }
     }
 
     this.initProvider(data);
@@ -161,26 +178,30 @@ export default class EngineRenderer extends AEventDispatcher {
   }
 
   on(type: typeof EngineRenderer.EVENT_HIGHLIGHT_CHANGED, listener: typeof highlightChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(type, listener);
   }
 
 
-  setDataProvider(data: ADataProvider) {
+  setDataProvider(data: DataProvider) {
     this.takeDownProvider();
 
     this.data = data;
     (<any>this.ctx).provider = data;
+    (<any>this.ctx).tasks = data.getTaskExecutor();
 
     this.initProvider(data);
   }
 
   private takeDownProvider() {
-    this.data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, null);
-    this.data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, null);
-    this.data.on(`${ADataProvider.EVENT_REMOVE_RANKING}.body`, null);
-    this.data.on(`${ADataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, null);
-    this.data.on(`${ADataProvider.EVENT_JUMP_TO_NEAREST}.body`, null);
+    this.data.on(`${DataProvider.EVENT_SELECTION_CHANGED}.body`, null);
+    this.data.on(`${DataProvider.EVENT_ADD_RANKING}.body`, null);
+    this.data.on(`${DataProvider.EVENT_REMOVE_RANKING}.body`, null);
+    this.data.on(`${DataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, null);
+    this.data.on(`${DataProvider.EVENT_SHOWTOPN_CHANGED}.body`, null);
+    this.data.on(`${DataProvider.EVENT_JUMP_TO_NEAREST}.body`, null);
+    this.data.on(`${DataProvider.EVENT_BUSY}.body`, null);
 
     this.rankings.forEach((r) => this.table.remove(r));
     this.rankings.splice(0, this.rankings.length);
@@ -188,20 +209,25 @@ export default class EngineRenderer extends AEventDispatcher {
     this.slopeGraphs.splice(0, this.slopeGraphs.length);
   }
 
-  private initProvider(data: ADataProvider) {
-    data.on(`${ADataProvider.EVENT_SELECTION_CHANGED}.body`, () => this.updateSelection(data.getSelection()));
-    data.on(`${ADataProvider.EVENT_ADD_RANKING}.body`, (ranking: Ranking) => {
+  private initProvider(data: DataProvider) {
+    data.on(`${DataProvider.EVENT_SELECTION_CHANGED}.body`, () => this.updateSelection(data.getSelection()));
+    data.on(`${DataProvider.EVENT_ADD_RANKING}.body`, (ranking: Ranking) => {
       this.addRanking(ranking);
     });
-    data.on(`${ADataProvider.EVENT_REMOVE_RANKING}.body`, (ranking: Ranking) => {
+    data.on(`${DataProvider.EVENT_REMOVE_RANKING}.body`, (ranking: Ranking) => {
       this.removeRanking(ranking);
     });
-    data.on(`${ADataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, (ranking: Ranking) => {
+    data.on(`${DataProvider.EVENT_GROUP_AGGREGATION_CHANGED}.body`, (ranking: Ranking) => {
       this.update(this.rankings.filter((r) => r.ranking === ranking));
     });
-    data.on(`${ADataProvider.EVENT_JUMP_TO_NEAREST}.body`, (indices: number[]) => {
+    data.on(`${DataProvider.EVENT_SHOWTOPN_CHANGED}.body`, () => {
+      this.update(this.rankings);
+    });
+    data.on(`${DataProvider.EVENT_JUMP_TO_NEAREST}.body`, (indices: number[]) => {
       this.setHighlightToNearest(indices, true);
     });
+
+    (<any>this.ctx).provider = data;
 
     this.data.getRankings().forEach((r) => this.addRanking(r));
   }
@@ -218,26 +244,16 @@ export default class EngineRenderer extends AEventDispatcher {
       return;
     }
     const rankings = ranking ? [ranking] : this.rankings;
-    rankings.forEach((r) => {
-      const ranking = r.ranking;
-      const order = ranking.getOrder();
-      const cols = col ? [col] : ranking.flatColumns;
-      const histo = order == null ? null : this.data.stats(order);
-      cols.filter((d) => d.isVisible() && isNumberColumn(d)).forEach((col: Column) => {
-        this.histCache.set(col.id, histo == null ? null : histo.stats(<INumberColumn>col));
-      });
-      cols.filter((d) => isCategoricalColumn(d) && d.isVisible()).forEach((col: Column) => {
-        this.histCache.set(col.id, histo == null ? null : histo.hist(<ICategoricalColumn>col));
-      });
+
+    for (const r of rankings) {
       if (col) {
         // single update
         r.updateHeaderOf(col);
       } else {
         r.updateHeaders();
       }
-    });
-
-    this.updateAbles.forEach((u) => u(this.ctx));
+    }
+    this.updateUpdateAbles();
   }
 
   private addRanking(ranking: Ranking) {
@@ -253,14 +269,14 @@ export default class EngineRenderer extends AEventDispatcher {
       animation: this.options.animated,
       customRowUpdate: this.options.customRowUpdate || (() => undefined),
       levelOfDetail: this.options.levelOfDetail || (() => 'high'),
-      flags: this.options.flags
+      flags: <ILineUpFlags>this.options.flags
     }));
     r.on(EngineRanking.EVENT_WIDTH_CHANGED, () => {
       this.updateRotatedHeaderState();
       this.table.widthChanged();
     });
     r.on(EngineRanking.EVENT_UPDATE_DATA, () => this.update([r]));
-    r.on(EngineRanking.EVENT_UPDATE_HIST, (col: Column) => this.updateHist(r, col));
+    r.on(EngineRanking.EVENT_RECREATE, () => this.updateUpdateAbles());
     this.forward(r, EngineRanking.EVENT_HIGHLIGHT_CHANGED);
     if (this.enabledHighlightListening) {
       r.enableHighlightListening(true);
@@ -306,17 +322,6 @@ export default class EngineRenderer extends AEventDispatcher {
     if (rankings.length === 0) {
       return;
     }
-    const orders = rankings.map((r) => r.ranking.getOrder());
-    const data = this.data.fetch(orders);
-
-    (<any>this.ctx).totalNumberOfRows = Math.max(...data.map((d) => d.length));
-
-    // TODO support async
-    const localData = data.map((d) => d.map((d) => <IDataRow>d));
-
-    if (this.histCache.size === 0) {
-      this.updateHist();
-    }
 
     const round2 = (v: number) => round(v, 2);
     const rowPadding = round2(this.zoomFactor * this.options.rowPadding!);
@@ -343,30 +348,46 @@ export default class EngineRenderer extends AEventDispatcher {
       };
     };
 
-    rankings.forEach((r, i) => {
-      const grouped = r.groupData(localData[i]);
+    for (const r of rankings) {
+      const grouped = r.groupData();
 
+      // inline with creating the groupData
       const {height, defaultHeight, padding} = heightsFor(r.ranking, grouped);
 
+      const strategy = this.data.getAggregationStrategy();
+      const topNGetter = (group: IGroup) => this.data.getTopNAggregated(r.ranking, group);
+
+      // inline and create manually for better performance
       const rowContext = nonUniformContext(grouped.map(height), defaultHeight, (index) => {
         const pad = (typeof padding === 'number' ? padding : padding(grouped[index] || null));
-        if (index >= 0 && grouped[index] && (isGroup(grouped[index]) || (<IGroupItem>grouped[index]).meta === 'last' || (<IGroupItem>grouped[index]).meta === 'first last')) {
-          return groupPadding + pad;
+        const v = grouped[index];
+
+        if (index < 0 || !v || (isGroup(v) && isSummaryGroup(v, strategy, topNGetter))) {
+          return pad;
         }
-        return pad;
+        return pad + groupPadding * groupEndLevel(v, topNGetter);
       });
       r.render(grouped, rowContext);
-    });
+    }
 
     this.updateSlopeGraphs(rankings);
 
+    this.updateUpdateAbles();
     this.updateRotatedHeaderState();
     this.table.widthChanged();
   }
 
+  private updateUpdateAbles() {
+    for (const u of this.updateAbles) {
+      u(this.ctx);
+    }
+  }
+
   private updateSlopeGraphs(rankings: EngineRanking[] = this.rankings) {
     const indices = new Set(rankings.map((d) => this.rankings.indexOf(d)));
-    this.slopeGraphs.forEach((s, i) => {
+
+    for (let i = 0; i < this.slopeGraphs.length; ++i) {
+      const s = this.slopeGraphs[i];
       if (s.hidden) {
         return;
       }
@@ -378,7 +399,7 @@ export default class EngineRenderer extends AEventDispatcher {
       const leftRanking = this.rankings[left];
       const rightRanking = this.rankings[right];
       s.rebuild(leftRanking.currentData, leftRanking.context, rightRanking.currentData, rightRanking.context);
-    });
+    }
   }
 
   setHighlight(dataIndex: number, scrollIntoView: boolean) {
@@ -416,7 +437,7 @@ export default class EngineRenderer extends AEventDispatcher {
 
   enableHighlightListening(enable: boolean) {
     for (const ranking of this.rankings) {
-        ranking.enableHighlightListening(enable);
+      ranking.enableHighlightListening(enable);
     }
     this.enabledHighlightListening = enable;
   }

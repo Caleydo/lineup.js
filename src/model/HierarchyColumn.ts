@@ -1,12 +1,13 @@
 import {Category, toolbar} from './annotations';
 import CategoricalColumn from './CategoricalColumn';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
-import {ICategoricalColumn, ICategory} from './ICategoricalColumn';
-import {IDataRow, IGroup} from './interfaces';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, dirtyCaches, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import {ICategoricalColumn, ICategory, ICategoricalColorMappingFunction} from './ICategoricalColumn';
+import {IDataRow, IGroup, IValueColumnDesc, DEFAULT_COLOR} from './interfaces';
 import {colorPool} from './internal';
 import {missingGroup} from './missing';
-import ValueColumn, {IValueColumnDesc, dataLoaded} from './ValueColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
+import ValueColumn, {dataLoaded} from './ValueColumn';
+import {IEventListener} from '../internal';
+import {restoreColorMapping, DEFAULT_COLOR_FUNCTION} from './CategoricalColorMappingFunction';
 
 export interface ICategoryNode extends ICategory {
   children: Readonly<ICategoryNode>[];
@@ -34,19 +35,28 @@ export interface ICutOffNode {
 }
 
 /**
+ * emitted when the color mapping property changes
+ * @asMemberOf HierarchyColumn
+ * @event
+ */
+declare function colorMappingChanged(previous: ICategoricalColorMappingFunction, current: ICategoricalColorMappingFunction): void;
+
+
+/**
  * emitted when the cut off property changes
  * @asMemberOf HierarchyColumn
  * @event
  */
-export declare function cutOffChanged(previous: ICutOffNode, current: ICutOffNode): void;
+declare function cutOffChanged(previous: ICutOffNode, current: ICutOffNode): void;
 
 /**
  * column for hierarchical categorical values
  */
-@toolbar('cutoff', 'group', 'groupBy')
+@toolbar('cutoff', 'group', 'groupBy', 'colorMappedCategorical')
 @Category('categorical')
 export default class HierarchyColumn extends ValueColumn<string> implements ICategoricalColumn {
   static readonly EVENT_CUTOFF_CHANGED = 'cutOffChanged';
+  static readonly EVENT_COLOR_MAPPING_CHANGED = 'colorMappingChanged';
 
   private readonly hierarchySeparator: string;
   readonly hierarchy: Readonly<ICategoryInternalNode>;
@@ -57,6 +67,8 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
   private readonly currentLeavesNameCache = new Map<string, Readonly<ICategoryInternalNode>>();
   private readonly currentLeavesPathCache = new Map<string, Readonly<ICategoryInternalNode>>();
 
+  private colorMapping: ICategoricalColorMappingFunction;
+
   constructor(id: string, desc: Readonly<IHierarchyColumnDesc>) {
     super(id, desc);
     this.hierarchySeparator = desc.hierarchySeparator || '.';
@@ -66,6 +78,7 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
     this.updateCaches();
 
     this.setDefaultRenderer('categorical');
+    this.colorMapping = DEFAULT_COLOR_FUNCTION;
   }
 
   private initHierarchy(root: IPartialCategoryNode) {
@@ -93,7 +106,7 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
         return r;
       });
       const path = prefix + name;
-      const label = node.label ? `${node.label}` : path;
+      const label = node.label ? node.label : path;
       return {path, name, children, label, color: node.color!, value: 0};
     };
     return add('', root);
@@ -104,10 +117,11 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
   }
 
   protected createEventList() {
-    return super.createEventList().concat([HierarchyColumn.EVENT_CUTOFF_CHANGED]);
+    return super.createEventList().concat([HierarchyColumn.EVENT_COLOR_MAPPING_CHANGED, HierarchyColumn.EVENT_CUTOFF_CHANGED]);
   }
 
   on(type: typeof HierarchyColumn.EVENT_CUTOFF_CHANGED, listener: typeof cutOffChanged | null): this;
+  on(type: typeof HierarchyColumn.EVENT_COLOR_MAPPING_CHANGED, listener: typeof colorMappingChanged | null): this;
   on(type: typeof ValueColumn.EVENT_DATA_LOADED, listener: typeof dataLoaded | null): this;
   on(type: typeof Column.EVENT_WIDTH_CHANGED, listener: typeof widthChanged | null): this;
   on(type: typeof Column.EVENT_LABEL_CHANGED, listener: typeof labelChanged | null): this;
@@ -115,12 +129,69 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
+  }
+
+  dump(toDescRef: (desc: any) => any): any {
+    const r = super.dump(toDescRef);
+    r.colorMapping = this.colorMapping.dump();
+    if (isFinite(this.currentMaxDepth)) {
+      r.maxDepth = this.currentMaxDepth;
+    }
+    if (this.currentNode !== this.hierarchy) {
+      r.cutOffNode = this.currentNode.path;
+    }
+    return r;
+  }
+
+  restore(dump: any, factory: (dump: any) => Column | null) {
+    super.restore(dump, factory);
+    this.colorMapping = restoreColorMapping(dump.colorMapping, this.categories);
+    if (typeof dump.maxDepth !== 'undefined') {
+      this.currentMaxDepth = dump.maxDepth;
+    }
+    if (typeof dump.cutOffNode !== 'undefined') {
+      const path = dump.cutOffNode.split(this.hierarchySeparator);
+      let node: Readonly<ICategoryInternalNode> | null = this.hierarchy;
+
+      let act = path.shift();
+      while (act && node) {
+        if (node.name !== act) {
+          node = null;
+          break;
+        }
+        const next = path.shift();
+        if (!next) {
+          break;
+        }
+        act = next;
+        node = node.children.find((d) => d.name === act) || null;
+      }
+      this.currentNode = node || this.hierarchy;
+    }
+
+    if (typeof dump.maxDepth !== 'undefined' || typeof dump.cutOffNode !== 'undefined') {
+      this.currentLeaves = computeLeaves(this.currentNode, this.currentMaxDepth);
+      this.updateCaches();
+    }
+  }
+
+  getColorMapping() {
+    return this.colorMapping.clone();
+  }
+
+  setColorMapping(mapping: ICategoricalColorMappingFunction) {
+    if (this.colorMapping.eq(mapping)) {
+      return;
+    }
+    this.fire([CategoricalColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
   }
 
   getCutOff(): ICutOffNode {
@@ -174,6 +245,14 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
     return v ? v.name : null;
   }
 
+  getCategories(row: IDataRow) {
+    return [this.getCategory(row)];
+  }
+
+  iterCategory(row: IDataRow) {
+    return [this.getCategory(row)];
+  }
+
   getLabel(row: IDataRow) {
     return CategoricalColumn.prototype.getLabel.call(this, row);
   }
@@ -202,17 +281,18 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
     return CategoricalColumn.prototype.getSet.call(this, row);
   }
 
-  compare(a: IDataRow, b: IDataRow) {
-    return CategoricalColumn.prototype.compare.call(this, a, b);
+  toCompareValue(row: IDataRow) {
+    return CategoricalColumn.prototype.toCompareValue.call(this, row);
+  }
+
+  toCompareValueType() {
+    return CategoricalColumn.prototype.toCompareValueType.call(this);
   }
 
   group(row: IDataRow): IGroup {
-    if (this.isMissing(row)) {
-      return missingGroup;
-    }
     const base = this.getCategory(row);
     if (!base) {
-      return super.group(row);
+      return missingGroup;
     }
     return {name: base.label, color: base.color};
   }
@@ -250,7 +330,9 @@ export function resolveInnerNodes(node: ICategoryInternalNode) {
   let index = 0;
   while (index < queue.length) {
     const next = queue[index++];
-    queue.push(...next.children);
+    for (const n of next.children) {
+      queue.push(n);
+    }
   }
   return queue;
 }
@@ -263,7 +345,7 @@ export function isHierarchical(categories: (string | Partial<ICategory>)[]) {
   return categories.some((c) => (<any>c).parent != null);
 }
 
-export function deriveHierarchy(categories: (Partial<ICategory> & { parent: string | null })[]) {
+export function deriveHierarchy(categories: (Partial<ICategory> & {parent: string | null})[]) {
   const lookup = new Map<string, ICategoryNode>();
   categories.forEach((c) => {
     const p = c.parent || '';
@@ -272,14 +354,14 @@ export function deriveHierarchy(categories: (Partial<ICategory> & { parent: stri
       children: [],
       label: c.name!,
       name: c.name!,
-      color: Column.DEFAULT_COLOR,
+      color: DEFAULT_COLOR,
       value: 0
     }, lookup.get(c.name!) || {}, c);
     lookup.set(c.name!, item);
 
     if (!lookup.has(p)) {
       // create proxy
-      lookup.set(p, {name: p, children: [], label: p, value: 0, color: Column.DEFAULT_COLOR});
+      lookup.set(p, {name: p, children: [], label: p, value: 0, color: DEFAULT_COLOR});
     }
     lookup.get(p)!.children.push(item);
   });

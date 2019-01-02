@@ -1,5 +1,5 @@
-import {min, max} from 'd3-array';
-import {EAdvancedSortMethod, ESortMethod, INumberColumnDesc, IMapAbleDesc} from '../../model';
+import {min, max} from '../../internal';
+import {EAdvancedSortMethod, ESortMethod, INumberColumnDesc} from '../../model';
 import ColumnBuilder from './ColumnBuilder';
 
 export default class NumberColumnBuilder extends ColumnBuilder<INumberColumnDesc> {
@@ -28,8 +28,25 @@ export default class NumberColumnBuilder extends ColumnBuilder<INumberColumnDesc
     return this;
   }
 
+  /**
+   * sets the column color in case of numerical columns
+   * @deprecated use colorMapping instead
+   */
+  color(color: string) {
+    return this.colorMapping(color);
+  }
+
   colorMapping(type: string | ((v: number)=>string) | any) {
-    (<IMapAbleDesc>this.desc).colorMapping = type;
+    this.desc.colorMapping = type;
+    return this;
+  }
+
+  /**
+   * d3-format to use for formatting
+   * @param format d3-format
+   */
+  numberFormat(format: string) {
+    this.desc.numberFormat = format;
     return this;
   }
 

@@ -1,13 +1,10 @@
-import {defaultOptions} from '../config';
-import {ILineUpOptions} from '../interfaces';
-import merge from '../internal/merge';
-import DataProvider from '../provider/ADataProvider';
+import {ILineUpOptions, defaultOptions} from '../config';
+import {merge} from '../internal';
+import {DataProvider} from '../provider';
+import {cssClass} from '../styles';
 import {ALineUp} from './ALineUp';
 import EngineRenderer from './EngineRenderer';
 import SidePanel from './panel/SidePanel';
-import {cssClass} from '../styles';
-
-export {ILineUpOptions} from '../interfaces';
 
 export default class LineUp extends ALineUp {
   private readonly renderer: EngineRenderer | null;
@@ -33,7 +30,7 @@ export default class LineUp extends ALineUp {
     if (this.options.sidePanel) {
       this.panel = new SidePanel(this.renderer.ctx, this.node.ownerDocument!, {
         collapseable: this.options.sidePanelCollapsed ? 'collapsed' : true,
-        hierarchy: this.options.hierarchyIndicator
+        hierarchy: this.options.hierarchyIndicator && this.options.flags.advancedRankingFeatures
       });
       this.renderer.pushUpdateAble((ctx) => this.panel!.update(ctx));
       this.node.insertBefore(this.panel.node, this.node.firstChild);
