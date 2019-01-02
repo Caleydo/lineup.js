@@ -1,5 +1,4 @@
-import {IDataRow} from '../model';
-import Column from '../model/Column';
+import {Column, IDataRow, isMissingValue} from '../model';
 import {CANVAS_HEIGHT, DASH, cssClass} from '../styles';
 
 export function renderMissingValue(ctx: CanvasRenderingContext2D, width: number, height: number, x = 0, y = 0) {
@@ -11,13 +10,13 @@ export function renderMissingValue(ctx: CanvasRenderingContext2D, width: number,
 }
 
 export function renderMissingDOM(node: HTMLElement, col: Column, d: IDataRow) {
-  const missing = col.isMissing(d);
+  const missing = isMissingValue(col.getValue(d));
   node.classList.toggle(cssClass('missing'), missing);
   return missing;
 }
 
 export function renderMissingCanvas(ctx: CanvasRenderingContext2D, col: Column, d: IDataRow, width: number, x = 0, y = 0) {
-  const missing = col.isMissing(d);
+  const missing = isMissingValue(col.getValue(d));
   if (missing) {
     renderMissingValue(ctx, width, CANVAS_HEIGHT, x, y);
   }

@@ -1,22 +1,11 @@
-import {ICategory} from './ICategoricalColumn';
-import Column from './Column';
-
-
-export interface ICategoricalColorMappingFunction {
-  apply(v: ICategory): string;
-
-  dump(): any;
-
-  clone(): ICategoricalColorMappingFunction;
-
-  eq(other: ICategoricalColorMappingFunction): boolean;
-}
+import {ICategory, ICategoricalColorMappingFunction} from '.';
+import {DEFAULT_COLOR} from './interfaces';
 
 /**
  * @internal
  */
 export const DEFAULT_COLOR_FUNCTION: ICategoricalColorMappingFunction = {
-  apply: (v) => v ? v.color : Column.DEFAULT_COLOR,
+  apply: (v) => v ? v.color : DEFAULT_COLOR,
   dump: () => null,
   clone: () => DEFAULT_COLOR_FUNCTION,
   eq: (other) => other === DEFAULT_COLOR_FUNCTION

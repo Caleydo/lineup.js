@@ -1,16 +1,31 @@
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged, dirtyCaches} from './Column';
 import {IDataRow} from './interfaces';
-import StringColumn, {filterChanged, groupingChanged} from './StringColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
+import StringColumn from './StringColumn';
+import {IEventListener} from '../internal';
 import ValueColumn, {dataLoaded} from './ValueColumn';
 
+
+/**
+ * emitted when the filter property changes
+ * @asMemberOf AnnotateColumn
+ * @event
+ */
+declare function filterChanged(previous: string | RegExp | null, current: string | RegExp | null): void;
+
+
+/**
+ * emitted when the grouping property changes
+ * @asMemberOf AnnotateColumn
+ * @event
+ */
+declare function groupingChanged(previous: (RegExp | string)[][], current: (RegExp | string)[][]): void;
 
 /**
  * emitted when the value of a row changes
  * @asMemberOf AnnotateColumn
  * @event
  */
-export declare function valueChanged(dataIndex: number, previous: string, current: string): void;
+declare function valueChanged(dataIndex: number, previous: string, current: string): void;
 
 /**
  * a string column in which the values can be edited locally
@@ -34,10 +49,12 @@ export default class AnnotateColumn extends StringColumn {
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
@@ -78,7 +95,7 @@ export default class AnnotateColumn extends StringColumn {
     } else {
       this.annotations.set(row.i, value);
     }
-    this.fire([AnnotateColumn.EVENT_VALUE_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], row.i, old, value);
+    this.fire([AnnotateColumn.EVENT_VALUE_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_CACHES, Column.EVENT_DIRTY], row.i, old, value);
     return true;
   }
 }

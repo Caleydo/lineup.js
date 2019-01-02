@@ -1,11 +1,9 @@
-import {suffix} from '../../internal/AEventDispatcher';
-import debounce from '../../internal/debounce';
-import CompositeColumn from '../../model/CompositeColumn';
+import {debounce, clear, suffix} from '../../internal';
+import {CompositeColumn} from '../../model';
 import {createHeader, updateHeader} from '../header';
 import {IRankingHeaderContext} from '../interfaces';
 import ADialog, {IDialogContext} from './ADialog';
-import {cssClass} from '../../styles';
-import {clear} from '../../internal/utils';
+import {cssClass, engineCssClass} from '../../styles';
 
 /** @internal */
 export default class CompositeChildrenDialog extends ADialog {
@@ -37,8 +35,15 @@ export default class CompositeChildrenDialog extends ADialog {
         const summary = this.ctx.summaryRenderer(c, false);
         const summaryNode = this.ctx.asElement(summary.template);
         summaryNode.dataset.renderer = c.getSummaryRenderer();
-        summaryNode.classList.add(cssClass('summary'), cssClass('renderer'));
-        summary.update(summaryNode, this.ctx.statsOf(<any>c));
+        summaryNode.classList.add(cssClass('summary'), cssClass('renderer'), cssClass('th-summary'));
+
+        const r = summary.update(summaryNode);
+        if (r) {
+          summaryNode.classList.add(engineCssClass('loading'));
+          r.then(() => {
+            summaryNode.classList.remove(engineCssClass('loading'));
+          });
+        }
         n.appendChild(summaryNode);
         node.appendChild(n);
       });

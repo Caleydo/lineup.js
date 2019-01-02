@@ -1,13 +1,13 @@
 import {Category, toolbar} from './annotations';
 import CategoricalColumn from './CategoricalColumn';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
-import {ICategoricalColumn, ICategory} from './ICategoricalColumn';
-import {IDataRow, IGroup} from './interfaces';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, dirtyCaches, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import {ICategoricalColumn, ICategory, ICategoricalColorMappingFunction} from './ICategoricalColumn';
+import {IDataRow, IGroup, IValueColumnDesc, DEFAULT_COLOR} from './interfaces';
 import {colorPool} from './internal';
 import {missingGroup} from './missing';
-import ValueColumn, {IValueColumnDesc, dataLoaded} from './ValueColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
-import {ICategoricalColorMappingFunction, restoreColorMapping, DEFAULT_COLOR_FUNCTION} from './CategoricalColorMappingFunction';
+import ValueColumn, {dataLoaded} from './ValueColumn';
+import {IEventListener} from '../internal';
+import {restoreColorMapping, DEFAULT_COLOR_FUNCTION} from './CategoricalColorMappingFunction';
 
 export interface ICategoryNode extends ICategory {
   children: Readonly<ICategoryNode>[];
@@ -39,7 +39,7 @@ export interface ICutOffNode {
  * @asMemberOf HierarchyColumn
  * @event
  */
-export declare function colorMappingChanged(previous: ICategoricalColorMappingFunction, current: ICategoricalColorMappingFunction): void;
+declare function colorMappingChanged(previous: ICategoricalColorMappingFunction, current: ICategoricalColorMappingFunction): void;
 
 
 /**
@@ -47,7 +47,7 @@ export declare function colorMappingChanged(previous: ICategoricalColorMappingFu
  * @asMemberOf HierarchyColumn
  * @event
  */
-export declare function cutOffChanged(previous: ICutOffNode, current: ICutOffNode): void;
+declare function cutOffChanged(previous: ICutOffNode, current: ICutOffNode): void;
 
 /**
  * column for hierarchical categorical values
@@ -129,10 +129,12 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
@@ -160,7 +162,7 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
       let node: Readonly<ICategoryInternalNode> | null = this.hierarchy;
 
       let act = path.shift();
-      while(act && node) {
+      while (act && node) {
         if (node.name !== act) {
           node = null;
           break;
@@ -243,6 +245,14 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
     return v ? v.name : null;
   }
 
+  getCategories(row: IDataRow) {
+    return [this.getCategory(row)];
+  }
+
+  iterCategory(row: IDataRow) {
+    return [this.getCategory(row)];
+  }
+
   getLabel(row: IDataRow) {
     return CategoricalColumn.prototype.getLabel.call(this, row);
   }
@@ -271,17 +281,18 @@ export default class HierarchyColumn extends ValueColumn<string> implements ICat
     return CategoricalColumn.prototype.getSet.call(this, row);
   }
 
-  compare(a: IDataRow, b: IDataRow) {
-    return CategoricalColumn.prototype.compare.call(this, a, b);
+  toCompareValue(row: IDataRow) {
+    return CategoricalColumn.prototype.toCompareValue.call(this, row);
+  }
+
+  toCompareValueType() {
+    return CategoricalColumn.prototype.toCompareValueType.call(this);
   }
 
   group(row: IDataRow): IGroup {
-    if (this.isMissing(row)) {
-      return missingGroup;
-    }
     const base = this.getCategory(row);
     if (!base) {
-      return super.group(row);
+      return missingGroup;
     }
     return {name: base.label, color: base.color};
   }
@@ -319,7 +330,9 @@ export function resolveInnerNodes(node: ICategoryInternalNode) {
   let index = 0;
   while (index < queue.length) {
     const next = queue[index++];
-    queue.push(...next.children);
+    for (const n of next.children) {
+      queue.push(n);
+    }
   }
   return queue;
 }
@@ -332,7 +345,7 @@ export function isHierarchical(categories: (string | Partial<ICategory>)[]) {
   return categories.some((c) => (<any>c).parent != null);
 }
 
-export function deriveHierarchy(categories: (Partial<ICategory> & { parent: string | null })[]) {
+export function deriveHierarchy(categories: (Partial<ICategory> & {parent: string | null})[]) {
   const lookup = new Map<string, ICategoryNode>();
   categories.forEach((c) => {
     const p = c.parent || '';
@@ -341,14 +354,14 @@ export function deriveHierarchy(categories: (Partial<ICategory> & { parent: stri
       children: [],
       label: c.name!,
       name: c.name!,
-      color: Column.DEFAULT_COLOR,
+      color: DEFAULT_COLOR,
       value: 0
     }, lookup.get(c.name!) || {}, c);
     lookup.set(c.name!, item);
 
     if (!lookup.has(p)) {
       // create proxy
-      lookup.set(p, {name: p, children: [], label: p, value: 0, color: Column.DEFAULT_COLOR});
+      lookup.set(p, {name: p, children: [], label: p, value: 0, color: DEFAULT_COLOR});
     }
     lookup.get(p)!.children.push(item);
   });

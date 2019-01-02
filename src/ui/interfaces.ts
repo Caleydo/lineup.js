@@ -1,11 +1,39 @@
-import {ICategoricalStatistics, IStatistics} from '../internal';
-import {Column, ICategoricalColumn, IGroupData, IGroupItem, INumberColumn} from '../model';
+import {ILineUpFlags} from '../config';
+import {Column, IGroupData, IGroupItem} from '../model';
 import {IDataProvider} from '../provider';
-import {IImposer, IRenderContext} from '../renderer';
-import {ISummaryRenderer} from '../renderer/interfaces';
-import {IToolbarAction, IToolbarDialogAddon} from './toolbar';
+import {IImposer, IRenderContext, ISummaryRenderer} from '../renderer';
 import DialogManager from './dialogs/DialogManager';
-import {ILineUpFlags} from '../interfaces';
+import {IDialogContext} from './dialogs';
+
+export interface IUIOptions {
+  shortcut: boolean | 'only';
+  order: number;
+  featureLevel: 'basic' | 'advanced';
+  featureCategory: 'ranking' | 'model' | 'ui';
+}
+
+export interface IOnClickHandler {
+  (col: Column, evt: MouseEvent, ctx: IRankingHeaderContext, level: number, viaShortcut: boolean): any;
+}
+
+export interface IToolbarAction {
+  title: string;
+
+  enabled?(col: Column): boolean;
+
+  onClick: IOnClickHandler;
+
+  options: Partial<IUIOptions>;
+}
+
+export interface IToolbarDialogAddon {
+  title: string;
+
+  order: number;
+
+  append(col: Column, node: HTMLElement, dialog: IDialogContext, ctx: IRankingHeaderContext): void;
+}
+
 
 export interface IRenderInfo {
   type: string;
@@ -21,13 +49,11 @@ export interface IRankingHeaderContextContainer {
 
   asElement(html: string): HTMLElement;
 
-  toolbar: { [key: string]: IToolbarAction | IToolbarDialogAddon };
+  readonly toolbar: {[key: string]: IToolbarAction | IToolbarDialogAddon};
 
-  flags: ILineUpFlags;
+  readonly flags: ILineUpFlags;
 
-  statsOf(col: (INumberColumn | ICategoricalColumn) & Column, unfiltered?: boolean): ICategoricalStatistics | IStatistics | null;
-
-  getPossibleRenderer(col: Column): { item: IRenderInfo[], group: IRenderInfo[], summary: IRenderInfo[] };
+  getPossibleRenderer(col: Column): {item: IRenderInfo[], group: IRenderInfo[], summary: IRenderInfo[]};
 
   summaryRenderer(co: Column, interactive: boolean, imposer?: IImposer): ISummaryRenderer;
 }
@@ -44,3 +70,7 @@ export declare type IRankingHeaderContext = Readonly<IRankingHeaderContextContai
 
 export declare type IRankingContext = Readonly<IRankingBodyContext>;
 
+export enum EMode {
+  ITEM = 'item',
+  BAND = 'band'
+}

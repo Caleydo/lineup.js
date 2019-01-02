@@ -1,8 +1,8 @@
 import {filterMissingMarkup, findFilterMissing} from '../missing';
 import ADialog, {IDialogContext} from './ADialog';
 import {updateFilterState, uniqueId} from './utils';
-import DateColumn from '../../model/DateColumn';
-import {IDateFilter, isDummyDateFilter, noDateFilter} from '../../model/IDateColumn';
+import {DateColumn, IDateFilter} from '../../model';
+import {isDummyDateFilter, noDateFilter} from '../../model/internalDate';
 import {timeFormat} from 'd3-time-format';
 
 /** @internal */
@@ -42,7 +42,7 @@ export default class DateFilterDialog extends ADialog {
     <input type="date" id="${id}F" name="from" placeholder="From..." autofocus value="${isFinite(act.min) ? f(new Date(act.min)) : ''}">
     <label for="${id}T">To: </label>
     <input type="date" id="${id}T" name="to" placeholder="To..." value="${isFinite(act.max) ? f(new Date(act.max)) : ''}">
-    ${filterMissingMarkup(act.filterMissing, this.dialog.idPrefix)}`);
+    ${filterMissingMarkup(act.filterMissing)}`);
 
     const update = () => {
       this.submit();

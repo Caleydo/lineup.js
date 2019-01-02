@@ -1,25 +1,20 @@
-import {LazyBoxPlotData} from '../internal';
-import {toolbar, SortByDefault, dialogAddons} from './annotations';
-import ArrayColumn, {IArrayColumnDesc, IArrayDesc, spliceChanged} from './ArrayColumn';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
-import ValueColumn, {dataLoaded} from './ValueColumn';
-import {IDataRow} from './interfaces';
-import {
-  compareBoxPlot, DEFAULT_FORMATTER, EAdvancedSortMethod, getBoxPlotNumber, INumberFilter, INumbersColumn,
-  noNumberFilter, isDummyNumberFilter, restoreNumberFilter
-} from './INumberColumn';
-import {
-  createMappingFunction, IMapAbleDesc, IMappingFunction, restoreMapping,
-  ScaleMappingFunction
-} from './MappingFunction';
+import {format} from 'd3-format';
+import {boxplotBuilder, IAdvancedBoxPlotData, IEventListener} from '../internal';
+import {dialogAddons, SortByDefault, toolbar} from './annotations';
+import ArrayColumn, {IArrayColumnDesc} from './ArrayColumn';
+import {createColorMappingFunction, restoreColorMapping} from './ColorMappingFunction';
+import Column, {dirty, dirtyCaches, dirtyHeader, dirtyValues, groupRendererChanged, labelChanged, metaDataChanged, rendererTypeChanged, summaryRendererChanged, visibilityChanged, widthChanged} from './Column';
+import {IArrayDesc} from './IArrayColumn';
+import {IDataRow, ECompareValueType} from './interfaces';
+import {DEFAULT_FORMATTER, getBoxPlotNumber, isDummyNumberFilter, noNumberFilter, restoreNumberFilter, toCompareBoxPlotValue} from './internalNumber';
+import {EAdvancedSortMethod, IColorMappingFunction, IMappingFunction, INumberDesc, INumberFilter, INumbersColumn} from './INumberColumn';
+import {createMappingFunction, restoreMapping, ScaleMappingFunction} from './MappingFunction';
 import {isMissingValue} from './missing';
-import NumberColumn, {colorMappingChanged} from './NumberColumn';
-import {IAdvancedBoxPlotData} from '../internal/math';
-import {IEventListener} from '../internal/AEventDispatcher';
-import {IColorMappingFunction, restoreColorMapping, createColorMappingFunction} from './ColorMappingFunction';
+import NumberColumn from './NumberColumn';
+import ValueColumn, {dataLoaded} from './ValueColumn';
 
 
-export interface INumbersDesc extends IArrayDesc, IMapAbleDesc {
+export interface INumbersDesc extends IArrayDesc, INumberDesc {
   readonly sort?: EAdvancedSortMethod;
 }
 
@@ -30,21 +25,27 @@ export declare type INumbersColumnDesc = INumbersDesc & IArrayColumnDesc<number>
  * @asMemberOf NumbersColumn
  * @event
  */
-export declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+/**
+ * emitted when the color mapping property changes
+ * @asMemberOf NumberMapColumn
+ * @event
+ */
+declare function colorMappingChanged(previous: IColorMappingFunction, current: IColorMappingFunction): void;
 
 /**
  * emitted when the sort method property changes
  * @asMemberOf NumbersColumn
  * @event
  */
-export declare function sortMethodChanged(previous: EAdvancedSortMethod, current: EAdvancedSortMethod): void;
+declare function sortMethodChanged(previous: EAdvancedSortMethod, current: EAdvancedSortMethod): void;
 
 /**
  * emitted when the filter property changes
  * @asMemberOf NumbersColumn
  * @event
  */
-export declare function filterChanged(previous: INumberFilter | null, current: INumberFilter | null): void;
+declare function filterChanged(previous: INumberFilter | null, current: INumberFilter | null): void;
 
 @toolbar('filterNumber', 'colorMapped', 'editMapping')
 @dialogAddons('sort', 'sortNumbers')
@@ -55,8 +56,9 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
   static readonly EVENT_SORTMETHOD_CHANGED = NumberColumn.EVENT_SORTMETHOD_CHANGED;
   static readonly EVENT_FILTER_CHANGED = NumberColumn.EVENT_FILTER_CHANGED;
 
-
   static readonly CENTER = 0;
+
+  private readonly numberFormat: (n: number) => string = DEFAULT_FORMATTER;
 
   private sort: EAdvancedSortMethod;
   private mapping: IMappingFunction;
@@ -75,6 +77,10 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     this.original = this.mapping.clone();
     this.colorMapping = restoreColorMapping(desc);
 
+    if (desc.numberFormat) {
+      this.numberFormat = format(desc.numberFormat);
+    }
+
     this.sort = desc.sort || EAdvancedSortMethod.median;
 
     // better initialize the default with based on the data length
@@ -86,8 +92,16 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     this.setDefaultSummaryRenderer('histogram');
   }
 
-  compare(a: IDataRow, b: IDataRow): number {
-    return compareBoxPlot(this, a, b);
+  getNumberFormat() {
+    return this.numberFormat;
+  }
+
+  toCompareValue(row: IDataRow): number {
+    return toCompareBoxPlotValue(this, row);
+  }
+
+  toCompareValueType() {
+    return ECompareValueType.FLOAT;
   }
 
   getRawNumbers(row: IDataRow) {
@@ -99,11 +113,15 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (data == null) {
       return null;
     }
-    return new LazyBoxPlotData(data, this.mapping);
+    const b = boxplotBuilder();
+    for (const d of data) {
+      b.push(isMissingValue(d) ? NaN : this.mapping.apply(d));
+    }
+    return b.build();
   }
 
   getRange() {
-    return this.mapping.getRange(DEFAULT_FORMATTER);
+    return this.mapping.getRange(this.numberFormat);
   }
 
   getRawBoxPlotData(row: IDataRow): IAdvancedBoxPlotData | null {
@@ -111,11 +129,15 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (data == null) {
       return null;
     }
-    return new LazyBoxPlotData(data);
+    const b = boxplotBuilder();
+    for (const d of data) {
+      b.push(isMissingValue(d) ? NaN : d);
+    }
+    return b.build();
   }
 
   getNumbers(row: IDataRow) {
-    return this.getValue(row);
+    return this.getValues(row);
   }
 
   getNumber(row: IDataRow): number {
@@ -127,13 +149,25 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
   }
 
   getValue(row: IDataRow) {
-    const values = this.getRawValue(row);
-    return values.map((d) => isMissingValue(d) ? NaN : this.mapping.apply(d));
+    const v = this.getValues(row);
+    return v.every(isNaN) ? null : v;
+  }
+
+  getValues(row: IDataRow) {
+    return this.getRawValue(row).map((d) => isNaN(d) ? NaN : this.mapping.apply(d));
+  }
+
+  iterNumber(row: IDataRow) {
+    return this.getNumbers(row);
+  }
+
+  iterRawNumber(row: IDataRow) {
+    return this.getRawNumbers(row);
   }
 
   getRawValue(row: IDataRow) {
-    const r = super.getValue(row);
-    return r == null ? [] : r;
+    const r = super.getRaw(row);
+    return r == null ? [] : r.map((d) => isMissingValue(d) ? NaN : +d);
   }
 
   getExportValue(row: IDataRow, format: 'text' | 'json'): any {
@@ -141,7 +175,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
   }
 
   getLabels(row: IDataRow) {
-    return this.getValue(row).map(DEFAULT_FORMATTER);
+    return this.getValues(row).map(this.numberFormat);
   }
 
   getSortMethod() {
@@ -152,7 +186,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (this.sort === sort) {
       return;
     }
-    this.fire([NumbersColumn.EVENT_SORTMETHOD_CHANGED], this.sort, this.sort = sort);
+    this.fire([NumbersColumn.EVENT_SORTMETHOD_CHANGED, NumberColumn.EVENT_DIRTY_HEADER, NumberColumn.EVENT_DIRTY_VALUES, NumbersColumn.EVENT_DIRTY_CACHES, NumberColumn.EVENT_DIRTY], this.sort, this.sort = sort);
     // sort by me if not already sorted by me
     if (!this.isSortedByMe().asc) {
       this.sortByMe();
@@ -194,7 +228,6 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
   on(type: typeof NumbersColumn.EVENT_MAPPING_CHANGED, listener: typeof mappingChanged | null): this;
   on(type: typeof NumbersColumn.EVENT_SORTMETHOD_CHANGED, listener: typeof sortMethodChanged | null): this;
   on(type: typeof NumbersColumn.EVENT_FILTER_CHANGED, listener: typeof filterChanged | null): this;
-  on(type: typeof ArrayColumn.EVENT_SPLICE_CHANGED, listener: typeof spliceChanged | null): this;
   on(type: typeof ValueColumn.EVENT_DATA_LOADED, listener: typeof dataLoaded | null): this;
   on(type: typeof Column.EVENT_WIDTH_CHANGED, listener: typeof widthChanged | null): this;
   on(type: typeof Column.EVENT_LABEL_CHANGED, listener: typeof labelChanged | null): this;
@@ -202,10 +235,12 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
@@ -222,7 +257,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (this.mapping.eq(mapping)) {
       return;
     }
-    this.fire([NumbersColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.mapping.clone(), this.mapping = mapping);
+    this.fire([NumbersColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_CACHES, Column.EVENT_DIRTY], this.mapping.clone(), this.mapping = mapping);
   }
 
   getColor(row: IDataRow) {
@@ -237,7 +272,7 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     if (this.colorMapping.eq(mapping)) {
       return;
     }
-    this.fire([NumbersColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
+    this.fire([NumbersColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_CACHES, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
   }
 
   isFiltered() {

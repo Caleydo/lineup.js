@@ -1,16 +1,15 @@
-import * as vars from 'raw-loader!./_vars.scss';
 
 const styles = new Map<string, string>();
-{
-  const r = /^[$]([\w]+): ([\w #.()'\/,-]+)( !default)?;/gmi;
-  const s = String(vars);
+// {
+//   const r = /^[$]([\w]+): ([\w #.()'\/,-]+)( !default)?;/gmi;
+//   const s = String(vars);
 
-  let m: RegExpMatchArray | null = s.match(r);
-  while (m != null) {
-    styles.set(m[1], m[2]);
-    m = s.match(r);
-  }
-}
+//   let m: RegExpMatchArray | null = r.exec(s);
+//   while (m != null) {
+//     styles.set(m[1], m[2]);
+//     m = r.exec(s);
+//   }
+// }
 
 /** @internal */
 export default function getStyle(key: string, defaultValue = '') {
@@ -22,6 +21,7 @@ export default function getStyle(key: string, defaultValue = '') {
   }
   return defaultValue;
 }
+
 /** @internal */
 export const COLUMN_PADDING = parseInt(getStyle('lu_engine_grip_gap', '5px'), 10);
 /** @internal */
@@ -34,15 +34,14 @@ export const DASH = {
 };
 /** @internal */
 export const UPSET = {
-  circle: getStyle('lu_renderer_upset_circle_color'),
-  inactive: parseFloat(getStyle('lu_renderer_upset_inactive_opacity', '0.1')),
-  stroke: getStyle('lu_renderer_upset_stroke')
+  color: getStyle('lu_renderer_upset_color'),
+  inactive: parseFloat(getStyle('lu_renderer_upset_inactive_opacity', '0.1'))
 };
 /** @internal */
 export const DOT = {
   color: getStyle('lu_renderer_dot_color', 'gray'),
   size: parseInt(getStyle('lu_renderer_dot_size', '5px'), 10),
-  opacity: parseFloat(getStyle('lu_renderer_dot_opacity', '0.7'))
+  opacity: parseFloat(getStyle('lu_renderer_dot_opacity', '0.5'))
 };
 /** @internal */
 export const BOX_PLOT = {
@@ -54,8 +53,10 @@ export const BOX_PLOT = {
 /** @internal */
 export const AGGREGATE = {
   width: parseInt(getStyle('lu_aggregate_square_bracket_width', '4px'), 10),
-  strokeWidth: parseInt(getStyle('lu_aggregate_square_bracket_stroke_width', '1px'), 10),
-  color: getStyle('lu_aggregate_square_bracket_stroke_color', '#000')
+  strokeWidth: parseInt(getStyle('lu_aggregate_square_bracket_stroke_width', '2px'), 10),
+  color: getStyle('lu_aggregate_square_bracket_stroke_color', '#000'),
+  levelOffset: parseInt(getStyle('lu_aggregate_level_offset', '2px'), 10),
+  levelWidth: parseInt(getStyle('lu_aggregate_level_width', '22px'), 10)
 };
 /** @internal */
 export const SLOPEGRAPH_WIDTH = parseInt(getStyle('lu_slope_width', '200px'), 10);

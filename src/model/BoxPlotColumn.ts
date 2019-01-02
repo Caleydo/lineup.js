@@ -1,22 +1,17 @@
 import {format} from 'd3-format';
-import {IBoxPlotData} from '../internal';
-import {Category, toolbar, SortByDefault, dialogAddons} from './annotations';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
-import ValueColumn, {IValueColumnDesc, dataLoaded} from './ValueColumn';
-import {IDataRow} from './interfaces';
-import {
-  compareBoxPlot, ESortMethod, getBoxPlotNumber, IBoxPlotColumn, INumberFilter, noNumberFilter, isDummyNumberFilter, restoreNumberFilter
-} from './INumberColumn';
-import {
-  createMappingFunction, IMapAbleDesc, IMappingFunction, restoreMapping,
-  ScaleMappingFunction
-} from './MappingFunction';
-import NumberColumn, {colorMappingChanged} from './NumberColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
-import {IColorMappingFunction, restoreColorMapping, createColorMappingFunction} from './ColorMappingFunction';
+import {IBoxPlotData, IEventListener} from '../internal';
+import {Category, dialogAddons, SortByDefault, toolbar} from './annotations';
+import {createColorMappingFunction, restoreColorMapping} from './ColorMappingFunction';
+import Column, {dirty, dirtyCaches, dirtyHeader, dirtyValues, groupRendererChanged, labelChanged, metaDataChanged, rendererTypeChanged, summaryRendererChanged, visibilityChanged, widthChanged} from './Column';
+import {IDataRow, ECompareValueType, IValueColumnDesc} from './interfaces';
+import {ESortMethod, IBoxPlotColumn, INumberDesc, INumberFilter, IColorMappingFunction, IMappingFunction} from './INumberColumn';
+import {createMappingFunction, restoreMapping, ScaleMappingFunction} from './MappingFunction';
+import NumberColumn from './NumberColumn';
+import ValueColumn, {dataLoaded} from './ValueColumn';
+import {DEFAULT_FORMATTER, noNumberFilter, toCompareBoxPlotValue, getBoxPlotNumber, isDummyNumberFilter, restoreNumberFilter} from './internalNumber';
 
 
-export interface IBoxPlotDesc extends IMapAbleDesc {
+export interface IBoxPlotDesc extends INumberDesc {
   sort?: ESortMethod;
 }
 
@@ -28,21 +23,28 @@ export declare type IBoxPlotColumnDesc = IBoxPlotDesc & IValueColumnDesc<IBoxPlo
  * @asMemberOf BoxPlotColumn
  * @event
  */
-export declare function sortMethodChanged(previous: ESortMethod, current: ESortMethod): void;
+declare function sortMethodChanged(previous: ESortMethod, current: ESortMethod): void;
 
 /**
  * emitted when the mapping property changes
  * @asMemberOf BoxPlotColumn
  * @event
  */
-export declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
+
+/**
+ * emitted when the color mapping property changes
+ * @asMemberOf BoxPlotColumn
+ * @event
+ */
+declare function colorMappingChanged(previous: IColorMappingFunction, current: IColorMappingFunction): void;
 
 /**
  * emitted when the filter property changes
  * @asMemberOf BoxPlotColumn
  * @event
  */
-export declare function filterChanged(previous: INumberFilter | null, current: INumberFilter | null): void;
+declare function filterChanged(previous: INumberFilter | null, current: INumberFilter | null): void;
 
 
 @toolbar('filterNumber', 'colorMapped', 'editMapping')
@@ -55,7 +57,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
   static readonly EVENT_SORTMETHOD_CHANGED = NumberColumn.EVENT_SORTMETHOD_CHANGED;
   static readonly EVENT_FILTER_CHANGED = NumberColumn.EVENT_FILTER_CHANGED;
 
-  static readonly DEFAULT_FORMATTER = format('.3n');
+  private readonly numberFormat: (n: number) => string = DEFAULT_FORMATTER;
 
   private sort: ESortMethod;
 
@@ -77,12 +79,23 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
     this.original = this.mapping.clone();
     this.colorMapping = restoreColorMapping(desc);
 
-    this.sort = desc.sort || ESortMethod.min;
+    if (desc.numberFormat) {
+      this.numberFormat = format(desc.numberFormat);
+    }
 
+    this.sort = desc.sort || ESortMethod.min;
   }
 
-  compare(a: IDataRow, b: IDataRow): number {
-    return compareBoxPlot(this, a, b);
+  getNumberFormat() {
+    return this.numberFormat;
+  }
+
+  toCompareValue(row: IDataRow): number {
+    return toCompareBoxPlotValue(this, row);
+  }
+
+  toCompareValueType() {
+    return ECompareValueType.FLOAT;
   }
 
   getBoxPlotData(row: IDataRow): IBoxPlotData | null {
@@ -90,7 +103,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
   }
 
   getRange() {
-    return this.mapping.getRange(BoxPlotColumn.DEFAULT_FORMATTER);
+    return this.mapping.getRange(this.numberFormat);
   }
 
   getRawBoxPlotData(row: IDataRow): IBoxPlotData | null {
@@ -108,7 +121,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
   getValue(row: IDataRow) {
     const v = this.getRawValue(row);
     if (v == null) {
-      return v;
+      return null;
     }
     const r: IBoxPlotData = {
       min: this.mapping.apply(v.min),
@@ -143,12 +156,20 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
     return getBoxPlotNumber(this, row, 'raw');
   }
 
+  iterNumber(row: IDataRow) {
+    return [this.getNumber(row)];
+  }
+
+  iterRawNumber(row: IDataRow) {
+    return [this.getRawNumber(row)];
+  }
+
   getLabel(row: IDataRow): string {
     const v = this.getRawValue(row);
     if (v == null) {
       return '';
     }
-    const f = BoxPlotColumn.DEFAULT_FORMATTER;
+    const f = this.numberFormat;
     return `BoxPlot(min = ${f(v.min)}, q1 = ${f(v.q1)}, median = ${f(v.median)}, q3 = ${f(v.q3)}, max = ${f(v.max)})`;
   }
 
@@ -209,10 +230,12 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
@@ -229,7 +252,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
     if (this.mapping.eq(mapping)) {
       return;
     }
-    this.fire([BoxPlotColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.mapping.clone(), this.mapping = mapping);
+    this.fire([BoxPlotColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_CACHES, Column.EVENT_DIRTY], this.mapping.clone(), this.mapping = mapping);
   }
 
   getColor(row: IDataRow) {
@@ -244,7 +267,7 @@ export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements 
     if (this.colorMapping.eq(mapping)) {
       return;
     }
-    this.fire([BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
+    this.fire([BoxPlotColumn.EVENT_COLOR_MAPPING_CHANGED, Column.EVENT_DIRTY_HEADER, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY_CACHES, Column.EVENT_DIRTY], this.colorMapping.clone(), this.colorMapping = mapping);
   }
 
   isFiltered() {

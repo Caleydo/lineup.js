@@ -1,12 +1,10 @@
-import {ICategoricalColumn, ICategory} from '../../model/ICategoricalColumn';
+import {ICategoricalColumn, CategoricalsColumn, CategoricalMapColumn, ICategory} from '../../model';
 import ADialog, {IDialogContext} from './ADialog';
 import {uniqueId} from './utils';
 import {cssClass} from '../../styles';
-import { DEFAULT_COLOR_FUNCTION, ReplacmentColorMappingFunction} from '../../model/CategoricalColorMappingFunction';
-import CategoricalsColumn from '../../model/CategoricalsColumn';
-import CategoricalMapColumn from '../../model/CategoricalMapColumn';
 import {color} from 'd3-color';
 import {schemeCategory10, schemeAccent, schemeDark2, schemePastel1, schemePastel2, schemeSet1, schemeSet2, schemeSet3} from 'd3-scale-chromatic';
+import {DEFAULT_COLOR_FUNCTION, ReplacmentColorMappingFunction} from '../../model/CategoricalColorMappingFunction';
 
 const sets: {[key: string]: ReadonlyArray<string>} = {schemeCategory10, schemeAccent, schemeDark2, schemePastel1, schemePastel2, schemeSet1, schemeSet2, schemeSet3};
 
@@ -37,10 +35,10 @@ export default class CategoricalColorMappingDialog extends ADialog {
         </select>
       </div>
       ${this.column.categories.map((d) => `
-        <div class="${cssClass('dialog-color-table-entry')}">
-          <input id="${id}${d.name}" data-cat="${d.name}" type="color" value="${color(mapping.apply(d))!.hex()}">
-          <label for="${id}${d.name}">${d.label}</label>
-        </div>`).join('')}
+        <label class="${cssClass('checkbox')} ${cssClass('dialog-color-table-entry')}">
+          <input data-cat="${d.name}" type="color" value="${color(mapping.apply(d))!.hex()}">
+          <span>${d.label}</span>
+        </label>`).join('')}
     </div>`);
 
     this.findInput('select').onchange = (evt) => {

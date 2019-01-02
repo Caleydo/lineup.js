@@ -1,10 +1,9 @@
-import AEventDispatcher from '../internal/AEventDispatcher';
-import OrderedSet from '../internal/OrderedSet';
+import {OrderedSet, AEventDispatcher, IEventListener} from '../internal';
 import {IGroupData, IGroupItem, isGroup} from '../model';
-import {IDataProvider} from '../provider/ADataProvider';
-import {rangeSelection} from '../renderer/SelectionRenderer';
-import {IEventListener} from '../internal/AEventDispatcher';
-import {engineCssClass, cssClass} from '../styles/index';
+import {IDataProvider} from '../provider';
+import {cssClass, engineCssClass} from '../styles';
+import {forEachIndices} from '../model/internal';
+import {rangeSelection} from '../provider/utils';
 
 interface IPoint {
   x: number;
@@ -22,7 +21,7 @@ interface IShift {
  * @internal
  * @event
  */
-export declare function selectRange(from: number, to: number, additional: boolean): void;
+declare function selectRange(from: number, to: number, additional: boolean): void;
 
 /** @internal */
 export default class SelectionManager extends AEventDispatcher {
@@ -33,7 +32,7 @@ export default class SelectionManager extends AEventDispatcher {
 
   private start: (IPoint & IShift) | null = null;
 
-  constructor(private readonly ctx: { provider: IDataProvider }, private readonly body: HTMLElement) {
+  constructor(private readonly ctx: {provider: IDataProvider}, private readonly body: HTMLElement) {
     super();
     const root = body.parentElement!.parentElement!;
     let hr = <HTMLHRElement>root.querySelector('hr');
@@ -84,8 +83,8 @@ export default class SelectionManager extends AEventDispatcher {
         passive: true
       });
     }, {
-      passive: true
-    });
+        passive: true
+      });
   }
 
   protected createEventList() {
@@ -93,6 +92,7 @@ export default class SelectionManager extends AEventDispatcher {
   }
 
   on(type: typeof SelectionManager.EVENT_SELECT_RANGE, listener: typeof selectRange | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(type, listener);
   }
@@ -142,12 +142,7 @@ export default class SelectionManager extends AEventDispatcher {
     };
   }
 
-  /**
-   *
-   */
-
-
-  selectRange(rows: { forEach: (c: (item: (IGroupItem | IGroupData)) => void) => void }, additional: boolean = false) {
+  selectRange(rows: {forEach: (c: (item: (IGroupItem | IGroupData)) => void) => void}, additional: boolean = false) {
     const current = new OrderedSet<number>(additional ? this.ctx.provider.getSelection() : []);
     const toggle = (dataIndex: number) => {
       if (current.has(dataIndex)) {
@@ -158,9 +153,9 @@ export default class SelectionManager extends AEventDispatcher {
     };
     rows.forEach((d) => {
       if (isGroup(d)) {
-        d.rows.forEach((r) => toggle(r.i));
+        forEachIndices(d.order, toggle);
       } else {
-        toggle(d.i);
+        toggle(d.dataIndex);
       }
     });
     this.ctx.provider.setSelection(Array.from(current));
@@ -174,7 +169,7 @@ export default class SelectionManager extends AEventDispatcher {
     }
   }
 
-  update(node: HTMLElement, selectedDataIndices: { has(dataIndex: number): boolean }) {
+  update(node: HTMLElement, selectedDataIndices: {has(dataIndex: number): boolean}) {
     const dataIndex = parseInt(node.dataset.i!, 10);
     if (selectedDataIndices.has(dataIndex)) {
       node.classList.add(cssClass('selected'));

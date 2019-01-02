@@ -1,10 +1,8 @@
-import {IDataRow, IGroup} from '../model';
-import Column from '../model/Column';
-import StringColumn from '../model/StringColumn';
+import {StringColumn, Column, IDataRow, IOrderedGroup} from '../model';
 import {filterMissingMarkup, findFilterMissing} from '../ui/missing';
-import {default as IRenderContext, ICellRendererFactory} from './interfaces';
+import {IRenderContext, ICellRendererFactory} from './interfaces';
 import {renderMissingDOM} from './missing';
-import {setText, uniqueId, exampleText} from './utils';
+import {setText, exampleText} from './utils';
 import {cssClass} from '../styles';
 
 
@@ -36,16 +34,20 @@ export default class StringCellRenderer implements ICellRendererFactory {
   }
 
 
-  createGroup(col: StringColumn) {
+  createGroup(col: StringColumn, context: IRenderContext) {
     return {
       template: `<div> </div>`,
-      update: (n: HTMLDivElement, _group: IGroup, rows: IDataRow[]) => {
-        const v = exampleText(col, rows);
-        if (col.escape) {
-          setText(n, v);
-        } else {
-          n.innerHTML = v;
-        }
+      update: (n: HTMLDivElement, group: IOrderedGroup) => {
+        return context.tasks.groupExampleRows(col, group, 'string', (rows) => exampleText(col, rows)).then((text) => {
+          if (typeof text === 'symbol') {
+            return;
+          }
+          if (col.escape) {
+            setText(n, text);
+          } else {
+            n.innerHTML = text;
+          }
+        });
       }
     };
   }
@@ -99,7 +101,7 @@ export default class StringCellRenderer implements ICellRendererFactory {
     };
   }
 
-  createSummary(col: StringColumn, context: IRenderContext, interactive: boolean) {
+  createSummary(col: StringColumn, _context: IRenderContext, interactive: boolean) {
     if (!interactive) {
       return {
         template: `<div></div>`,
@@ -115,11 +117,10 @@ export default class StringCellRenderer implements ICellRendererFactory {
       bak = '';
     }
     let update: (col: StringColumn) => void;
-    const id = uniqueId(context.idPrefix);
     return {
       template: `<form><input type="text" placeholder="Filter ${col.desc.label}..." autofocus value="${(bak instanceof RegExp) ? bak.source : bak}">
-          <div class="${cssClass('checkbox')}"><input id="${id}" type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><label for="${id}">RegExp</label></div>
-          ${filterMissingMarkup(bakMissing, context.idPrefix)}</form>`,
+          <label class="${cssClass('checkbox')}"><input type="checkbox" ${(bak instanceof RegExp) ? 'checked="checked"' : ''}><span>RegExp</span></label>
+          ${filterMissingMarkup(bakMissing)}</form>`,
       update: (node: HTMLElement) => {
         if (!update) {
           update = StringCellRenderer.interactiveSummary(col, node);

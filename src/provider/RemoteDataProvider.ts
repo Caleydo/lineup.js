@@ -1,8 +1,7 @@
-import Column, {IColumnDesc, IDataRow} from '../model';
-import {defaultGroup, IOrderedGroup} from '../model/Group';
-import Ranking from '../model/Ranking';
+import Column, {IColumnDesc, IDataRow, Ranking, defaultGroup, IndicesArray} from '../model';
 import ACommonDataProvider from './ACommonDataProvider';
-import {IDataProviderOptions, IStatsBuilder} from './ADataProvider';
+import {IDataProviderOptions} from './interfaces';
+import {DirectRenderTasks} from './DirectRenderTasks';
 
 /**
  * interface what the server side has to provide
@@ -12,7 +11,7 @@ export interface IServerData {
    * sort the dataset by the given description
    * @param ranking
    */
-  sort(ranking: Ranking): Promise<number[]>;
+  sort(ranking: Ranking): Promise<IndicesArray>;
 
   /**
    * returns a slice of the data array identified by a list of indices
@@ -32,8 +31,6 @@ export interface IServerData {
    * @param column
    */
   search(search: string | RegExp, column: any): Promise<number[]>;
-
-  stats(indices: number[]): IStatsBuilder;
 }
 
 
@@ -44,10 +41,10 @@ export interface IRemoteDataProviderOptions {
   maxCacheSize: number;
 }
 
-function createIndex2Pos(order: number[]) {
+function createIndex2Pos(order: IndicesArray) {
   const index2pos = <number[]>[];
   for (let i = 0; i < order.length; ++i) {
-    index2pos[order[i]] = i;
+    index2pos[order[i]] = i + 1;
   }
   return index2pos;
 }
@@ -73,9 +70,14 @@ export default class RemoteDataProvider extends ACommonDataProvider {
     return this.cache.size;
   }
 
-  sortImpl(ranking: Ranking): Promise<IOrderedGroup[]> {
+  getTaskExecutor() {
+    // FIXME
+    return new DirectRenderTasks([]);
+  }
+
+  sort(ranking: Ranking) {
     //use the server side to sort
-    return this.server.sort(ranking).then((order) => [Object.assign({order, index2pos: createIndex2Pos(order)}, defaultGroup)]);
+    return this.server.sort(ranking).then((order) => ({groups: [Object.assign({order}, defaultGroup)], index2pos: createIndex2Pos(order)}));
   }
 
   private loadFromServer(indices: number[]) {
@@ -132,6 +134,14 @@ export default class RemoteDataProvider extends ACommonDataProvider {
       order.map((i) => this.cache.get(i)!));
   }
 
+  getRow(index: number) {
+    if (this.cache.has(index)) {
+      return this.cache.get(index)!;
+    }
+    this.loadInCache([index]);
+    return this.cache.get(index)!;
+  }
+
 
   mappingSample(col: Column): Promise<number[]> {
     return this.server.mappingSample((<any>col.desc).column);
@@ -141,9 +151,5 @@ export default class RemoteDataProvider extends ACommonDataProvider {
     this.server.search(search, (<any>col.desc).column).then((indices) => {
       this.jumpToNearest(indices);
     });
-  }
-
-  stats(indices: number[]) {
-    return this.server.stats(indices);
   }
 }

@@ -1,35 +1,9 @@
-import {MIN_LABEL_WIDTH} from '../config';
-import Column from '../model/Column';
-import {IArrayColumn} from '../model/IArrayColumn';
+import {MIN_LABEL_WIDTH} from '../constants';
+import {Column, IArrayColumn, IDataRow, ICategoricalLikeColumn, isMapAbleColumn, DEFAULT_COLOR} from '../model';
 import {hsl} from 'd3-color';
 import {cssClass} from '../styles';
-import IRenderContext from './interfaces';
-import {IDataRow} from '../model/interfaces';
-
-/**
- * utility function to sets attributes and styles in a nodes
- * @param node
- * @param attrs
- * @param styles
- * @param text
- * @return {T}
- * @internal
- */
-export function attr<T extends (HTMLElement | SVGElement)>(node: T, attrs: {[key: string]: any} = {}, styles: {[key: string]: any} = {}, text?: string): T {
-  Object.keys(attrs).forEach((attr) => {
-    const v = String(attrs[attr]);
-    if (node.getAttribute(attr) !== v) {
-      node.setAttribute(attr, v);
-    }
-  });
-  Object.keys(styles).forEach((attr) => {
-    const v = styles[attr];
-    if ((<any>node).style.getPropertyValue(attr) !== v) {
-      (<any>node).style.setProperty(attr, v);
-    }
-  });
-  return setText(node, text);
-}
+import {IRenderContext} from '.';
+import {ISequence} from '../internal';
 
 /** @internal */
 export function noop() {
@@ -93,6 +67,7 @@ export function matchColumns(node: HTMLElement, columns: {column: Column, templa
       cnode.dataset.columnId = col.column.id;
       // store current renderer
       cnode.dataset.renderer = col.rendererId;
+      cnode.classList.add(cssClass(`renderer-${col.rendererId}`));
     });
     return;
   }
@@ -121,9 +96,9 @@ export function matchColumns(node: HTMLElement, columns: {column: Column, templa
     let cnode = <HTMLElement>node.querySelector(`[data-column-id="${col.column.id}"]`);
     if (!cnode) {
       cnode = ctx.asElement(col.template);
-      cnode.classList.add(cssClass('renderer'));
       cnode.dataset.columnId = col.column.id;
       cnode.dataset.renderer = col.rendererId;
+      cnode.classList.add(cssClass(`renderer-${col.rendererId}`));
     }
     node.appendChild(cnode);
   });
@@ -135,8 +110,15 @@ export function wideEnough(col: IArrayColumn<any>, length: number = col.labels.l
   return w / length > MIN_LABEL_WIDTH; // at least 30 pixel
 }
 
+/** @internal */
+export function wideEnoughCat(col: ICategoricalLikeColumn) {
+  const w = col.getWidth();
+  return w / col.categories.length > MIN_LABEL_WIDTH; // at least 30 pixel
+}
 
 
+
+// side effect
 const adaptColorCache: {[bg: string]: string} = {};
 /**
  * Adapts the text color for a given background color
@@ -183,7 +165,7 @@ export function adaptDynamicColorToBgColor(node: HTMLElement, bgColor: string, t
 
 
 /** @internal */
-export const uniqueId: (prefix: string)=>string = (function() {
+export const uniqueId: (prefix: string) => string = (function () {
   // side effect but just within the function itself, so good for the library
   let idCounter = 0;
   return (prefix: string) => `${prefix}${(idCounter++).toString(36)}`;
@@ -193,17 +175,30 @@ export const uniqueId: (prefix: string)=>string = (function() {
 const NUM_EXAMPLE_VALUES = 5;
 
 /** @internal */
-export function exampleText(col: Column, rows: IDataRow[]) {
+export function exampleText(col: Column, rows: ISequence<IDataRow>) {
   const examples = <string[]>[];
-  for (const row of rows) {
-    if (col.isMissing(row)) {
-      continue;
+  rows.every((row) => {
+    if (col.getValue(row) == null) {
+      return true;
     }
     const v = col.getLabel(row);
     examples.push(v);
-    if (examples.length >= NUM_EXAMPLE_VALUES) {
-      break;
-    }
-  }
+    return examples.length < NUM_EXAMPLE_VALUES;
+  });
   return `${examples.join(', ')}${examples.length < rows.length ? ', ...' : ''}`;
+}
+
+
+/** @internal */
+export function multiLevelGridCSSClass(idPrefix: string, column: Column) {
+  return cssClass(`stacked-${idPrefix}-${column.id}`);
+}
+
+
+/** @internal */
+export function colorOf(col: Column) {
+  if (isMapAbleColumn(col)) {
+    return col.getColorMapping().apply(0);
+  }
+  return DEFAULT_COLOR;
 }

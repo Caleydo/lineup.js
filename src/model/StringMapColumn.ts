@@ -1,10 +1,11 @@
 import {toolbar} from './annotations';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged, dirtyCaches} from './Column';
 import ValueColumn, {dataLoaded} from './ValueColumn';
 import {IDataRow} from './interfaces';
 import MapColumn, {IMapColumnDesc} from './MapColumn';
 import {EAlignment, IStringDesc} from './StringColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
+import {IEventListener} from '../internal';
+import {isMissingValue} from './missing';
 
 export declare type IStringMapColumnDesc = IStringDesc & IMapColumnDesc<string>;
 
@@ -31,18 +32,25 @@ export default class StringMapColumn extends MapColumn<string> {
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
 
   getValue(row: IDataRow) {
-    return super.getValue(row).map(({key, value}) => ({
+    const r = this.getMapValue(row);
+    return r.every((d) => d.value === '') ? null : r;
+  }
+
+  getMapValue(row: IDataRow) {
+    return super.getMap(row).map(({key, value}) => ({
       key,
-      value: value == null ? '' : String(value)
+      value: isMissingValue(value) ? '' : String(value)
     }));
   }
 }

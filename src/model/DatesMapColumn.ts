@@ -1,5 +1,5 @@
 import {timeFormat, timeParse} from 'd3-time-format';
-import {IDateColumn, IDateFilter, noDateFilter, restoreDateFilter, isDummyDateFilter} from './IDateColumn';
+import {IDateColumn, IDateFilter} from './IDateColumn';
 import {IKeyValue} from './IArrayColumn';
 import {IDataRow} from './interfaces';
 import MapColumn, {IMapColumnDesc} from './MapColumn';
@@ -7,9 +7,10 @@ import {isMissingValue} from './missing';
 import DatesColumn, {EDateSort, IDatesDesc} from './DatesColumn';
 import DateColumn from './DateColumn';
 import {dialogAddons, toolbar} from './annotations';
-import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged} from './Column';
+import Column, {widthChanged, labelChanged, metaDataChanged, dirty, dirtyHeader, dirtyValues, rendererTypeChanged, groupRendererChanged, summaryRendererChanged, visibilityChanged, dirtyCaches} from './Column';
 import ValueColumn, {dataLoaded} from './ValueColumn';
-import {IEventListener} from '../internal/AEventDispatcher';
+import {IEventListener} from '../internal';
+import {noDateFilter, isDummyDateFilter, restoreDateFilter} from './internalDate';
 
 export declare type IDateMapColumnDesc = IDatesDesc & IMapColumnDesc<Date | null>;
 
@@ -18,14 +19,14 @@ export declare type IDateMapColumnDesc = IDatesDesc & IMapColumnDesc<Date | null
  * @asMemberOf DatesMapColumn
  * @event
  */
-export declare function sortMethodChanged(previous: EDateSort, current: EDateSort): void;
+declare function sortMethodChanged(previous: EDateSort, current: EDateSort): void;
 
 /**
  * emitted when the filter property changes
  * @asMemberOf DatesMapColumn
  * @event
  */
-export declare function filterChanged(previous: IDateFilter | null, current: IDateFilter | null): void;
+declare function filterChanged(previous: IDateFilter | null, current: IDateFilter | null): void;
 
 
 @toolbar('filterDate')
@@ -60,10 +61,12 @@ export default class DatesMapColumn extends MapColumn<Date | null> implements ID
   on(type: typeof Column.EVENT_DIRTY, listener: typeof dirty | null): this;
   on(type: typeof Column.EVENT_DIRTY_HEADER, listener: typeof dirtyHeader | null): this;
   on(type: typeof Column.EVENT_DIRTY_VALUES, listener: typeof dirtyValues | null): this;
+  on(type: typeof Column.EVENT_DIRTY_CACHES, listener: typeof dirtyCaches | null): this;
   on(type: typeof Column.EVENT_RENDERER_TYPE_CHANGED, listener: typeof rendererTypeChanged | null): this;
   on(type: typeof Column.EVENT_GROUP_RENDERER_TYPE_CHANGED, listener: typeof groupRendererChanged | null): this;
   on(type: typeof Column.EVENT_SUMMARY_RENDERER_TYPE_CHANGED, listener: typeof summaryRendererChanged | null): this;
   on(type: typeof Column.EVENT_VISIBILITY_CHANGED, listener: typeof visibilityChanged | null): this;
+  on(type: string | string[], listener: IEventListener | null): this; // required for correct typings in *.d.ts
   on(type: string | string[], listener: IEventListener | null): this {
     return super.on(<any>type, listener);
   }
@@ -78,22 +81,32 @@ export default class DatesMapColumn extends MapColumn<Date | null> implements ID
     return this.parse(String(v));
   }
 
-  getValue(row: IDataRow) {
-    return super.getValue(row).map(({key, value}) => ({
+  getDateMap(row: IDataRow) {
+    return super.getMap(row).map(({key, value}) => ({
       key,
       value: this.parseValue(value)
     }));
   }
 
+  iterDate(row: IDataRow) {
+    return this.getDates(row);
+  }
+
+  getValue(row: IDataRow) {
+    const r = this.getDateMap(row);
+
+    return r.every((d) => d == null) ? null : r;
+  }
+
   getLabels(row: IDataRow): IKeyValue<string>[] {
-    return this.getValue(row).map(({key, value}) => ({
+    return this.getDateMap(row).map(({key, value}) => ({
       key,
       value: (value instanceof Date) ? this.format(value) : ''
     }));
   }
 
   getDates(row: IDataRow): (Date | null)[] {
-    return this.getValue(row).map((v) => v.value);
+    return this.getDateMap(row).map((v) => v.value);
   }
 
   getDate(row: IDataRow) {

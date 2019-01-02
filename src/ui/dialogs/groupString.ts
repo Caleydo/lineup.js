@@ -1,5 +1,5 @@
 import {IDialogContext} from './ADialog';
-import StringColumn from '../../model/StringColumn';
+import {StringColumn} from '../../model';
 import {cssClass} from '../../styles';
 
 
@@ -8,16 +8,16 @@ export default function append(col: StringColumn, node: HTMLElement, dialog: IDi
   const current = col.getGroupCriteria();
   const isRegex = current.length > 0 && current[0] instanceof RegExp;
   node.insertAdjacentHTML('beforeend', `
-    <div class="${cssClass('checkbox')}">
+    <label class="${cssClass('checkbox')}">
       <input type="radio" name="regex" value="startsWith" id="${dialog.idPrefix}RW" ${!isRegex ? 'checked' : ''}>
-      <label for="${dialog.idPrefix}RW">Text starts with &hellip;</label>
-    </div>
-    <div class="${cssClass('checkbox')}">
+      <span>Text starts with &hellip;</span>
+    </label>
+    <label class="${cssClass('checkbox')}">
       <input type="radio" name="regex" value="regex" id="${dialog.idPrefix}RE" ${isRegex ? 'checked' : ''}>
-      <label for="${dialog.idPrefix}RE">RegExp</label>
-    </div>
-    <textarea required rows="5" placeholder="e.g. Test,a.*" id="${dialog.idPrefix}T">${current.map((d) => typeof d === 'string' ? d : d.source).join('\n')}</textarea>
-    <button id="${dialog.idPrefix}A">Apply</button>
+      <span>RegExp</span>
+    </label>
+    <textarea class="${cssClass('textarea')}" required rows="5" placeholder="e.g. Test,a.*" id="${dialog.idPrefix}T">${current.map((d) => typeof d === 'string' ? d : d.source).join('\n')}</textarea>
+    <button class="${cssClass('dialog-button')}" id="${dialog.idPrefix}A">Apply</button>
   `);
 
   const button = node.querySelector<HTMLButtonElement>(`#${dialog.idPrefix}A`)!;

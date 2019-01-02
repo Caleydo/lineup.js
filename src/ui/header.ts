@@ -1,23 +1,12 @@
-// import Popper from 'popper.js';
-import {MIN_LABEL_WIDTH} from '../config';
-import {equalArrays} from '../internal';
-import {dragAble, dropAble, hasDnDType, IDropResult} from '../internal/dnd';
-import {
-  createImpositionBoxPlotDesc, createImpositionDesc, createImpositionsDesc, createNestedDesc, createReduceDesc,
-  createStackDesc, IColumnDesc, isArrayColumn, isBoxPlotColumn, isCategoricalColumn, isMapColumn, isNumberColumn,
-  isNumbersColumn
-} from '../model';
-import {categoryOf, getSortType} from '../model/annotations';
-import Column from '../model/Column';
-import {default as CompositeColumn, IMultiLevelColumn, isMultiLevelColumn} from '../model/CompositeColumn';
-import ImpositionBoxPlotColumn from '../model/ImpositionBoxPlotColumn';
-import ImpositionCompositeColumn from '../model/ImpositionCompositeColumn';
-import ImpositionCompositesColumn from '../model/ImpositionCompositesColumn';
-import {IRankingHeaderContext} from './interfaces';
-import {IOnClickHandler, getToolbar, dialogContext} from './toolbar';
-import {IToolbarAction} from './toolbar';
+import {MIN_LABEL_WIDTH} from '../constants';
+import {equalArrays, dragAble, dropAble, hasDnDType, IDropResult} from '../internal';
+import {categoryOf, getSortType} from '../model';
+import {createNestedDesc, createReduceDesc, createStackDesc, IColumnDesc, isArrayColumn, isBoxPlotColumn, isCategoricalColumn, isMapColumn, isNumberColumn, isNumbersColumn, Column, ImpositionCompositeColumn, ImpositionCompositesColumn, createImpositionDesc, createImpositionsDesc, ImpositionBoxPlotColumn, createImpositionBoxPlotDesc, CompositeColumn, IMultiLevelColumn, isMultiLevelColumn} from '../model';
+import {aria, cssClass} from '../styles';
 import MoreColumnOptionsDialog from './dialogs/MoreColumnOptionsDialog';
-import {cssClass, aria} from '../styles';
+import {IRankingHeaderContext, IToolbarAction, IOnClickHandler} from './interfaces';
+import {getToolbar} from './toolbar';
+import {dialogContext} from './dialogs';
 
 /** @internal */
 export interface IHeaderOptions {
@@ -52,7 +41,7 @@ export function createHeader(col: Column, ctx: IRankingHeaderContext, options: P
 
   // addTooltip(node, col);
 
-  createShortcutMenuItems(<HTMLElement>node.querySelector(`.${cssClass('toolbar')}`)!, options.level!, col, ctx);
+  createShortcutMenuItems(<HTMLElement>node.getElementsByClassName(cssClass('toolbar'))[0]!, options.level!, col, ctx);
 
   toggleToolbarIcons(node, col);
 
@@ -63,7 +52,7 @@ export function createHeader(col: Column, ctx: IRankingHeaderContext, options: P
     mergeDropAble(node, col, ctx);
   }
   if (options.rearrangeAble) {
-    rearrangeDropAble(<HTMLElement>node.querySelector(`.${cssClass('handle')}`)!, col, ctx);
+    rearrangeDropAble(<HTMLElement>node.getElementsByClassName(cssClass('handle'))[0]!, col, ctx);
   }
   if (options.resizeable) {
     dragWidth(col, node);
@@ -73,9 +62,9 @@ export function createHeader(col: Column, ctx: IRankingHeaderContext, options: P
 
 
 /** @internal */
-export function updateHeader(node: HTMLElement, col: Column) {
-  const label = <HTMLElement>node.querySelector(`.${cssClass('label')}`)!;
-  label.innerHTML = col.getWidth() < MIN_LABEL_WIDTH ? '&nbsp;' : col.label;
+export function updateHeader(node: HTMLElement, col: Column, minWidth = MIN_LABEL_WIDTH) {
+  const label = <HTMLElement>node.getElementsByClassName(cssClass('label'))[0]!;
+  label.innerHTML = col.getWidth() < minWidth ? '&nbsp;' : col.label;
   node.title = col.description ? `${col.label}\n${col.description}` : col.label;
   node.dataset.colId = col.id;
   node.dataset.type = col.desc.type;
@@ -87,7 +76,7 @@ export function updateHeader(node: HTMLElement, col: Column) {
 
 /** @internal */
 export function updateIconState(node: HTMLElement, col: Column) {
-  const sort = <HTMLElement>node.querySelector(`.${cssClass('action-sort')}`)!;
+  const sort = <HTMLElement>node.getElementsByClassName(cssClass('action-sort'))[0]!;
   if (sort) {
     const {asc, priority} = col.isSortedByMe();
     sort.dataset.sort = asc !== undefined ? asc : '';
@@ -99,7 +88,7 @@ export function updateIconState(node: HTMLElement, col: Column) {
     }
   }
 
-  const sortGroups = <HTMLElement>node.querySelector(`.${cssClass('action-sortgroup')}`)!;
+  const sortGroups = <HTMLElement>node.getElementsByClassName(cssClass('action-sortgroup'))[0]!;
   if (sortGroups) {
     const {asc, priority} = col.isGroupSortedByMe();
     sortGroups.dataset.sort = asc !== undefined ? asc : '';
@@ -111,7 +100,7 @@ export function updateIconState(node: HTMLElement, col: Column) {
     }
   }
 
-  const group = <HTMLElement>node.querySelector(`.${cssClass('action-group')}`)!;
+  const group = <HTMLElement>node.getElementsByClassName(cssClass('action-group'))[0]!;
   if (group) {
     const groupedBy = col.isGroupedBy();
     group.dataset.group = groupedBy >= 0 ? 'true' : 'false';
@@ -122,7 +111,7 @@ export function updateIconState(node: HTMLElement, col: Column) {
     }
   }
 
-  const filter = <HTMLElement>node.querySelector(`.${cssClass('action-filter')}`)!;
+  const filter = <HTMLElement>node.getElementsByClassName(cssClass('action-filter'))[0]!;
   if (!filter) {
     return;
   }
@@ -198,7 +187,7 @@ export function createToolbarMenuItems(node: HTMLElement, level: number, col: Co
 /** @internal */
 function toggleRotatedHeader(node: HTMLElement, col: Column, defaultVisibleClientWidth: number) {
   // rotate header flag if needed
-  const label = <HTMLElement>node.querySelector(`.${cssClass('label')}`);
+  const label = <HTMLElement>node.getElementsByClassName(cssClass('label'))[0];
   if (col.getWidth() < MIN_LABEL_WIDTH) {
     label.classList.remove(`.${cssClass('rotated')}`);
     return;
@@ -212,14 +201,14 @@ function toggleRotatedHeader(node: HTMLElement, col: Column, defaultVisibleClien
 function toggleToolbarIcons(node: HTMLElement, col: Column, defaultVisibleClientWidth = 22.5) {
   toggleRotatedHeader(node, col, defaultVisibleClientWidth);
 
-  const toolbar = <HTMLElement>node.querySelector(`.${cssClass('toolbar')}`);
+  const toolbar = <HTMLElement>node.getElementsByClassName(cssClass('toolbar'))[0];
   if (toolbar.childElementCount === 0) {
     return;
   }
   const availableWidth = col.getWidth();
   const actions = Array.from(toolbar.children).map((d) => ({node: <HTMLElement>d, width: d.clientWidth > 0 ? d.clientWidth : defaultVisibleClientWidth}));
 
-  const shortCuts =  actions.filter((d) => d.node.dataset.a === 'o');
+  const shortCuts = actions.filter((d) => d.node.dataset.a === 'o');
   const hybrids = actions.filter((d) => d.node.dataset.a === 's');
   const moreIcon = actions.find((d) => d.node.dataset.a === 'm');
   const moreEntries = moreIcon ? parseInt(moreIcon.node.dataset.m!, 10) : 0;
@@ -259,7 +248,7 @@ function toggleToolbarIcons(node: HTMLElement, col: Column, defaultVisibleClient
  */
 export function dragWidth(col: Column, node: HTMLElement) {
   let ueberElement: HTMLElement;
-  const handle = <HTMLElement>node.querySelector(`.${cssClass('handle')}`);
+  const handle = <HTMLElement>node.getElementsByClassName(cssClass('handle'))[0];
 
 
   let start = 0;
@@ -450,11 +439,6 @@ export function resortDropAble(node: HTMLElement, column: Column, ctx: IRankingH
       removeFromSort(column);
       if (isCategoricalColumn(col)) { // we can group by it
         groups.splice(groupIndex + (where === 'after' ? 1 : 0), 0, col);
-        if (groups.length > ranking.getMaxGroupColumns()) {
-          // move the rest to sorting
-          const removed = groups.splice(0, groups.length - ranking.getMaxGroupColumns());
-          criteria.unshift(...removed.reverse().map((d) => ({asc: false, col: d}))); // now a first sorting criteria
-        }
       } else {
         // remove all before and shift to sorting + sorting
         const removed = groups.splice(0, groups.length - groupIndex);
@@ -547,7 +531,7 @@ export function mergeDropAble(node: HTMLElement, column: Column, ctx: IRankingHe
       if (hasDnDType(e, ...numberish)) {
         node.dataset.draginfo = 'Wrap';
       }
-    });
+    }, false, () => column.children.length < 2);
   }
   if (column instanceof ImpositionBoxPlotColumn) {
     return dropAble(node, categorical.concat(boxplot), pushChild, (e) => {
@@ -558,7 +542,7 @@ export function mergeDropAble(node: HTMLElement, column: Column, ctx: IRankingHe
       if (hasDnDType(e, ...boxplot)) {
         node.dataset.draginfo = 'Wrap';
       }
-    });
+    }, false, () => column.children.length < 2);
   }
   if (column instanceof ImpositionCompositesColumn) {
     return dropAble(node, categorical.concat(numbers), pushChild, (e) => {
@@ -569,7 +553,7 @@ export function mergeDropAble(node: HTMLElement, column: Column, ctx: IRankingHe
       if (hasDnDType(e, ...numbers)) {
         node.dataset.draginfo = 'Wrap';
       }
-    });
+    }, false, () => column.children.length < 2);
   }
   if (isMultiLevelColumn(column)) {
     // stack column or nested

@@ -1,14 +1,12 @@
 import {INumberBin, IStatistics} from '../internal';
-import {IDataRow, IGroup, IGroupMeta} from '../model';
-import Column from '../model/Column';
-import CompositeNumberColumn from '../model/CompositeNumberColumn';
+import {Column, CompositeNumberColumn, IDataRow, IOrderedGroup, INumberColumn} from '../model';
 import {CANVAS_HEIGHT, cssClass} from '../styles';
 import {getHistDOMRenderer} from './HistogramCellRenderer';
-import {default as IRenderContext, ERenderMode, ICellRendererFactory} from './interfaces';
+import {IRenderContext, ERenderMode, ICellRendererFactory} from './interfaces';
 import {renderMissingCanvas, renderMissingDOM} from './missing';
 import {createData} from './MultiLevelCellRenderer';
-import {matchColumns, forEachChild} from './utils';
-import {colorOf} from '../ui/dialogs/utils';
+import {colorOf, matchColumns, forEachChild} from './utils';
+import {tasksAll} from '../provider';
 
 
 /** @internal */
@@ -24,17 +22,17 @@ export default class InterleavingCellRenderer implements ICellRendererFactory {
     const width = context.colWidth(col);
     return {
       template: `<div>${cols.map((r) => r.template).join('')}</div>`,
-      update: (n: HTMLDivElement, d: IDataRow, i: number, group: IGroup, meta: IGroupMeta) => {
+      update: (n: HTMLDivElement, d: IDataRow, i: number, group: IOrderedGroup) => {
         const missing = renderMissingDOM(n, col, d);
         if (missing) {
           return;
         }
         matchColumns(n, cols, context);
         forEachChild(n, (ni: HTMLElement, j) => {
-          cols[j].renderer!.update(ni, d, i, group, meta);
+          cols[j].renderer!.update(ni, d, i, group);
         });
       },
-      render: (ctx: CanvasRenderingContext2D, d: IDataRow, _i: number, group: IGroup, meta: IGroupMeta) => {
+      render: (ctx: CanvasRenderingContext2D, d: IDataRow, _i: number, group: IOrderedGroup) => {
         if (renderMissingCanvas(ctx, col, d, width)) {
           return;
         }
@@ -44,7 +42,7 @@ export default class InterleavingCellRenderer implements ICellRendererFactory {
         cols.forEach((r, i) => {
           const rr = r.renderer!;
           if (rr.render) {
-            rr.render(ctx, d, i, group, meta);
+            rr.render(ctx, d, i, group);
           }
           ctx.translate(0, CANVAS_HEIGHT);
         });
@@ -57,45 +55,56 @@ export default class InterleavingCellRenderer implements ICellRendererFactory {
     const {cols} = createData(col, context, false, ERenderMode.GROUP);
     return {
       template: `<div>${cols.map((r) => r.template).join('')}</div>`,
-      update: (n: HTMLElement, group: IGroup, rows: IDataRow[]) => {
+      update: (n: HTMLElement, group: IOrderedGroup) => {
         matchColumns(n, cols, context);
         forEachChild(n, (ni: HTMLElement, j) => {
-          cols[j].groupRenderer!.update(ni, group, rows);
+          cols[j].groupRenderer!.update(ni, group);
         });
       }
     };
   }
 
-  createSummary(col: CompositeNumberColumn, context: IRenderContext, _interactive: boolean, globalHist: IStatistics | null) {
+  createSummary(col: CompositeNumberColumn, context: IRenderContext, _interactive: boolean) {
     const cols = col.children;
     let acc = 0;
-    const {template, render} = getHistDOMRenderer(globalHist, col, {
+    const {template, render} = getHistDOMRenderer(col, {
       color: () => colorOf(cols[(acc++) % cols.length])
     });
     return {
       template,
       update: (n: HTMLElement) => {
-        const stats = cols.map((c) => <IStatistics | null>context.statsOf(<any>c));
-        if (!stats.some(Boolean)) {
-          n.classList.add(cssClass('missing'));
-          return;
-        }
-        n.classList.remove(cssClass('missing'));
-        const grouped = groupedHist(stats);
-        render(n, grouped);
+        const tasks = cols.map((col) => context.tasks.summaryNumberStats(<INumberColumn>col));
+
+        return tasksAll(tasks).then((vs) => {
+          if (typeof vs === 'symbol') {
+            return;
+          }
+          const summaries = vs.map((d) => d.summary);
+          if (!summaries.some(Boolean)) {
+            n.classList.add(cssClass('missing'));
+            return;
+          }
+          n.classList.remove(cssClass('missing'));
+          const grouped = groupedHist(summaries)!;
+          render(n, grouped);
+        });
       }
     };
   }
 }
 
 const dummyBin: INumberBin = {
-  length: 0,
+  count: 0,
   x0: 0,
   x1: 0
 };
 
 function groupedHist(stats: (IStatistics | null)[]) {
   const sample = stats.find(Boolean)!;
+  if (!sample) {
+    return null;
+  }
+
   const bins = sample.hist.length;
   // assert all have the same bin size
   const hist = <INumberBin[]>[];
@@ -107,8 +116,8 @@ function groupedHist(stats: (IStatistics | null)[]) {
         hist.push(dummyBin);
         return;
       }
-      if (bin.length > maxBin) {
-        maxBin = bin.length;
+      if (bin.count > maxBin) {
+        maxBin = bin.count;
       }
       hist.push(bin);
     });
