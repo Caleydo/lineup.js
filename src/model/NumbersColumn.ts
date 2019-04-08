@@ -28,7 +28,7 @@ export declare type INumbersColumnDesc = INumbersDesc & IArrayColumnDesc<number>
 declare function mappingChanged(previous: IMappingFunction, current: IMappingFunction): void;
 /**
  * emitted when the color mapping property changes
- * @asMemberOf NumberMapColumn
+ * @asMemberOf NumbersColumn
  * @event
  */
 declare function colorMappingChanged(previous: IColorMappingFunction, current: IColorMappingFunction): void;
@@ -283,12 +283,16 @@ export default class NumbersColumn extends ArrayColumn<number> implements INumbe
     return NumberColumn.prototype.getFilter.call(this);
   }
 
-  setFilter(value: INumberFilter = {min: -Infinity, max: +Infinity, filterMissing: false}) {
+  setFilter(value: INumberFilter | null) {
     NumberColumn.prototype.setFilter.call(this, value);
   }
 
   filter(row: IDataRow) {
     return NumberColumn.prototype.filter.call(this, row);
+  }
+
+  clearFilter() {
+    return NumberColumn.prototype.clearFilter.call(this);
   }
 }
 
