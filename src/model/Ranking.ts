@@ -2,7 +2,7 @@ import {equalArrays, fixCSS, IEventListener, suffix, joinIndexArrays, AEventDisp
 import {isSortingAscByDefault} from './annotations';
 import Column, {dirty, dirtyCaches, dirtyHeader, dirtyValues, labelChanged, visibilityChanged, widthChanged} from './Column';
 import CompositeColumn from './CompositeColumn';
-import {IRankingDump, defaultGroup, IndicesArray, IOrderedGroup, IDataRow, IColumnParent, IFlatColumn, ISortCriteria, UIntTypedArray, IGroupParent} from './interfaces';
+import {IRankingDump, defaultGroup, IndicesArray, IOrderedGroup, IDataRow, IColumnParent, IFlatColumn, ISortCriteria, UIntTypedArray, IGroupParent, ITypeFactory} from './interfaces';
 import {groupRoots, isOrderedGroup} from './internal';
 
 export enum EDirtyReason {
@@ -213,7 +213,7 @@ export default class Ranking extends AEventDispatcher implements IColumnParent {
           return offsets.get(g)!;
         }
         const subs = g.subGroups.map((gi) => resolve(<Readonly<IGroupParent> | IOrderedGroup>gi));
-        const offset = subs[0].offset;
+        const offset = subs.length > 0 ? subs[0].offset : 0;
         const size = subs.reduce((a, b) => a + b.size, 0);
         const r = {offset, size};
         offsets.set(g, r);
@@ -263,7 +263,7 @@ export default class Ranking extends AEventDispatcher implements IColumnParent {
     return r;
   }
 
-  restore(dump: IRankingDump, factory: (dump: any) => Column | null) {
+  restore(dump: IRankingDump, factory: ITypeFactory) {
     this.clear();
     (dump.columns || []).map((child: any) => {
       const c = factory(child);
